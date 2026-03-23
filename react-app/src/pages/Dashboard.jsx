@@ -1,8 +1,20 @@
+import { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import StatCard from '../components/StatCard';
-import { Gauge, Target, Trophy, Zap, BookOpen, Medal, AtSign, Network, Globe } from 'lucide-react';
+import { Gauge, Target, Trophy, Zap, BookOpen, Medal, AtSign, Network, Globe, AlertTriangle } from 'lucide-react';
 
 export default function Dashboard() {
+    const [weakKeys, setWeakKeys] = useState([]);
+
+    useEffect(() => {
+        const stored = JSON.parse(localStorage.getItem('weakKeys') || '{}');
+        const sorted = Object.entries(stored)
+            .sort(([, a], [, b]) => b - a)
+            .slice(0, 5);
+        setWeakKeys(sorted); // [['e', 12], ['t', 8], ...]
+    }, []);
+
+    const maxErrors = weakKeys[0]?.[1] || 1;
     return (
         <div className="layout-container flex h-full grow flex-col">
             <Navbar />
@@ -77,45 +89,55 @@ export default function Dashboard() {
                         </div>
                     </div>
 
-                    {/* Recent Activity */}
+                    {/* Weakest Keys Analytics */}
                     <div className="bg-white dark:bg-primary/5 p-6 rounded-xl border border-slate-200 dark:border-primary/10">
-                        <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Recent Challenges</h2>
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-4 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-primary/5 transition-colors cursor-pointer">
-                                <div className="h-10 w-10 rounded bg-primary/20 flex items-center justify-center text-primary">
-                                    <Zap size={24} />
-                                </div>
-                                <div className="flex-1">
-                                    <p className="text-sm font-semibold">1v1 Sprint</p>
-                                    <p className="text-xs text-slate-500">Won vs @QuickKeys</p>
-                                </div>
-                                <p className="text-sm font-bold text-primary">128 WPM</p>
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
+                                <AlertTriangle className="w-4 h-4 text-red-500" />
                             </div>
-
-                            <div className="flex items-center gap-4 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-primary/5 transition-colors cursor-pointer">
-                                <div className="h-10 w-10 rounded bg-amber-500/20 flex items-center justify-center text-amber-500">
-                                    <BookOpen size={24} />
-                                </div>
-                                <div className="flex-1">
-                                    <p className="text-sm font-semibold">Classic Mode</p>
-                                    <p className="text-xs text-slate-500">Practice Session</p>
-                                </div>
-                                <p className="text-sm font-bold text-slate-400">115 WPM</p>
-                            </div>
-
-                            <div className="flex items-center gap-4 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-primary/5 transition-colors cursor-pointer">
-                                <div className="h-10 w-10 rounded bg-red-500/20 flex items-center justify-center text-red-500">
-                                    <Medal size={24} />
-                                </div>
-                                <div className="flex-1">
-                                    <p className="text-sm font-semibold">Tournament</p>
-                                    <p className="text-xs text-slate-500">Global Qualifier</p>
-                                </div>
-                                <p className="text-sm font-bold text-primary">141 WPM</p>
+                            <div>
+                                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Weakest Keys</h2>
+                                <p className="text-xs text-slate-500">Letters you mistype the most</p>
                             </div>
                         </div>
-                        <button className="w-full mt-6 py-2 text-sm font-medium text-primary border border-primary/20 rounded-lg hover:bg-primary/10 transition-colors">
-                            View All Activity
+
+                        {weakKeys.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-8 text-center gap-3">
+                                <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800/50 flex items-center justify-center">
+                                    <Zap className="w-6 h-6 text-slate-400" />
+                                </div>
+                                <p className="text-sm text-slate-500 font-medium">No data yet</p>
+                                <p className="text-xs text-slate-400 max-w-[180px]">Play a Solo match to generate your weakness analysis.</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {weakKeys.map(([letter, count]) => (
+                                    <div key={letter} className="group">
+                                        <div className="flex items-center justify-between mb-1.5">
+                                            <div className="flex items-center gap-2">
+                                                <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-500/20 text-red-400 font-black text-lg font-mono uppercase">
+                                                    {letter}
+                                                </span>
+                                                <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">{count} misses</span>
+                                            </div>
+                                            <span className="text-xs font-bold text-red-400">{Math.round((count / maxErrors) * 100)}%</span>
+                                        </div>
+                                        <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                                            <div
+                                                className="h-full bg-gradient-to-r from-red-500 to-red-400 rounded-full transition-all duration-500"
+                                                style={{ width: `${Math.round((count / maxErrors) * 100)}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        <button
+                            onClick={() => { localStorage.removeItem('weakKeys'); setWeakKeys([]); }}
+                            className="w-full mt-6 py-2 text-xs font-bold text-slate-500 border border-slate-200 dark:border-slate-700/50 rounded-lg hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30 transition-all"
+                        >
+                            Reset Analytics
                         </button>
                     </div>
                 </div>

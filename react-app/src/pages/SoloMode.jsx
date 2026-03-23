@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Zap, BarChart2, Settings, UserCircle, RotateCcw } from 'lucide-react';
+import { getRandomQuote } from '../utils/quotes';
 
 const DEFAULT_TIME = 30;
-const PLACEHOLDER_TEXT = "The quick brown fox jumps over the lazy dog. Complexity is the enemy of execution. In the heart of the digital arena, speed and precision define the victor.";
 
 export default function SoloMode() {
-    const [text, setText] = useState(PLACEHOLDER_TEXT);
+    const [text, setText] = useState(() => getRandomQuote('medium'));
     const [userInput, setUserInput] = useState('');
-    const [status, setStatus] = useState('idle'); // 'idle', 'typing', 'finished'
+    const [status, setStatus] = useState('idle');
     const [timeLeft, setTimeLeft] = useState(DEFAULT_TIME);
+    const [errorMap, setErrorMap] = useState({});
+    const [difficulty, setDifficulty] = useState('medium');
 
     const inputRef = useRef(null);
 
@@ -44,6 +46,16 @@ export default function SoloMode() {
 
         if (val.length <= text.length) {
             setUserInput(val);
+
+            // Detect a new character typed that is wrong
+            if (val.length > userInput.length) {
+                const typedChar = val[val.length - 1];
+                const expectedChar = text[val.length - 1];
+                if (typedChar !== expectedChar && expectedChar !== ' ') {
+                    const missedChar = expectedChar.toLowerCase();
+                    setErrorMap(prev => ({ ...prev, [missedChar]: (prev[missedChar] || 0) + 1 }));
+                }
+            }
         }
 
         // Auto-finish if type all text
@@ -71,10 +83,33 @@ export default function SoloMode() {
         setUserInput('');
         setStatus('idle');
         setTimeLeft(DEFAULT_TIME);
+        setErrorMap({});
         if (inputRef.current) {
             inputRef.current.focus();
         }
     };
+
+    // Save errorMap to localStorage when the test finishes
+    useEffect(() => {
+        if (status === 'finished' && Object.keys(errorMap).length > 0) {
+            const existing = JSON.parse(localStorage.getItem('weakKeys') || '{}');
+            const merged = { ...existing };
+            for (const [key, count] of Object.entries(errorMap)) {
+                merged[key] = (merged[key] || 0) + count;
+            }
+            localStorage.setItem('weakKeys', JSON.stringify(merged));
+        }
+    }, [status]);
+
+    // Fetch a new quote whenever difficulty changes
+    useEffect(() => {
+        setText(getRandomQuote(difficulty));
+        setUserInput('');
+        setStatus('idle');
+        setTimeLeft(DEFAULT_TIME);
+        setErrorMap({});
+        if (inputRef.current) inputRef.current.focus();
+    }, [difficulty]);
 
     // Allow resetting with Tab + Enter
     useEffect(() => {
@@ -124,9 +159,24 @@ export default function SoloMode() {
                             <button className="px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-slate-200">60s</button>
                         </div>
                         <div className="flex gap-1 bg-slate-800/30 p-1 rounded-xl">
-                            <button className="px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">Easy</button>
-                            <button className="px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-slate-200">Medium</button>
-                            <button className="px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-slate-200">Hard</button>
+                            <button 
+                                onClick={() => setDifficulty('easy')}
+                                className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${difficulty === 'easy' ? 'bg-primary/10 text-primary border border-primary/20' : 'text-slate-400 hover:text-slate-200'}`}
+                            >
+                                Easy
+                            </button>
+                            <button 
+                                onClick={() => setDifficulty('medium')}
+                                className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${difficulty === 'medium' ? 'bg-primary/10 text-primary border border-primary/20' : 'text-slate-400 hover:text-slate-200'}`}
+                            >
+                                Medium
+                            </button>
+                            <button 
+                                onClick={() => setDifficulty('hard')}
+                                className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${difficulty === 'hard' ? 'bg-primary/10 text-primary border border-primary/20' : 'text-slate-400 hover:text-slate-200'}`}
+                            >
+                                Hard
+                            </button>
                         </div>
                     </div>
                 </div>
