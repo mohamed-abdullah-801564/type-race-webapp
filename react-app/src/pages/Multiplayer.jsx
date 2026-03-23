@@ -29,6 +29,7 @@ export default function Multiplayer() {
     const startTimeRef = useRef(null);
     // Ref so socket listeners always get the latest playerName without stale closure
     const playerNameRef = useRef('');
+    const userInputRef = useRef('');
 
     // Keep playerNameRef in sync with state
     useEffect(() => { playerNameRef.current = playerName; }, [playerName]);
@@ -62,7 +63,7 @@ export default function Multiplayer() {
             setGameState('countdown');
             setUserInput('');
             setTimeLeft(30);
-            startTimeRef.current = Date.now();
+            startTimeRef.current = startTime;
 
             const timeUntilStart = startTime - Date.now();
             let count = Math.ceil(timeUntilStart / 1000);
@@ -81,6 +82,8 @@ export default function Multiplayer() {
 
         // raceOver
         socket.on('raceOver', (data) => {
+            console.log('--- FRONTEND RECEIVED RACE OVER ---');
+            console.log('Winner Data from server:', data);
             if (timerRef.current) clearInterval(timerRef.current);
             setTimeLeft(0);
             setGameState('finished');
@@ -117,6 +120,20 @@ export default function Multiplayer() {
             setTimeLeft(remaining);
             if (remaining <= 0) {
                 clearInterval(timerRef.current);
+
+                const currentInput = userInputRef.current; // Get the latest typed text!
+                const elapsedMins = 30 / 60; // 0.5 minutes
+                const correct = currentInput.split('').filter((char, i) => char === text[i]).length;
+                const finalWpm = Math.round((correct / 5) / elapsedMins) || 0;
+                const finalAcc = currentInput.length > 0 ? Math.round((correct / currentInput.length) * 100) : 0;
+
+                setWinnerData(prev => prev || {
+                    winnerName: 'Time limit reached!',
+                    wpm: finalWpm,
+                    accuracy: finalAcc,
+                    winnerId: null
+                });
+
                 setGameState('finished');
             }
         }, 500); // poll every 500ms for accurate display
@@ -185,6 +202,7 @@ export default function Multiplayer() {
         const val = e.target.value;
         if (val.length <= text.length) {
             setUserInput(val);
+            userInputRef.current = val;
 
             // Use server start time for accurate, drift-free elapsed calculation
             const elapsedSec = startTimeRef.current
@@ -212,14 +230,23 @@ export default function Multiplayer() {
             });
 
             if (val.length === text.length) {
-                const timeElapsedMinutes = (Date.now() - startTimeRef.current) / 60000;
-                const correctCharsCount = val.split('').filter((char, i) => char === text[i]).length;
-                const finalWpm = Math.round((text.length / 5) / timeElapsedMinutes);
-                const finalAccuracy = Math.round((correctCharsCount / text.length) * 100);
+                // Ensure at least 1 second elapsed to prevent Math/Infinity errors
+                const elapsedMs = Math.max(1000, Date.now() - startTimeRef.current);
+                const elapsedMins = elapsedMs / 60000;
+
+                const correctChars = val.split('').filter((char, i) => char === text[i]).length;
+                const finalWpm = Math.round((text.length / 5) / elapsedMins) || 0;
+                const finalAccuracy = Math.round((correctChars / text.length) * 100) || 0;
+
+                console.log('--- FRONTEND EMITTING FINISH ---');
+                console.log('Room ID:', roomId);
+                console.log('startTimeRef.current:', startTimeRef.current);
+                console.log('Elapsed Ms:', elapsedMs);
+                console.log('WPM Calculated:', finalWpm);
+                console.log('Accuracy Calculated:', finalAccuracy);
 
                 socket.emit('playerFinished', {
                     roomId,
-                    playerName: playerNameRef.current,
                     wpm: finalWpm,
                     accuracy: finalAccuracy
                 });
@@ -469,7 +496,11 @@ export default function Multiplayer() {
                 <form 
                     onSubmit={(e) => {
                         e.preventDefault();
-                        if (tempName.trim()) setPlayerName(tempName.trim());
+                        if (tempName.trim()) {
+                            const name = tempName.trim();
+                            playerNameRef.current = name; // update ref immediately, synchronously
+                            setPlayerName(name);
+                        }
                     }}
                     className="w-full space-y-4"
                 >

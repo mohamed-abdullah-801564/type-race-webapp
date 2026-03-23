@@ -128,8 +128,16 @@ io.on('connection', (socket) => {
 
     // Handle player finishing the race
     socket.on('playerFinished', (data) => {
-        const { roomId, playerName, wpm, accuracy } = data;
-        const room = rooms[roomId];
+        console.log('--- SERVER RECEIVED PLAYER FINISHED ---');
+        console.log('Data from frontend:', data);
+        const room = rooms[data.roomId];
+        console.log('Did server find room?:', room ? 'Yes' : 'No');
+        if (room) {
+            const player = room.players.find(p => p.id === socket.id);
+            console.log('Did server find player?:', player);
+        }
+
+        const { roomId, wpm, accuracy } = data;
         if (!room) return;
 
         const player = room.players.find(p => p.id === socket.id);
@@ -141,9 +149,10 @@ io.on('connection', (socket) => {
 
             if (room.status !== 'finished') {
                 room.status = 'finished';
-                console.log(`[${roomId}] Race Over! Winner: ${playerName}`);
+                console.log(`[${roomId}] Race Over! Winner: ${player.name}`);
                 io.to(roomId).emit('raceOver', {
-                    winnerName: playerName,
+                    winnerId: player.id, // CRITICAL FIX
+                    winnerName: player.name,
                     wpm,
                     accuracy
                 });
