@@ -13,6 +13,8 @@ export default function Dashboard() {
     const [stats, setStats] = useState({ maxWPM: 0, avgAccuracy: 0, totalTests: 0 });
     const [performances, setPerformances] = useState({});
     const [recentWPMs, setRecentWPMs] = useState([]);
+    const [recentHistory, setRecentHistory] = useState([]);
+    const [hoveredDataPoint, setHoveredDataPoint] = useState(null);
 
     useEffect(() => {
         // Load Race History
@@ -25,7 +27,9 @@ export default function Dashboard() {
                 avgAccuracy: avgAcc.toFixed(1),
                 totalTests: history.length
             });
-            setRecentWPMs(history.slice(-10).map(h => h.wpm));
+            const last10 = history.slice(-10);
+            setRecentHistory(last10);
+            setRecentWPMs(last10.map(h => h.wpm));
         }
 
         // Load Key Performances
@@ -44,7 +48,9 @@ export default function Dashboard() {
     const maxRecentWPM = Math.max(...recentWPMs, 100);
     const points = recentWPMs.map((wpm, i) => ({
         x: recentWPMs.length > 1 ? (i / (recentWPMs.length - 1)) * 1000 : 500,
-        y: 250 - (wpm / maxRecentWPM) * 200 - 25 // Leave some margin at top/bottom
+        y: 250 - (wpm / maxRecentWPM) * 200 - 25,
+        wpm: wpm,
+        acc: recentHistory[i] ? parseFloat(recentHistory[i].accuracy).toFixed(1) : 0
     }));
 
     const pathD = points.length >= 2 
@@ -88,9 +94,9 @@ export default function Dashboard() {
                 {/* Analytics & Charts */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-2 bg-white dark:bg-primary/5 p-8 rounded-xl border border-slate-200 dark:border-primary/10">
-                        <div className="flex items-center justify-between mb-8">
+                        <div className="flex items-center justify-between mb-8 pb-6 border-b border-slate-200 dark:border-primary/10">
                             <div>
-                                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Performance Trend</h2>
+                                <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Performance Trend</h3>
                                 <p className="text-sm text-slate-500">WPM over your last 10 practice tests</p>
                             </div>
                             <div className="flex gap-2">
@@ -99,15 +105,16 @@ export default function Dashboard() {
                                 </span>
                             </div>
                         </div>
-                        <div className="h-[250px] w-full relative">
-                            {recentWPMs.length < 2 ? (
-                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/40 rounded-xl border border-dashed border-white/10">
-                                    <Zap className="w-8 h-8 text-primary/40 mb-2 animate-pulse" />
-                                    <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Play more games to see your trend</p>
-                                </div>
-                            ) : (
-                                <>
-                                    <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 1000 250">
+                        <div className="w-full pt-12 px-6 pb-6 overflow-visible">
+                            <div className="h-[250px] w-full relative overflow-visible">
+                                {recentWPMs.length < 2 ? (
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/40 rounded-xl border border-dashed border-white/10">
+                                        <Zap className="w-8 h-8 text-primary/40 mb-2 animate-pulse" />
+                                        <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Play more games to see your trend</p>
+                                    </div>
+                                ) : (
+                                    <>
+                                    <svg className="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 1000 250">
                                         <defs>
                                             <linearGradient id="glowGradient" x1="0" x2="0" y1="0" y2="1">
                                                 <stop offset="0%" stopColor="#00f5d4" stopOpacity="0.3"></stop>
@@ -118,16 +125,46 @@ export default function Dashboard() {
                                         <path className="chart-glow" d={pathD} fill="none" stroke="#00f5d4" strokeLinecap="round" strokeWidth="4"></path>
                                         {/* Points */}
                                         {points.map((p, i) => (
-                                            <circle key={i} cx={p.x} cy={p.y} fill="#00f5d4" r="5" className="drop-shadow-[0_0_8px_rgba(0,245,212,0.8)]"></circle>
+                                            <circle 
+                                                key={i} 
+                                                cx={p.x} 
+                                                cy={p.y} 
+                                                fill="#00f5d4" 
+                                                r="6" 
+                                                className="drop-shadow-[0_0_8px_rgba(0,245,212,0.8)] cursor-pointer transition-all duration-300 transform-gpu hover:scale-150 origin-center"
+                                                style={{ transformOrigin: `${p.x}px ${p.y}px` }}
+                                                onMouseEnter={() => setHoveredDataPoint({ ...p, index: i + 1 })}
+                                                onMouseLeave={() => setHoveredDataPoint(null)}
+                                            ></circle>
                                         ))}
+
+                                        {/* Dynamic Tooltip */}
                                     </svg>
-                                    <div className="absolute bottom-0 left-0 w-full flex justify-between text-[10px] text-slate-500 mt-4 px-1 font-mono">
+                                    {hoveredDataPoint && (
+                                        <div
+                                            className={`absolute z-[100] pointer-events-none transition-all duration-300 
+                                                ${hoveredDataPoint.x > 700 ? '-translate-x-[110%]' : 'translate-x-[20%]'}
+                                                ${hoveredDataPoint.y < 50 ? 'translate-y-[20%]' : '-translate-y-[120%]'}
+                                            `}
+                                            style={{
+                                                left: `${(hoveredDataPoint.x / 1000) * 100}%`,
+                                                top: `${(hoveredDataPoint.y / 250) * 100}%`
+                                            }}
+                                        >
+                                            <div className="bg-slate-900 border border-primary text-white text-xs font-mono font-bold px-4 py-2 rounded-lg shadow-2xl whitespace-nowrap">
+                                                Run {hoveredDataPoint.index} | WPM: {hoveredDataPoint.wpm} | Acc: {hoveredDataPoint.acc}%
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="absolute -bottom-6 left-0 w-full flex justify-between text-[10px] text-slate-500 px-1 font-mono">
                                         {points.map((_, i) => (
                                             <span key={i}>Run {i + 1}</span>
                                         ))}
                                     </div>
                                 </>
                             )}
+                            </div>
                         </div>
                     </div>
 
@@ -219,7 +256,7 @@ export default function Dashboard() {
                 <div className="bg-white dark:bg-primary/5 rounded-xl border border-slate-200 dark:border-primary/10 overflow-hidden">
                     <div className="p-6 border-b border-slate-200 dark:border-primary/10 flex justify-between items-center">
                         <div>
-                            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Global Leaderboard</h2>
+                            <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Season 1: Neon Genesis</h2>
                             <p className="text-sm text-slate-500">Top 10 typists this season</p>
                         </div>
                         <div className="flex bg-slate-100 dark:bg-primary/10 p-1 rounded-lg">
@@ -243,9 +280,9 @@ export default function Dashboard() {
                                     { rank: '01', name: 'SpeedDemon_99', wpm: 186, accuracy: '99.2%', status: 'Live', isUser: false, avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAn2MgrVu9d4njiPpNorFRqt6VcbIYXaN4wzSY0Z4_pi6TDHgAZdJDzkEhs1n9G2JUgIdPs33hM4DxLqsFNJfSP2ytbq03w5igkj08KuIW8_flONw6zOvuYMoJN_F-JmFvb1HhcvlLDElll67sQPkapGJDB9l0qRgzXu1lZL1e9RTvWPKCyk-25T8w22rY_YZl5_2ligeis4LCBFFAygjbsqIwz-ViTHYDGm8REs3rF4RtX45Ltt1FTeOzKwUBapOFu_qMRvlIAOIM' },
                                     { rank: '02', name: 'LunarTypist', wpm: 179, accuracy: '98.8%', status: 'Offline', isUser: false, avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDmCZcbkv5AQCX_8lL4lKJ66OxAjOzxDhRkhA2QQmJ-KEDfl5C9D1LwsSDZxOnMMazJoHnUai9w8A2MxSjyRR4cYztYa8yzdqUcKZOEgs4bqXJjrMJE_4YoNP76e5e2n8keKYisD6lWppt0OU4tYT42AULkd-zTj5ePLoBC60QeDcrhDoIDa8gCXEy8TMS-TTn8_IMnadfoz5UI0-gHHt4MQHzFxFV3_Hg53nRcrcvvvzbiQgUcI_2K8_JNVww6yDfANYKUUemDSqw' },
                                     { rank: '03', name: 'JazzKeyz', wpm: 175, accuracy: '99.5%', status: 'Live', isUser: false, avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAKm57FvjnxGUUBlXlo5d2F-Nc5S6qw-11MjNPoeEu1iztrnNR7WPbM0HzQKk3omQ7NwHpjmxS5Nf1Z_o309gJGsLBwt9Dd3aBBDK2P9Qi7UuYR8WNhlUrsiO52AzfGZJTEMs5ocPTqdVQ5c2HtZ7oQxiRcv_h1OEyKs4CPM60NCg-CeH7b_7R5BF9lva9OH-4pax1NpBtrKM_lVB5cd8fq63jhSABWTcPsC4v4Nu2wZeKTp72wCKAP4j3mEB3btnOYFoBCvvNiErI' },
-                                    { rank: '12', name: 'Alex_Type (You)', wpm: 142, accuracy: '98.5%', status: 'Live', isUser: true, avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCIxYuqaYQ076-VKGL3G2WkrOLH14fN1qhOPGOJalA8Dl-TjBhAEdNwuJ46rLRPGLZIQYdQ_1ThQPW6E268gaJI9cuM8UjnSnug-YoHfQTlmPGPzbR-Dh-0cPZWRXN79DrMWpeEbNOjuXbjV7wVN2Sw4A2LT_93jJaSRMLhpEpy9obfv4Pc617bgQGiucpF6at3RYopOagk4Wz42cDu7mMipxdx1pnJn0lU3zo7gkvt21RZouBDkBlnnXBhGo2LwfQGEA_T1oTGoec' },
+                                    { rank: '12', name: `${localStorage.getItem('playerName') || 'Guest'} (You)`, wpm: stats.maxWPM || 0, accuracy: `${stats.avgAccuracy || 0}%`, status: 'Live', isUser: true, avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCIxYuqaYQ076-VKGL3G2WkrOLH14fN1qhOPGOJalA8Dl-TjBhAEdNwuJ46rLRPGLZIQYdQ_1ThQPW6E268gaJI9cuM8UjnSnug-YoHfQTlmPGPzbR-Dh-0cPZWRXN79DrMWpeEbNOjuXbjV7wVN2Sw4A2LT_93jJaSRMLhpEpy9obfv4Pc617bgQGiucpF6at3RYopOagk4Wz42cDu7mMipxdx1pnJn0lU3zo7gkvt21RZouBDkBlnnXBhGo2LwfQGEA_T1oTGoec' },
                                 ].map((item, index) => (
-                                    <tr key={index} className={`hover:bg-slate-50/50 dark:hover:bg-primary/5 transition-colors ${item.isUser ? 'bg-primary/5 border-l-2 border-primary' : ''}`}>
+                                    <tr key={index} className={`hover:bg-slate-50/50 dark:hover:bg-primary/5 transition-colors ${item.isUser ? 'bg-primary/10 border-l-4 border-primary shadow-[inset_0_0_20px_rgba(0,245,212,0.05)]' : ''}`}>
                                         <td className={`px-6 py-4 font-bold ${item.rank === '01' || item.isUser ? 'text-primary' : 'text-slate-400'}`}>{item.rank}</td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">

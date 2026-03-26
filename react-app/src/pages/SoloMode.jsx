@@ -177,11 +177,15 @@ export default function SoloMode() {
                     setStatus('typing');
                     startTimeRef.current = Date.now();
                 }
-            }
-            if (e.key === 'Enter') {
+            } else if (e.key === 'Enter') {
                 const expectedChar = text[userInput.length];
                 if (expectedChar === '\n') {
+                    e.preventDefault();
                     setUserInput(prev => prev + '\n');
+                    if (status === 'idle') {
+                        setStatus('typing');
+                        startTimeRef.current = Date.now();
+                    }
                 }
             }
         }

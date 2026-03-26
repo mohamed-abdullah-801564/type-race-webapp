@@ -23,19 +23,21 @@ const generateRoomCode = () => {
 };
 
 const QUOTES = [
-    { text: 'the quick brown fox jumps over the lazy dog and rests by the river', difficulty: 'easy' },
-    { text: 'she sells sea shells by the sea shore and the shells she sells are sea shells', difficulty: 'easy' },
-    { text: 'how much wood would a woodchuck chuck if a woodchuck could chuck wood', difficulty: 'easy' },
-    { text: 'a journey of a thousand miles begins with a single step forward', difficulty: 'easy' },
-    { text: 'In the middle of difficulty lies opportunity. Keep your eyes on the stars.', difficulty: 'medium' },
-    { text: 'Success is not final, failure is not fatal: it is the courage to continue.', difficulty: 'medium' },
-    { text: 'The only way to do great work is to love what you do. Keep looking.', difficulty: 'medium' },
-    { text: 'Believe you can and you are halfway there. The rest is discipline.', difficulty: 'medium' },
-    { text: 'To print variables in JS, use console.log("Hello!"); it is 100% effective.', difficulty: 'hard' },
-    { text: 'The regex pattern /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-z]{2,}$/ validates email.', difficulty: 'hard' },
-    { text: 'Run: git commit -m "fix: resolve #42 — null-pointer exception" && git push.', difficulty: 'hard' },
-    { text: 'She said, "It\'s 2 AM — why are you still coding?!" He replied: "One more bug."', difficulty: 'hard' },
+    { text: 'the quick brown fox jumps over the lazy dog and rests by the river', difficulty: 'easy', category: 'prose' },
+    { text: 'she sells sea shells by the sea shore and the shells she sells are sea shells', difficulty: 'easy', category: 'prose' },
+    { text: 'how much wood would a woodchuck chuck if a woodchuck could chuck wood', difficulty: 'easy', category: 'prose' },
+    { text: 'a journey of a thousand miles begins with a single step forward', difficulty: 'easy', category: 'prose' },
+    { text: 'In the middle of difficulty lies opportunity. Keep your eyes on the stars.', difficulty: 'medium', category: 'prose' },
+    { text: 'Success is not final, failure is not fatal: it is the courage to continue.', difficulty: 'medium', category: 'prose' },
+    { text: 'The only way to do great work is to love what you do. Keep looking.', difficulty: 'medium', category: 'prose' },
+    { text: 'Believe you can and you are halfway there. The rest is discipline.', difficulty: 'medium', category: 'prose' },
+    { text: 'To print variables in JS, use console.log("Hello!"); it is 100% effective.', difficulty: 'hard', category: 'prose' },
+    { text: 'The regex pattern /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-z]{2,}$/ validates email.', difficulty: 'hard', category: 'prose' },
+    { text: 'Run: git commit -m "fix: resolve #42 — null-pointer exception" && git push.', difficulty: 'hard', category: 'prose' },
+    { text: 'She said, "It\'s 2 AM — why are you still coding?!" He replied: "One more bug."', difficulty: 'hard', category: 'prose' },
 ];
+
+let globalChampionGhost = { wpm: 0, name: '', keystrokes: [] };
 
 io.on('connection', (socket) => {
     console.log(`User connected: ${socket.id}`);
@@ -98,7 +100,7 @@ io.on('connection', (socket) => {
     });
 
     // Start the race
-    socket.on('startRace', ({ roomId, difficulty }, callback) => {
+    socket.on('startRace', ({ roomId, difficulty, category }, callback) => {
         const room = rooms[roomId];
         if (!room) return;
 
@@ -107,18 +109,21 @@ io.on('connection', (socket) => {
             return;
         }
 
-        // Pick a random quote based on difficulty
+        // Pick a random quote based on difficulty and category
         const diff = difficulty || 'medium';
-        const pool = QUOTES.filter(q => q.difficulty === diff);
-        const selectedQuote = pool[Math.floor(Math.random() * pool.length)].text;
+        const cat = category || 'prose';
+        const source = cat === 'code' ? CODE_SNIPPETS : QUOTES;
+        const pool = source.filter(q => q.difficulty === diff);
+        const selectedQuote = pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)].text : source[0].text;
 
         room.status = 'playing';
-        console.log(`[${roomId}] Race started with difficulty: ${diff}`);
+        console.log(`[${roomId}] Race started with difficulty: ${diff}, category: ${cat}`);
 
         // Broadcast to EVERYONE in the room including the host
         io.to(roomId).emit('raceStarted', {
             text: selectedQuote,
-            startTime: Date.now() + 3000 // Give frontend ~3s to count down
+            startTime: Date.now() + 3000, // Give frontend ~3s to count down
+            championGhost: globalChampionGhost
         });
     });
 
@@ -185,7 +190,7 @@ const CODE_SNIPPETS = [
             console.log('Did server find player?:', player);
         }
 
-        const { roomId, wpm, accuracy } = data;
+        const { roomId, wpm, accuracy, keystrokes } = data;
         if (!room) return;
 
         const player = room.players.find(p => p.id === socket.id);
@@ -194,6 +199,15 @@ const CODE_SNIPPETS = [
             player.wpm = wpm;
             player.accuracy = accuracy;
             player.finished = true;
+
+            if (wpm > globalChampionGhost.wpm) {
+                globalChampionGhost = {
+                    wpm,
+                    name: player.name,
+                    keystrokes: keystrokes || []
+                };
+                console.log(`[Global Champion] New record: ${wpm} WPM by ${player.name}`);
+            }
 
             if (room.status !== 'finished') {
                 room.status = 'finished';

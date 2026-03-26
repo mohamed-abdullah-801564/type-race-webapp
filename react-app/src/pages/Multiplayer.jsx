@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { Link } from 'react-router-dom';
 import PlayerProgressBar from '../components/PlayerProgressBar';
-import { Network, Copy, Play, ArrowRight, UserPlus, Trophy, RotateCcw } from 'lucide-react';
+import { Network, Copy, Play, ArrowRight, UserPlus, Trophy, RotateCcw, Ghost, Code, FileText } from 'lucide-react';
 
 const SOCKET_SERVER = 'http://localhost:3001';
 
@@ -24,23 +24,38 @@ export default function Multiplayer() {
     const [userInput, setUserInput] = useState('');
     const [timeLeft, setTimeLeft] = useState(30);
     const [difficulty, setDifficulty] = useState('medium');
+    const [category, setCategory] = useState('prose');
     const [countdown, setCountdown] = useState(3);
     const [progress, setProgress] = useState(0);
     const [currentWpm, setCurrentWpm] = useState(0);
+    const [championGhost, setChampionGhost] = useState(null);
+    const [ghostIndex, setGhostIndex] = useState(0);
 
     const inputRef = useRef(null);
     const timerRef = useRef(null);
+    const keystrokesRef = useRef([]);
+
+    // Check localStorage for player name on mount
+    useEffect(() => {
+        const storedName = localStorage.getItem('playerName');
+        if (storedName) {
+            setPlayerName(storedName);
+        }
+    }, []);
+
     // Server-authoritative race start time — used for WPM and timer sync
     const startTimeRef = useRef(null);
     // Ref so socket listeners always get the latest playerName without stale closure
     const playerNameRef = useRef('');
     const userInputRef = useRef('');
     const roomIdRef = useRef('');
+    const playersRef = useRef([]);
 
     // Keep playerNameRef in sync with state
     useEffect(() => { playerNameRef.current = playerName; }, [playerName]);
     useEffect(() => { userInputRef.current = userInput; }, [userInput]);
     useEffect(() => { roomIdRef.current = roomId; }, [roomId]);
+    useEffect(() => { playersRef.current = players; }, [players]);
 
     // 1. Initialize Socket
     useEffect(() => {
@@ -76,13 +91,16 @@ export default function Multiplayer() {
         });
 
         // raceStarted
-        socket.on('raceStarted', ({ text, startTime }) => {
+        socket.on('raceStarted', ({ text, startTime, championGhost }) => {
             setText(text);
+            setChampionGhost(championGhost || null);
             setGameState('countdown');
             setUserInput('');
             setTimeLeft(30);
             setProgress(0);
             setCurrentWpm(0);
+            setGhostIndex(0);
+            keystrokesRef.current = [];
             startTimeRef.current = startTime;
 
             const timeUntilStart = startTime - Date.now();
@@ -149,6 +167,32 @@ export default function Multiplayer() {
         return () => clearTimeout(timeout);
     }, [progress, currentWpm, socket, gameState]);
 
+    // Ghost Cursor Animation Loop
+    useEffect(() => {
+        let animationFrame;
+        if (gameState === 'racing' && championGhost?.keystrokes?.length > 0) {
+            const start = startTimeRef.current;
+            const animate = () => {
+                const elapsed = Date.now() - start;
+                let index = 0;
+                const strokes = championGhost.keystrokes;
+                for (let i = 0; i < strokes.length; i++) {
+                    if (strokes[i].time <= elapsed) {
+                        index = i + 1;
+                    } else {
+                        break;
+                    }
+                }
+                setGhostIndex(index);
+                animationFrame = requestAnimationFrame(animate);
+            };
+            animationFrame = requestAnimationFrame(animate);
+        } else {
+            setGhostIndex(0);
+        }
+        return () => cancelAnimationFrame(animationFrame);
+    }, [gameState, championGhost]);
+
     // Handle Race Timer — synced to server startTime so all clients tick identically
     useEffect(() => {
         if (gameState !== 'racing') return;
@@ -169,12 +213,28 @@ export default function Multiplayer() {
                 const finalWpm = Math.round((correct / 5) / elapsedMins) || 0;
                 const finalAcc = currentVal.length > 0 ? Math.round((correct / currentVal.length) * 100) : 0;
 
-                setWinnerData(prev => prev || {
-                    winnerName: 'Time limit reached!',
-                    wpm: finalWpm,
-                    accuracy: finalAcc,
-                    winnerId: null
-                });
+                const currentPlayers = playersRef.current;
+                if (currentPlayers.length > 0) {
+                    const sorted = [...currentPlayers].sort((a, b) => {
+                        if (b.progress !== a.progress) return b.progress - a.progress;
+                        return b.wpm - a.wpm;
+                    });
+                    const topPlayer = sorted[0];
+
+                    setWinnerData(prev => prev || {
+                        winnerName: topPlayer.name,
+                        wpm: topPlayer.wpm,
+                        accuracy: topPlayer.id === socket?.id ? finalAcc : 100, // Approximate accuracy if not us
+                        winnerId: topPlayer.id
+                    });
+                } else {
+                    setWinnerData(prev => prev || {
+                        winnerName: 'Time limit reached!',
+                        wpm: finalWpm,
+                        accuracy: finalAcc,
+                        winnerId: null
+                    });
+                }
 
                 setGameState('finished');
             }
@@ -223,7 +283,7 @@ export default function Multiplayer() {
 
     const handleStartRace = () => {
         if (isHost && roomIdRef.current) {
-            socket.emit('startRace', { roomId: roomIdRef.current, difficulty });
+            socket.emit('startRace', { roomId: roomIdRef.current, difficulty, category });
         }
     };
 
@@ -241,18 +301,21 @@ export default function Multiplayer() {
     // Keep track of errors for weakKeys
     const [errorMap, setErrorMap] = useState({});
 
-    const handleInputChange = (e) => {
+    const processKeystroke = (val) => {
         if (gameState !== 'racing') return;
 
-        const val = e.target.value;
         if (val.length <= text.length) {
-            // Detect a new character typed that is wrong
             if (val.length > userInput.length) {
                 const typedChar = val[val.length - 1];
                 const expectedChar = text[val.length - 1];
                 if (typedChar !== expectedChar && expectedChar !== ' ') {
                     const missedChar = expectedChar.toLowerCase();
                     setErrorMap(prev => ({ ...prev, [missedChar]: (prev[missedChar] || 0) + 1 }));
+                }
+
+                if (startTimeRef.current) {
+                    const timeOffset = Date.now() - startTimeRef.current;
+                    keystrokesRef.current.push({ char: typedChar, time: timeOffset });
                 }
             }
 
@@ -281,8 +344,29 @@ export default function Multiplayer() {
                 socket.emit('playerFinished', {
                     roomId: roomIdRef.current,
                     wpm: calculatedWpm,
-                    accuracy: finalAccuracy
+                    accuracy: finalAccuracy,
+                    keystrokes: keystrokesRef.current
                 });
+            }
+        }
+    };
+
+    const handleInputChange = (e) => processKeystroke(e.target.value);
+
+    const handleKeyDown = (e) => {
+        if (gameState === 'racing' && category === 'code') {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const nextChunk = text.slice(userInput.length);
+                const indentMatch = nextChunk.match(/^ +/);
+                const indent = indentMatch ? indentMatch[0] : "    ";
+                processKeystroke(userInput + indent);
+            } else if (e.key === 'Enter') {
+                const expectedChar = text[userInput.length];
+                if (expectedChar === '\n') {
+                    e.preventDefault();
+                    processKeystroke(userInput + '\n');
+                }
             }
         }
     };
@@ -380,14 +464,14 @@ export default function Multiplayer() {
 
                 <div className="flex flex-col items-center gap-6 px-4">
                     {isHost && (
-                        <div className="flex flex-col items-center gap-3">
+                        <div className="flex flex-col items-center gap-3 w-full max-w-sm">
                             <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Select Difficulty</span>
-                            <div className="flex gap-1 bg-slate-800/30 p-1 rounded-xl border border-slate-700/30">
+                            <div className="flex gap-1 bg-slate-800/30 p-1 rounded-xl border border-slate-700/30 w-full">
                                 {['easy', 'medium', 'hard'].map((d) => (
                                     <button
                                         key={d}
                                         onClick={() => setDifficulty(d)}
-                                        className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
+                                        className={`flex-1 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
                                             difficulty === d 
                                             ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(0,245,212,0.1)]' 
                                             : 'text-slate-500 hover:text-slate-300'
@@ -396,6 +480,30 @@ export default function Multiplayer() {
                                         {d}
                                     </button>
                                 ))}
+                            </div>
+
+                            <span className="text-xs font-bold uppercase tracking-widest text-slate-500 mt-4">Data Stream</span>
+                            <div className="flex gap-1 bg-slate-800/30 p-1 rounded-xl border border-slate-700/30 w-full">
+                                <button
+                                    onClick={() => setCategory('prose')}
+                                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
+                                        category === 'prose' 
+                                        ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(0,245,212,0.1)]' 
+                                        : 'text-slate-500 hover:text-slate-300'
+                                    }`}
+                                >
+                                    <FileText className="w-3.5 h-3.5" /> Prose
+                                </button>
+                                <button
+                                    onClick={() => setCategory('code')}
+                                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
+                                        category === 'code' 
+                                        ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(0,245,212,0.1)]' 
+                                        : 'text-slate-500 hover:text-slate-300'
+                                    }`}
+                                >
+                                    <Code className="w-3.5 h-3.5" /> Code
+                                </button>
                             </div>
                         </div>
                     )}
@@ -452,11 +560,17 @@ export default function Multiplayer() {
                         className="w-full text-2xl lg:text-3xl leading-relaxed font-mono tracking-tight text-left relative cursor-text min-h-[300px]"
                         onClick={() => inputRef.current && inputRef.current.focus()}
                     >
+                        {championGhost && championGhost.wpm > 0 && (
+                            <div className="absolute -top-10 left-0 bg-yellow-400/10 border border-yellow-400/30 text-yellow-500 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-2 shadow-[0_0_10px_rgba(250,204,21,0.2)]">
+                                👑 Champion: {championGhost.name} ({championGhost.wpm} WPM)
+                            </div>
+                        )}
                         <input
                             ref={inputRef}
                             type="text"
                             value={userInput}
                             onChange={handleInputChange}
+                            onKeyDown={handleKeyDown}
                             className="absolute opacity-0 -z-10 focus:outline-none"
                             autoFocus
                             autoComplete="off"
@@ -475,11 +589,15 @@ export default function Multiplayer() {
                                 }
 
                                 const isCursor = index === userInput.length && gameState === 'racing';
+                                const isGhost = index === ghostIndex && gameState === 'racing' && championGhost;
 
                                 return (
                                     <span key={index} className="relative transition-colors duration-75">
                                         {isCursor && (
                                             <span className="absolute left-0 top-0 h-full w-[2px] bg-primary animate-pulse shadow-[0_0_8px_#00f5d4] z-10 -ml-1" />
+                                        )}
+                                        {isGhost && (
+                                            <span className="absolute left-0 top-0 h-full w-[2px] bg-yellow-400/50 shadow-[0_0_8px_rgba(250,204,21,0.5)] z-0 -ml-1 transition-all duration-300 ease-linear" />
                                         )}
                                         <span className={`${colorClass} ${char === ' ' && userInput[index] !== char && index < userInput.length ? 'px-1' : ''}`}>
                                             {char}
@@ -571,6 +689,7 @@ export default function Multiplayer() {
                         e.preventDefault();
                         if (tempName.trim()) {
                             const name = tempName.trim();
+                            localStorage.setItem('playerName', name);
                             playerNameRef.current = name; // update ref immediately, synchronously
                             setPlayerName(name);
                         }
