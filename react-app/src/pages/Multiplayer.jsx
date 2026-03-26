@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
+import { Link } from 'react-router-dom';
 import PlayerProgressBar from '../components/PlayerProgressBar';
 import { Network, Copy, Play, ArrowRight, UserPlus, Trophy, RotateCcw } from 'lucide-react';
 
@@ -22,7 +23,11 @@ export default function Multiplayer() {
     const [text, setText] = useState('');
     const [userInput, setUserInput] = useState('');
     const [timeLeft, setTimeLeft] = useState(30);
+    const [difficulty, setDifficulty] = useState('medium');
     const [countdown, setCountdown] = useState(3);
+    const [progress, setProgress] = useState(0);
+    const [currentWpm, setCurrentWpm] = useState(0);
+
     const inputRef = useRef(null);
     const timerRef = useRef(null);
     // Server-authoritative race start time — used for WPM and timer sync
@@ -30,9 +35,12 @@ export default function Multiplayer() {
     // Ref so socket listeners always get the latest playerName without stale closure
     const playerNameRef = useRef('');
     const userInputRef = useRef('');
+    const roomIdRef = useRef('');
 
     // Keep playerNameRef in sync with state
     useEffect(() => { playerNameRef.current = playerName; }, [playerName]);
+    useEffect(() => { userInputRef.current = userInput; }, [userInput]);
+    useEffect(() => { roomIdRef.current = roomId; }, [roomId]);
 
     // 1. Initialize Socket
     useEffect(() => {
@@ -57,12 +65,24 @@ export default function Multiplayer() {
             if (socket.id === newHost) setIsHost(true);
         });
 
+        // progressUpdated
+        socket.on('progressUpdated', ({ playerId, progressPercentage, wpm }) => {
+            setPlayers(prev => prev.map(p => {
+                if (p.id === playerId) {
+                    return { ...p, progress: progressPercentage, wpm };
+                }
+                return p;
+            }));
+        });
+
         // raceStarted
         socket.on('raceStarted', ({ text, startTime }) => {
             setText(text);
             setGameState('countdown');
             setUserInput('');
             setTimeLeft(30);
+            setProgress(0);
+            setCurrentWpm(0);
             startTimeRef.current = startTime;
 
             const timeUntilStart = startTime - Date.now();
@@ -70,20 +90,21 @@ export default function Multiplayer() {
             setCountdown(count);
 
             const countInterval = setInterval(() => {
-                count--;
-                if (count > 0) {
-                    setCountdown(count);
+                const now = Date.now();
+                const remaining = Math.ceil((startTimeRef.current - now) / 1000);
+                
+                if (remaining > 0) {
+                    setCountdown(remaining);
                 } else {
                     clearInterval(countInterval);
                     setGameState('racing');
                 }
-            }, 1000);
+            }, 100);
         });
 
         // raceOver
         socket.on('raceOver', (data) => {
             console.log('--- FRONTEND RECEIVED RACE OVER ---');
-            console.log('Winner Data from server:', data);
             if (timerRef.current) clearInterval(timerRef.current);
             setTimeLeft(0);
             setGameState('finished');
@@ -97,17 +118,36 @@ export default function Multiplayer() {
             setWinnerData(null);
             setUserInput('');
             setTimeLeft(30);
+            setProgress(0);
+            setCurrentWpm(0);
         });
 
         return () => {
             socket.off('playerJoined');
             socket.off('playerLeft');
-            socket.off('raceStarted');
             socket.off('progressUpdated');
+            socket.off('raceStarted');
             socket.off('raceOver');
             socket.off('roomReset');
         };
     }, [socket]);
+
+    // Throttled Progress Update
+    useEffect(() => {
+        if (gameState !== 'racing' || !socket || !roomIdRef.current) return;
+
+        const emitProgress = () => {
+            socket.emit('updateProgress', {
+                roomId: roomIdRef.current,
+                playerId: socket.id,
+                progressPercentage: progress,
+                wpm: currentWpm
+            });
+        };
+
+        const timeout = setTimeout(emitProgress, 500); // 500ms throttle
+        return () => clearTimeout(timeout);
+    }, [progress, currentWpm, socket, gameState]);
 
     // Handle Race Timer — synced to server startTime so all clients tick identically
     useEffect(() => {
@@ -115,17 +155,19 @@ export default function Multiplayer() {
 
         timerRef.current = setInterval(() => {
             if (!startTimeRef.current) return;
-            const elapsed = (Date.now() - startTimeRef.current) / 1000;
+            const now = Date.now();
+            const elapsed = (now - startTimeRef.current) / 1000;
             const remaining = Math.max(0, Math.round(30 - elapsed));
             setTimeLeft(remaining);
+
             if (remaining <= 0) {
                 clearInterval(timerRef.current);
 
-                const currentInput = userInputRef.current; // Get the latest typed text!
-                const elapsedMins = 30 / 60; // 0.5 minutes
-                const correct = currentInput.split('').filter((char, i) => char === text[i]).length;
+                const currentVal = userInputRef.current;
+                const correct = currentVal.split('').filter((char, i) => char === text[i]).length;
+                const elapsedMins = 0.5; // 30 seconds
                 const finalWpm = Math.round((correct / 5) / elapsedMins) || 0;
-                const finalAcc = currentInput.length > 0 ? Math.round((correct / currentInput.length) * 100) : 0;
+                const finalAcc = currentVal.length > 0 ? Math.round((correct / currentVal.length) * 100) : 0;
 
                 setWinnerData(prev => prev || {
                     winnerName: 'Time limit reached!',
@@ -136,7 +178,7 @@ export default function Multiplayer() {
 
                 setGameState('finished');
             }
-        }, 500); // poll every 500ms for accurate display
+        }, 100);
 
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
@@ -180,8 +222,8 @@ export default function Multiplayer() {
     };
 
     const handleStartRace = () => {
-        if (isHost && roomId) {
-            socket.emit('startRace', { roomId });
+        if (isHost && roomIdRef.current) {
+            socket.emit('startRace', { roomId: roomIdRef.current, difficulty });
         }
     };
 
@@ -190,69 +232,72 @@ export default function Multiplayer() {
     };
 
     const handlePlayAgain = () => {
-        if (isHost && roomId) {
-            socket.emit('resetRoom', { roomId });
+        if (isHost && roomIdRef.current) {
+            socket.emit('resetRoom', { roomId: roomIdRef.current });
         }
     };
 
     // 4. Typing Mechanics
+    // Keep track of errors for weakKeys
+    const [errorMap, setErrorMap] = useState({});
+
     const handleInputChange = (e) => {
         if (gameState !== 'racing') return;
 
         const val = e.target.value;
         if (val.length <= text.length) {
+            // Detect a new character typed that is wrong
+            if (val.length > userInput.length) {
+                const typedChar = val[val.length - 1];
+                const expectedChar = text[val.length - 1];
+                if (typedChar !== expectedChar && expectedChar !== ' ') {
+                    const missedChar = expectedChar.toLowerCase();
+                    setErrorMap(prev => ({ ...prev, [missedChar]: (prev[missedChar] || 0) + 1 }));
+                }
+            }
+
             setUserInput(val);
-            userInputRef.current = val;
 
-            // Use server start time for accurate, drift-free elapsed calculation
-            const elapsedSec = startTimeRef.current
-                ? (Date.now() - startTimeRef.current) / 1000
-                : 0;
+            const now = Date.now();
+            const elapsedMs = Math.max(1, now - startTimeRef.current);
+            const elapsedMins = elapsedMs / 60000;
 
-            // Calculate progress and real-time WPM
-            const progressPercentage = (val.length / text.length) * 100;
+            const progressPercentage = Math.round((val.length / text.length) * 100);
             const correctChars = val.split('').filter((char, i) => char === text[i]).length;
-            const currentWpm = elapsedSec > 0 ? Math.round((correctChars / 5) / (elapsedSec / 60)) : 0;
+            const calculatedWpm = Math.max(0, Math.round((correctChars / 5) / elapsedMins));
 
-            // Update local player state
+            setProgress(progressPercentage);
+            setCurrentWpm(calculatedWpm);
+
             setPlayers(prev => prev.map(p => {
                 if (p.id === socket?.id) {
-                    return { ...p, progress: progressPercentage, wpm: currentWpm };
+                    return { ...p, progress: progressPercentage, wpm: calculatedWpm };
                 }
                 return p;
             }));
 
-            socket.emit('updateProgress', {
-                roomId,
-                playerId: socket?.id,
-                progressPercentage,
-                wpm: currentWpm
-            });
-
-            if (val.length === text.length) {
-                // Ensure at least 1 second elapsed to prevent Math/Infinity errors
-                const elapsedMs = Math.max(1000, Date.now() - startTimeRef.current);
-                const elapsedMins = elapsedMs / 60000;
-
-                const correctChars = val.split('').filter((char, i) => char === text[i]).length;
-                const finalWpm = Math.round((text.length / 5) / elapsedMins) || 0;
+            if (val.length === text.length && text.length > 0) {
                 const finalAccuracy = Math.round((correctChars / text.length) * 100) || 0;
-
-                console.log('--- FRONTEND EMITTING FINISH ---');
-                console.log('Room ID:', roomId);
-                console.log('startTimeRef.current:', startTimeRef.current);
-                console.log('Elapsed Ms:', elapsedMs);
-                console.log('WPM Calculated:', finalWpm);
-                console.log('Accuracy Calculated:', finalAccuracy);
-
                 socket.emit('playerFinished', {
-                    roomId,
-                    wpm: finalWpm,
+                    roomId: roomIdRef.current,
+                    wpm: calculatedWpm,
                     accuracy: finalAccuracy
                 });
             }
         }
     };
+
+    // Save weakKeys on finish
+    useEffect(() => {
+        if (gameState === 'finished' && Object.keys(errorMap).length > 0) {
+            const existing = JSON.parse(localStorage.getItem('weakKeys') || '{}');
+            const merged = { ...existing };
+            for (const [key, count] of Object.entries(errorMap)) {
+                merged[key] = (merged[key] || 0) + count;
+            }
+            localStorage.setItem('weakKeys', JSON.stringify(merged));
+        }
+    }, [gameState]);
 
     // UI Renderers
     const renderLobby = () => {
@@ -333,12 +378,33 @@ export default function Multiplayer() {
                     ))}
                 </div>
 
-                <div className="flex justify-center px-4">
+                <div className="flex flex-col items-center gap-6 px-4">
+                    {isHost && (
+                        <div className="flex flex-col items-center gap-3">
+                            <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Select Difficulty</span>
+                            <div className="flex gap-1 bg-slate-800/30 p-1 rounded-xl border border-slate-700/30">
+                                {['easy', 'medium', 'hard'].map((d) => (
+                                    <button
+                                        key={d}
+                                        onClick={() => setDifficulty(d)}
+                                        className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
+                                            difficulty === d 
+                                            ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(0,245,212,0.1)]' 
+                                            : 'text-slate-500 hover:text-slate-300'
+                                        }`}
+                                    >
+                                        {d}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     {isHost ? (
                         <button
                             onClick={handleStartRace}
                             disabled={players.length < 1}
-                            className="px-10 py-4 bg-primary text-background-dark font-bold rounded-xl hover:bg-primary/90 transition-colors shadow-[0_0_20px_rgba(0,245,212,0.3)] disabled:opacity-50 disabled:shadow-none flex items-center gap-2 text-lg"
+                            className="px-10 py-4 bg-primary text-background-dark font-bold rounded-xl hover:bg-primary/90 transition-colors shadow-[0_0_20px_rgba(0,245,212,0.3)] disabled:opacity-50 disabled:shadow-none flex items-center gap-2 text-lg uppercase tracking-tighter"
                         >
                             <Play className="w-6 h-6 fill-background-dark" /> Start Race Now
                         </button>
@@ -463,22 +529,29 @@ export default function Multiplayer() {
                     </div>
                 </div>
 
-                {isHost ? (
-                    <button
-                        onClick={handlePlayAgain}
-                        className="group flex items-center gap-3 px-12 py-5 bg-primary text-background-dark font-black rounded-2xl hover:bg-primary/90 transition-all duration-300 shadow-[0_0_30px_rgba(0,245,212,0.3)] hover:scale-105 active:scale-95 text-xl uppercase tracking-wider"
-                    >
-                        <RotateCcw className="w-6 h-6 group-hover:rotate-180 transition-transform duration-500" />
-                        Play Again
-                    </button>
-                ) : (
-                    <div className="flex flex-col items-center gap-4">
-                        <div className="flex items-center gap-3 px-8 py-4 border border-primary/20 bg-primary/5 text-primary font-bold rounded-2xl backdrop-blur-sm">
-                            <div className="w-3 h-3 rounded-full bg-primary animate-ping" />
-                            Waiting for host to reset...
+                <div className="flex flex-col gap-4 w-full max-w-xs transition-all duration-300">
+                    {isHost ? (
+                        <button
+                            onClick={handlePlayAgain}
+                            className="group flex items-center justify-center gap-3 px-8 py-4 bg-primary text-background-dark font-black rounded-2xl hover:bg-primary/90 transition-all shadow-[0_0_30px_rgba(0,245,212,0.3)] hover:scale-105 active:scale-95 text-lg uppercase tracking-wider"
+                        >
+                            <RotateCcw className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
+                            Play Again
+                        </button>
+                    ) : (
+                        <div className="flex items-center justify-center gap-3 px-8 py-4 border border-primary/20 bg-primary/5 text-primary font-bold rounded-2xl backdrop-blur-sm">
+                            <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
+                            Wait for host...
                         </div>
-                    </div>
-                )}
+                    )}
+                    
+                    <Link 
+                        to="/" 
+                        className="flex items-center justify-center gap-2 px-8 py-4 border border-white/10 text-slate-400 font-bold rounded-2xl hover:bg-white/5 hover:text-white transition-all uppercase tracking-widest text-sm"
+                    >
+                        Return to Dashboard
+                    </Link>
+                </div>
             </div>
         );
     };

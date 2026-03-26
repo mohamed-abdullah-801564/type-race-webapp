@@ -22,7 +22,20 @@ const generateRoomCode = () => {
     return Math.random().toString(36).substring(2, 6).toUpperCase();
 };
 
-const SAMPLE_TEXT = "The quick brown fox jumps over the lazy dog. Complexity is the enemy of execution. In the heart of the digital arena, speed and precision define the victor.";
+const QUOTES = [
+    { text: 'the quick brown fox jumps over the lazy dog and rests by the river', difficulty: 'easy' },
+    { text: 'she sells sea shells by the sea shore and the shells she sells are sea shells', difficulty: 'easy' },
+    { text: 'how much wood would a woodchuck chuck if a woodchuck could chuck wood', difficulty: 'easy' },
+    { text: 'a journey of a thousand miles begins with a single step forward', difficulty: 'easy' },
+    { text: 'In the middle of difficulty lies opportunity. Keep your eyes on the stars.', difficulty: 'medium' },
+    { text: 'Success is not final, failure is not fatal: it is the courage to continue.', difficulty: 'medium' },
+    { text: 'The only way to do great work is to love what you do. Keep looking.', difficulty: 'medium' },
+    { text: 'Believe you can and you are halfway there. The rest is discipline.', difficulty: 'medium' },
+    { text: 'To print variables in JS, use console.log("Hello!"); it is 100% effective.', difficulty: 'hard' },
+    { text: 'The regex pattern /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-z]{2,}$/ validates email.', difficulty: 'hard' },
+    { text: 'Run: git commit -m "fix: resolve #42 — null-pointer exception" && git push.', difficulty: 'hard' },
+    { text: 'She said, "It\'s 2 AM — why are you still coding?!" He replied: "One more bug."', difficulty: 'hard' },
+];
 
 io.on('connection', (socket) => {
     console.log(`User connected: ${socket.id}`);
@@ -85,7 +98,7 @@ io.on('connection', (socket) => {
     });
 
     // Start the race
-    socket.on('startRace', ({ roomId }, callback) => {
+    socket.on('startRace', ({ roomId, difficulty }, callback) => {
         const room = rooms[roomId];
         if (!room) return;
 
@@ -94,12 +107,17 @@ io.on('connection', (socket) => {
             return;
         }
 
+        // Pick a random quote based on difficulty
+        const diff = difficulty || 'medium';
+        const pool = QUOTES.filter(q => q.difficulty === diff);
+        const selectedQuote = pool[Math.floor(Math.random() * pool.length)].text;
+
         room.status = 'playing';
-        console.log(`[${roomId}] Race started!`);
+        console.log(`[${roomId}] Race started with difficulty: ${diff}`);
 
         // Broadcast to EVERYONE in the room including the host
         io.to(roomId).emit('raceStarted', {
-            text: SAMPLE_TEXT,
+            text: selectedQuote,
             startTime: Date.now() + 3000 // Give frontend ~3s to count down
         });
     });
@@ -124,6 +142,36 @@ io.on('connection', (socket) => {
                 wpm
             });
         }
+    });
+
+const CODE_SNIPPETS = [
+    { text: 'function debounce(fn, delay) {\n    let timer;\n    return (...args) => {\n        clearTimeout(timer);\n        timer = setTimeout(() => fn(...args), delay);\n    };\n}', difficulty: 'medium', category: 'code', language: 'javascript' },
+    { text: 'def get_fibonacci(n):\n    a, b = 0, 1\n    for _ in range(n):\n        yield a\n        a, b = b, a + b', difficulty: 'medium', category: 'code', language: 'python' },
+    { text: 'SELECT users.name, COUNT(orders.id) AS total_orders\nFROM users\nLEFT JOIN orders ON users.id = orders.user_id\nGROUP BY users.id\nHAVING total_orders > 5;', difficulty: 'hard', category: 'code', language: 'sql' },
+    { text: 'const root = ReactDOM.createRoot(document.getElementById("root"));\nroot.render(<App />);', difficulty: 'easy', category: 'code', language: 'javascript' },
+    { text: 'class Circle:\n    def __init__(self, radius):\n        self.radius = radius\n    def area(self):\n        return 3.14 * self.radius ** 2', difficulty: 'medium', category: 'code', language: 'python' }
+];
+
+// ... existing code ...
+
+    // Provide a random quote for SoloMode
+    socket.on('getQuote', ({ difficulty, category }, callback) => {
+        const diff = difficulty || 'medium';
+        const cat = category || 'prose';
+        const source = cat === 'code' ? CODE_SNIPPETS : QUOTES;
+        const pool = source.filter(q => q.difficulty === diff);
+        const selected = pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : source[0];
+        if (callback) callback({ text: selected.text });
+    });
+
+    // NEW: Single source of truth for SoloMode quotes
+    socket.on('getSoloQuote', ({ difficulty, category }, callback) => {
+        const diff = difficulty || 'medium';
+        const cat = category || 'prose';
+        const source = cat === 'code' ? CODE_SNIPPETS : QUOTES;
+        const pool = source.filter(q => q.difficulty === diff);
+        const selected = pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : source[0];
+        if (callback) callback({ success: true, text: selected.text });
     });
 
     // Handle player finishing the race
@@ -151,7 +199,7 @@ io.on('connection', (socket) => {
                 room.status = 'finished';
                 console.log(`[${roomId}] Race Over! Winner: ${player.name}`);
                 io.to(roomId).emit('raceOver', {
-                    winnerId: player.id, // CRITICAL FIX
+                    winnerId: player.id,
                     winnerName: player.name,
                     wpm,
                     accuracy

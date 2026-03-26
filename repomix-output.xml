@@ -61,6 +61,7 @@ react-app/src/main.jsx
 react-app/src/pages/Dashboard.jsx
 react-app/src/pages/Multiplayer.jsx
 react-app/src/pages/SoloMode.jsx
+react-app/src/utils/quotes.js
 react-app/vite.config.js
 server/index.js
 server/package.json
@@ -678,12 +679,152 @@ createRoot(document.getElementById('root')).render(
 )
 </file>
 
+<file path="react-app/src/utils/quotes.js">
+const quotes = [
+    // ── Easy ─────────────────────────────────────────────────────────────────
+    {
+        text: 'the quick brown fox jumps over the lazy dog and rests by the river',
+        difficulty: 'easy',
+    },
+    {
+        text: 'she sells sea shells by the sea shore and the shells she sells are sea shells',
+        difficulty: 'easy',
+    },
+    {
+        text: 'how much wood would a woodchuck chuck if a woodchuck could chuck wood',
+        difficulty: 'easy',
+    },
+    {
+        text: 'the sun rises in the east and sets in the west every single day',
+        difficulty: 'easy',
+    },
+    {
+        text: 'a journey of a thousand miles begins with a single step forward',
+        difficulty: 'easy',
+    },
+    {
+        text: 'all that glitters is not gold and all who wander are not lost',
+        difficulty: 'easy',
+    },
+
+    // ── Medium ────────────────────────────────────────────────────────────────
+    {
+        text: 'In the middle of difficulty lies opportunity. Keep your eyes on the stars, and your feet on the ground.',
+        difficulty: 'medium',
+    },
+    {
+        text: 'Success is not final, failure is not fatal: it is the courage to continue that counts.',
+        difficulty: 'medium',
+    },
+    {
+        text: 'The only way to do great work is to love what you do. If you have not found it yet, keep looking.',
+        difficulty: 'medium',
+    },
+    {
+        text: 'It does not matter how slowly you go as long as you do not stop moving forward.',
+        difficulty: 'medium',
+    },
+    {
+        text: 'Believe you can and you are halfway there. The rest is discipline, patience, and hard work.',
+        difficulty: 'medium',
+    },
+    {
+        text: 'Two roads diverged in a wood, and I took the one less traveled by, and that has made all the difference.',
+        difficulty: 'medium',
+    },
+
+    // ── Hard ──────────────────────────────────────────────────────────────────
+    {
+        text: 'To print variables in JavaScript, use console.log("Hello, World!"); it is 100% effective and widely used.',
+        difficulty: 'hard',
+    },
+    {
+        text: 'The regex pattern /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$/ validates e-mail addresses.',
+        difficulty: 'hard',
+    },
+    {
+        text: 'Run: git commit -m "fix: resolve #42 — null-pointer exception in user-auth module" && git push origin main.',
+        difficulty: 'hard',
+    },
+    {
+        text: 'HTTP status codes: 200 OK, 301 Moved Permanently, 404 Not Found, 500 Internal Server Error.',
+        difficulty: 'hard',
+    },
+    {
+        text: 'In Python, f-strings work like this: name = "World"; print(f"Hello, {name}!") — clean & fast.',
+        difficulty: 'hard',
+    },
+    {
+        text: 'She said, "It\'s 2 AM — why are you still coding?!" He replied: "Just one more bug... I swear."',
+        difficulty: 'hard',
+    },
+];
+
+/**
+ * Returns a random quote string for the given difficulty level.
+ * Falls back to 'medium' if no quotes are found.
+ * @param {'easy' | 'medium' | 'hard'} difficulty
+ * @returns {string}
+ */
+export const getRandomQuote = (difficulty = 'medium') => {
+    const pool = quotes.filter(q => q.difficulty === difficulty);
+    const source = pool.length > 0 ? pool : quotes.filter(q => q.difficulty === 'medium');
+    return source[Math.floor(Math.random() * source.length)].text;
+};
+
+export default quotes;
+</file>
+
+<file path="react-app/vite.config.js">
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+})
+</file>
+
+<file path="server/package.json">
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "socket.io": "^4.8.3"
+  }
+}
+</file>
+
 <file path="react-app/src/pages/Dashboard.jsx">
+import { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import StatCard from '../components/StatCard';
-import { Gauge, Target, Trophy, Zap, BookOpen, Medal, AtSign, Network, Globe } from 'lucide-react';
+import { Gauge, Target, Trophy, Zap, BookOpen, Medal, AtSign, Network, Globe, AlertTriangle } from 'lucide-react';
 
 export default function Dashboard() {
+    const [weakKeys, setWeakKeys] = useState([]);
+
+    useEffect(() => {
+        const stored = JSON.parse(localStorage.getItem('weakKeys') || '{}');
+        const sorted = Object.entries(stored)
+            .sort(([, a], [, b]) => b - a)
+            .slice(0, 5);
+        setWeakKeys(sorted); // [['e', 12], ['t', 8], ...]
+    }, []);
+
+    const maxErrors = weakKeys[0]?.[1] || 1;
     return (
         <div className="layout-container flex h-full grow flex-col">
             <Navbar />
@@ -758,45 +899,55 @@ export default function Dashboard() {
                         </div>
                     </div>
 
-                    {/* Recent Activity */}
+                    {/* Weakest Keys Analytics */}
                     <div className="bg-white dark:bg-primary/5 p-6 rounded-xl border border-slate-200 dark:border-primary/10">
-                        <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Recent Challenges</h2>
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-4 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-primary/5 transition-colors cursor-pointer">
-                                <div className="h-10 w-10 rounded bg-primary/20 flex items-center justify-center text-primary">
-                                    <Zap size={24} />
-                                </div>
-                                <div className="flex-1">
-                                    <p className="text-sm font-semibold">1v1 Sprint</p>
-                                    <p className="text-xs text-slate-500">Won vs @QuickKeys</p>
-                                </div>
-                                <p className="text-sm font-bold text-primary">128 WPM</p>
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
+                                <AlertTriangle className="w-4 h-4 text-red-500" />
                             </div>
-
-                            <div className="flex items-center gap-4 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-primary/5 transition-colors cursor-pointer">
-                                <div className="h-10 w-10 rounded bg-amber-500/20 flex items-center justify-center text-amber-500">
-                                    <BookOpen size={24} />
-                                </div>
-                                <div className="flex-1">
-                                    <p className="text-sm font-semibold">Classic Mode</p>
-                                    <p className="text-xs text-slate-500">Practice Session</p>
-                                </div>
-                                <p className="text-sm font-bold text-slate-400">115 WPM</p>
-                            </div>
-
-                            <div className="flex items-center gap-4 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-primary/5 transition-colors cursor-pointer">
-                                <div className="h-10 w-10 rounded bg-red-500/20 flex items-center justify-center text-red-500">
-                                    <Medal size={24} />
-                                </div>
-                                <div className="flex-1">
-                                    <p className="text-sm font-semibold">Tournament</p>
-                                    <p className="text-xs text-slate-500">Global Qualifier</p>
-                                </div>
-                                <p className="text-sm font-bold text-primary">141 WPM</p>
+                            <div>
+                                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Weakest Keys</h2>
+                                <p className="text-xs text-slate-500">Letters you mistype the most</p>
                             </div>
                         </div>
-                        <button className="w-full mt-6 py-2 text-sm font-medium text-primary border border-primary/20 rounded-lg hover:bg-primary/10 transition-colors">
-                            View All Activity
+
+                        {weakKeys.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-8 text-center gap-3">
+                                <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800/50 flex items-center justify-center">
+                                    <Zap className="w-6 h-6 text-slate-400" />
+                                </div>
+                                <p className="text-sm text-slate-500 font-medium">No data yet</p>
+                                <p className="text-xs text-slate-400 max-w-[180px]">Play a Solo match to generate your weakness analysis.</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {weakKeys.map(([letter, count]) => (
+                                    <div key={letter} className="group">
+                                        <div className="flex items-center justify-between mb-1.5">
+                                            <div className="flex items-center gap-2">
+                                                <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-500/20 text-red-400 font-black text-lg font-mono uppercase">
+                                                    {letter}
+                                                </span>
+                                                <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">{count} misses</span>
+                                            </div>
+                                            <span className="text-xs font-bold text-red-400">{Math.round((count / maxErrors) * 100)}%</span>
+                                        </div>
+                                        <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                                            <div
+                                                className="h-full bg-gradient-to-r from-red-500 to-red-400 rounded-full transition-all duration-500"
+                                                style={{ width: `${Math.round((count / maxErrors) * 100)}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        <button
+                            onClick={() => { localStorage.removeItem('weakKeys'); setWeakKeys([]); }}
+                            className="w-full mt-6 py-2 text-xs font-bold text-slate-500 border border-slate-200 dark:border-slate-700/50 rounded-lg hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30 transition-all"
+                        >
+                            Reset Analytics
                         </button>
                     </div>
                 </div>
@@ -922,6 +1073,7 @@ export default function Multiplayer() {
     const [text, setText] = useState('');
     const [userInput, setUserInput] = useState('');
     const [timeLeft, setTimeLeft] = useState(30);
+    const [difficulty, setDifficulty] = useState('medium');
     const [countdown, setCountdown] = useState(3);
     const inputRef = useRef(null);
     const timerRef = useRef(null);
@@ -929,6 +1081,7 @@ export default function Multiplayer() {
     const startTimeRef = useRef(null);
     // Ref so socket listeners always get the latest playerName without stale closure
     const playerNameRef = useRef('');
+    const userInputRef = useRef('');
 
     // Keep playerNameRef in sync with state
     useEffect(() => { playerNameRef.current = playerName; }, [playerName]);
@@ -962,7 +1115,7 @@ export default function Multiplayer() {
             setGameState('countdown');
             setUserInput('');
             setTimeLeft(30);
-            startTimeRef.current = Date.now();
+            startTimeRef.current = startTime;
 
             const timeUntilStart = startTime - Date.now();
             let count = Math.ceil(timeUntilStart / 1000);
@@ -981,6 +1134,8 @@ export default function Multiplayer() {
 
         // raceOver
         socket.on('raceOver', (data) => {
+            console.log('--- FRONTEND RECEIVED RACE OVER ---');
+            console.log('Winner Data from server:', data);
             if (timerRef.current) clearInterval(timerRef.current);
             setTimeLeft(0);
             setGameState('finished');
@@ -1017,6 +1172,20 @@ export default function Multiplayer() {
             setTimeLeft(remaining);
             if (remaining <= 0) {
                 clearInterval(timerRef.current);
+
+                const currentInput = userInputRef.current; // Get the latest typed text!
+                const elapsedMins = 30 / 60; // 0.5 minutes
+                const correct = currentInput.split('').filter((char, i) => char === text[i]).length;
+                const finalWpm = Math.round((correct / 5) / elapsedMins) || 0;
+                const finalAcc = currentInput.length > 0 ? Math.round((correct / currentInput.length) * 100) : 0;
+
+                setWinnerData(prev => prev || {
+                    winnerName: 'Time limit reached!',
+                    wpm: finalWpm,
+                    accuracy: finalAcc,
+                    winnerId: null
+                });
+
                 setGameState('finished');
             }
         }, 500); // poll every 500ms for accurate display
@@ -1064,7 +1233,7 @@ export default function Multiplayer() {
 
     const handleStartRace = () => {
         if (isHost && roomId) {
-            socket.emit('startRace', { roomId });
+            socket.emit('startRace', { roomId, difficulty });
         }
     };
 
@@ -1085,6 +1254,7 @@ export default function Multiplayer() {
         const val = e.target.value;
         if (val.length <= text.length) {
             setUserInput(val);
+            userInputRef.current = val;
 
             // Use server start time for accurate, drift-free elapsed calculation
             const elapsedSec = startTimeRef.current
@@ -1112,15 +1282,23 @@ export default function Multiplayer() {
             });
 
             if (val.length === text.length) {
-                const elapsedMs = Date.now() - startTimeRef.current;
+                // Ensure at least 1 second elapsed to prevent Math/Infinity errors
+                const elapsedMs = Math.max(1000, Date.now() - startTimeRef.current);
                 const elapsedMins = elapsedMs / 60000;
+
                 const correctChars = val.split('').filter((char, i) => char === text[i]).length;
                 const finalWpm = Math.round((text.length / 5) / elapsedMins) || 0;
                 const finalAccuracy = Math.round((correctChars / text.length) * 100) || 0;
 
+                console.log('--- FRONTEND EMITTING FINISH ---');
+                console.log('Room ID:', roomId);
+                console.log('startTimeRef.current:', startTimeRef.current);
+                console.log('Elapsed Ms:', elapsedMs);
+                console.log('WPM Calculated:', finalWpm);
+                console.log('Accuracy Calculated:', finalAccuracy);
+
                 socket.emit('playerFinished', {
                     roomId,
-                    playerName: playerNameRef.current || 'Player',
                     wpm: finalWpm,
                     accuracy: finalAccuracy
                 });
@@ -1207,12 +1385,33 @@ export default function Multiplayer() {
                     ))}
                 </div>
 
-                <div className="flex justify-center px-4">
+                <div className="flex flex-col items-center gap-6 px-4">
+                    {isHost && (
+                        <div className="flex flex-col items-center gap-3">
+                            <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Select Difficulty</span>
+                            <div className="flex gap-1 bg-slate-800/30 p-1 rounded-xl border border-slate-700/30">
+                                {['easy', 'medium', 'hard'].map((d) => (
+                                    <button
+                                        key={d}
+                                        onClick={() => setDifficulty(d)}
+                                        className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
+                                            difficulty === d 
+                                            ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(0,245,212,0.1)]' 
+                                            : 'text-slate-500 hover:text-slate-300'
+                                        }`}
+                                    >
+                                        {d}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     {isHost ? (
                         <button
                             onClick={handleStartRace}
                             disabled={players.length < 1}
-                            className="px-10 py-4 bg-primary text-background-dark font-bold rounded-xl hover:bg-primary/90 transition-colors shadow-[0_0_20px_rgba(0,245,212,0.3)] disabled:opacity-50 disabled:shadow-none flex items-center gap-2 text-lg"
+                            className="px-10 py-4 bg-primary text-background-dark font-bold rounded-xl hover:bg-primary/90 transition-colors shadow-[0_0_20px_rgba(0,245,212,0.3)] disabled:opacity-50 disabled:shadow-none flex items-center gap-2 text-lg uppercase tracking-tighter"
                         >
                             <Play className="w-6 h-6 fill-background-dark" /> Start Race Now
                         </button>
@@ -1337,22 +1536,29 @@ export default function Multiplayer() {
                     </div>
                 </div>
 
-                {isHost ? (
-                    <button
-                        onClick={handlePlayAgain}
-                        className="group flex items-center gap-3 px-12 py-5 bg-primary text-background-dark font-black rounded-2xl hover:bg-primary/90 transition-all duration-300 shadow-[0_0_30px_rgba(0,245,212,0.3)] hover:scale-105 active:scale-95 text-xl uppercase tracking-wider"
-                    >
-                        <RotateCcw className="w-6 h-6 group-hover:rotate-180 transition-transform duration-500" />
-                        Play Again
-                    </button>
-                ) : (
-                    <div className="flex flex-col items-center gap-4">
-                        <div className="flex items-center gap-3 px-8 py-4 border border-primary/20 bg-primary/5 text-primary font-bold rounded-2xl backdrop-blur-sm">
-                            <div className="w-3 h-3 rounded-full bg-primary animate-ping" />
-                            Waiting for host to reset...
+                <div className="flex flex-col gap-4 w-full max-w-xs transition-all duration-300">
+                    {isHost ? (
+                        <button
+                            onClick={handlePlayAgain}
+                            className="group flex items-center justify-center gap-3 px-8 py-4 bg-primary text-background-dark font-black rounded-2xl hover:bg-primary/90 transition-all shadow-[0_0_30px_rgba(0,245,212,0.3)] hover:scale-105 active:scale-95 text-lg uppercase tracking-wider"
+                        >
+                            <RotateCcw className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
+                            Play Again
+                        </button>
+                    ) : (
+                        <div className="flex items-center justify-center gap-3 px-8 py-4 border border-primary/20 bg-primary/5 text-primary font-bold rounded-2xl backdrop-blur-sm">
+                            <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
+                            Wait for host...
                         </div>
-                    </div>
-                )}
+                    )}
+                    
+                    <Link 
+                        to="/" 
+                        className="flex items-center justify-center gap-2 px-8 py-4 border border-white/10 text-slate-400 font-bold rounded-2xl hover:bg-white/5 hover:text-white transition-all uppercase tracking-widest text-sm"
+                    >
+                        Return to Dashboard
+                    </Link>
+                </div>
             </div>
         );
     };
@@ -1419,15 +1625,17 @@ export default function Multiplayer() {
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Zap, BarChart2, Settings, UserCircle, RotateCcw } from 'lucide-react';
+import { getRandomQuote } from '../utils/quotes';
 
 const DEFAULT_TIME = 30;
-const PLACEHOLDER_TEXT = "The quick brown fox jumps over the lazy dog. Complexity is the enemy of execution. In the heart of the digital arena, speed and precision define the victor.";
 
 export default function SoloMode() {
-    const [text, setText] = useState(PLACEHOLDER_TEXT);
+    const [text, setText] = useState(() => getRandomQuote('medium'));
     const [userInput, setUserInput] = useState('');
-    const [status, setStatus] = useState('idle'); // 'idle', 'typing', 'finished'
+    const [status, setStatus] = useState('idle');
     const [timeLeft, setTimeLeft] = useState(DEFAULT_TIME);
+    const [errorMap, setErrorMap] = useState({});
+    const [difficulty, setDifficulty] = useState('medium');
 
     const inputRef = useRef(null);
 
@@ -1462,6 +1670,16 @@ export default function SoloMode() {
 
         if (val.length <= text.length) {
             setUserInput(val);
+
+            // Detect a new character typed that is wrong
+            if (val.length > userInput.length) {
+                const typedChar = val[val.length - 1];
+                const expectedChar = text[val.length - 1];
+                if (typedChar !== expectedChar && expectedChar !== ' ') {
+                    const missedChar = expectedChar.toLowerCase();
+                    setErrorMap(prev => ({ ...prev, [missedChar]: (prev[missedChar] || 0) + 1 }));
+                }
+            }
         }
 
         // Auto-finish if type all text
@@ -1489,10 +1707,33 @@ export default function SoloMode() {
         setUserInput('');
         setStatus('idle');
         setTimeLeft(DEFAULT_TIME);
+        setErrorMap({});
         if (inputRef.current) {
             inputRef.current.focus();
         }
     };
+
+    // Save errorMap to localStorage when the test finishes
+    useEffect(() => {
+        if (status === 'finished' && Object.keys(errorMap).length > 0) {
+            const existing = JSON.parse(localStorage.getItem('weakKeys') || '{}');
+            const merged = { ...existing };
+            for (const [key, count] of Object.entries(errorMap)) {
+                merged[key] = (merged[key] || 0) + count;
+            }
+            localStorage.setItem('weakKeys', JSON.stringify(merged));
+        }
+    }, [status]);
+
+    // Fetch a new quote whenever difficulty changes
+    useEffect(() => {
+        setText(getRandomQuote(difficulty));
+        setUserInput('');
+        setStatus('idle');
+        setTimeLeft(DEFAULT_TIME);
+        setErrorMap({});
+        if (inputRef.current) inputRef.current.focus();
+    }, [difficulty]);
 
     // Allow resetting with Tab + Enter
     useEffect(() => {
@@ -1542,9 +1783,24 @@ export default function SoloMode() {
                             <button className="px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-slate-200">60s</button>
                         </div>
                         <div className="flex gap-1 bg-slate-800/30 p-1 rounded-xl">
-                            <button className="px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">Easy</button>
-                            <button className="px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-slate-200">Medium</button>
-                            <button className="px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-slate-200">Hard</button>
+                            <button 
+                                onClick={() => setDifficulty('easy')}
+                                className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${difficulty === 'easy' ? 'bg-primary/10 text-primary border border-primary/20' : 'text-slate-400 hover:text-slate-200'}`}
+                            >
+                                Easy
+                            </button>
+                            <button 
+                                onClick={() => setDifficulty('medium')}
+                                className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${difficulty === 'medium' ? 'bg-primary/10 text-primary border border-primary/20' : 'text-slate-400 hover:text-slate-200'}`}
+                            >
+                                Medium
+                            </button>
+                            <button 
+                                onClick={() => setDifficulty('hard')}
+                                className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${difficulty === 'hard' ? 'bg-primary/10 text-primary border border-primary/20' : 'text-slate-400 hover:text-slate-200'}`}
+                            >
+                                Hard
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1614,7 +1870,7 @@ export default function SoloMode() {
                         </div>
                     </div>
 
-                    <div className="mt-20 faded-ui">
+                    <div className="mt-20 faded-ui flex items-center gap-4">
                         <button
                             onClick={resetTest}
                             className="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors px-6 py-2 rounded-lg bg-slate-800/20"
@@ -1622,6 +1878,12 @@ export default function SoloMode() {
                             <RotateCcw className="w-5 h-5" />
                             <span className="text-sm font-medium">Restart Test (Tab)</span>
                         </button>
+                        <Link 
+                            to="/" 
+                            className="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors px-6 py-2 rounded-lg border border-slate-800/40 hover:bg-slate-800/20"
+                        >
+                            <span className="text-sm font-medium">Return to Dashboard</span>
+                        </Link>
                     </div>
                 </div>
             </main>
@@ -1642,17 +1904,6 @@ export default function SoloMode() {
         </div>
     );
 }
-</file>
-
-<file path="react-app/vite.config.js">
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
-
-// https://vite.dev/config/
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
-})
 </file>
 
 <file path="server/index.js">
@@ -1680,7 +1931,20 @@ const generateRoomCode = () => {
     return Math.random().toString(36).substring(2, 6).toUpperCase();
 };
 
-const SAMPLE_TEXT = "The quick brown fox jumps over the lazy dog. Complexity is the enemy of execution. In the heart of the digital arena, speed and precision define the victor.";
+const QUOTES = [
+    { text: 'the quick brown fox jumps over the lazy dog and rests by the river', difficulty: 'easy' },
+    { text: 'she sells sea shells by the sea shore and the shells she sells are sea shells', difficulty: 'easy' },
+    { text: 'how much wood would a woodchuck chuck if a woodchuck could chuck wood', difficulty: 'easy' },
+    { text: 'a journey of a thousand miles begins with a single step forward', difficulty: 'easy' },
+    { text: 'In the middle of difficulty lies opportunity. Keep your eyes on the stars.', difficulty: 'medium' },
+    { text: 'Success is not final, failure is not fatal: it is the courage to continue.', difficulty: 'medium' },
+    { text: 'The only way to do great work is to love what you do. Keep looking.', difficulty: 'medium' },
+    { text: 'Believe you can and you are halfway there. The rest is discipline.', difficulty: 'medium' },
+    { text: 'To print variables in JS, use console.log("Hello!"); it is 100% effective.', difficulty: 'hard' },
+    { text: 'The regex pattern /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-z]{2,}$/ validates email.', difficulty: 'hard' },
+    { text: 'Run: git commit -m "fix: resolve #42 — null-pointer exception" && git push.', difficulty: 'hard' },
+    { text: 'She said, "It\'s 2 AM — why are you still coding?!" He replied: "One more bug."', difficulty: 'hard' },
+];
 
 io.on('connection', (socket) => {
     console.log(`User connected: ${socket.id}`);
@@ -1743,7 +2007,7 @@ io.on('connection', (socket) => {
     });
 
     // Start the race
-    socket.on('startRace', ({ roomId }, callback) => {
+    socket.on('startRace', ({ roomId, difficulty }, callback) => {
         const room = rooms[roomId];
         if (!room) return;
 
@@ -1752,12 +2016,17 @@ io.on('connection', (socket) => {
             return;
         }
 
+        // Pick a random quote based on difficulty
+        const diff = difficulty || 'medium';
+        const pool = QUOTES.filter(q => q.difficulty === diff);
+        const selectedQuote = pool[Math.floor(Math.random() * pool.length)].text;
+
         room.status = 'playing';
-        console.log(`[${roomId}] Race started!`);
+        console.log(`[${roomId}] Race started with difficulty: ${diff}`);
 
         // Broadcast to EVERYONE in the room including the host
         io.to(roomId).emit('raceStarted', {
-            text: SAMPLE_TEXT,
+            text: selectedQuote,
             startTime: Date.now() + 3000 // Give frontend ~3s to count down
         });
     });
@@ -1786,8 +2055,16 @@ io.on('connection', (socket) => {
 
     // Handle player finishing the race
     socket.on('playerFinished', (data) => {
-        const { roomId, playerName, wpm, accuracy } = data;
-        const room = rooms[roomId];
+        console.log('--- SERVER RECEIVED PLAYER FINISHED ---');
+        console.log('Data from frontend:', data);
+        const room = rooms[data.roomId];
+        console.log('Did server find room?:', room ? 'Yes' : 'No');
+        if (room) {
+            const player = room.players.find(p => p.id === socket.id);
+            console.log('Did server find player?:', player);
+        }
+
+        const { roomId, wpm, accuracy } = data;
         if (!room) return;
 
         const player = room.players.find(p => p.id === socket.id);
@@ -1799,9 +2076,10 @@ io.on('connection', (socket) => {
 
             if (room.status !== 'finished') {
                 room.status = 'finished';
-                console.log(`[${roomId}] Race Over! Winner: ${playerName}`);
+                console.log(`[${roomId}] Race Over! Winner: ${player.name}`);
                 io.to(roomId).emit('raceOver', {
-                    winnerName: playerName,
+                    winnerId: player.id, // CRITICAL FIX
+                    winnerName: player.name,
                     wpm,
                     accuracy
                 });
@@ -1865,27 +2143,6 @@ const PORT = 3001;
 server.listen(PORT, () => {
     console.log(`Socket.io Server running on port ${PORT}`);
 });
-</file>
-
-<file path="server/package.json">
-{
-  "name": "server",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "dependencies": {
-    "cors": "^2.8.6",
-    "express": "^5.2.1",
-    "socket.io": "^4.8.3"
-  }
-}
 </file>
 
 </files>

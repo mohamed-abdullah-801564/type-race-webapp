@@ -1,20 +1,59 @@
 import { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import StatCard from '../components/StatCard';
-import { Gauge, Target, Trophy, Zap, BookOpen, Medal, AtSign, Network, Globe, AlertTriangle } from 'lucide-react';
+import { Gauge, Target, Trophy, Zap, AlertTriangle, AtSign, Network, Globe, Keyboard } from 'lucide-react';
+
+const KEYBOARD_ROWS = [
+    ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
+    ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
+    ['z', 'x', 'c', 'v', 'b', 'n', 'm']
+];
 
 export default function Dashboard() {
-    const [weakKeys, setWeakKeys] = useState([]);
+    const [stats, setStats] = useState({ maxWPM: 0, avgAccuracy: 0, totalTests: 0 });
+    const [performances, setPerformances] = useState({});
+    const [recentWPMs, setRecentWPMs] = useState([]);
 
     useEffect(() => {
-        const stored = JSON.parse(localStorage.getItem('weakKeys') || '{}');
-        const sorted = Object.entries(stored)
-            .sort(([, a], [, b]) => b - a)
-            .slice(0, 5);
-        setWeakKeys(sorted); // [['e', 12], ['t', 8], ...]
+        // Load Race History
+        const history = JSON.parse(localStorage.getItem('raceHistory') || '[]');
+        if (history.length > 0) {
+            const maxWPM = Math.max(...history.map(h => h.wpm));
+            const avgAcc = history.reduce((acc, h) => acc + parseFloat(h.accuracy), 0) / history.length;
+            setStats({
+                maxWPM,
+                avgAccuracy: avgAcc.toFixed(1),
+                totalTests: history.length
+            });
+            setRecentWPMs(history.slice(-10).map(h => h.wpm));
+        }
+
+        // Load Key Performances
+        const perfs = JSON.parse(localStorage.getItem('keyPerformances') || '{}');
+        setPerformances(perfs);
     }, []);
 
-    const maxErrors = weakKeys[0]?.[1] || 1;
+    const getKeyColor = (latency) => {
+        if (!latency) return 'bg-slate-800/40 text-slate-600 border-slate-700/50';
+        if (latency < 200) return 'bg-primary/10 text-primary border-primary/40 shadow-[0_0_10px_rgba(0,245,212,0.1)]';
+        if (latency < 400) return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/40';
+        return 'bg-red-500/10 text-red-500 border-red-500/40 shadow-[0_0_10px_rgba(239,68,68,0.1)]';
+    };
+
+    // Graph Calculation
+    const maxRecentWPM = Math.max(...recentWPMs, 100);
+    const points = recentWPMs.map((wpm, i) => ({
+        x: recentWPMs.length > 1 ? (i / (recentWPMs.length - 1)) * 1000 : 500,
+        y: 250 - (wpm / maxRecentWPM) * 200 - 25 // Leave some margin at top/bottom
+    }));
+
+    const pathD = points.length >= 2 
+        ? `M${points[0].x},${points[0].y} ${points.slice(1).map(p => `L${p.x},${p.y}`).join(' ')}`
+        : "";
+
+    const fillD = points.length >= 2
+        ? `${pathD} V250 H${points[0].x} Z`
+        : "";
     return (
         <div className="layout-container flex h-full grow flex-col">
             <Navbar />
@@ -25,24 +64,24 @@ export default function Dashboard() {
                     <StatCard
                         title="Highest WPM"
                         icon={<Gauge size={24} />}
-                        value="142"
+                        value={stats.maxWPM || "0"}
                         trend="+4.2%"
-                        subtitle="Personal record achieved 2 days ago"
+                        subtitle="Your all-time peak performance"
                     />
                     <StatCard
                         title="Avg Accuracy"
                         icon={<Target size={24} />}
-                        value="98.5"
+                        value={stats.avgAccuracy || "0"}
                         valueSuffix="%"
                         trend="+0.2%"
-                        subtitle="Based on your last 50 tests"
+                        subtitle={`Average over ${stats.totalTests} tests`}
                     />
                     <StatCard
-                        title="Total Wins"
+                        title="Total Sessions"
                         icon={<Trophy size={24} />}
-                        value="842"
-                        trendLabel="#12 Rank"
-                        subtitle="Top 5% of all active typists"
+                        value={stats.totalTests || "0"}
+                        trendLabel="Live"
+                        subtitle="Solo runs completed"
                     />
                 </div>
 
@@ -61,84 +100,118 @@ export default function Dashboard() {
                             </div>
                         </div>
                         <div className="h-[250px] w-full relative">
-                            <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 1000 250">
-                                <defs>
-                                    <linearGradient id="glowGradient" x1="0" x2="0" y1="0" y2="1">
-                                        <stop offset="0%" stopColor="#00f5d4" stopOpacity="0.3"></stop>
-                                        <stop offset="100%" stopColor="#00f5d4" stopOpacity="0"></stop>
-                                    </linearGradient>
-                                </defs>
-                                <path d="M0,180 Q100,160 200,140 T400,120 T600,80 T800,60 T1000,40 V250 H0 Z" fill="url(#glowGradient)"></path>
-                                <path className="chart-glow" d="M0,180 Q100,160 200,140 T400,120 T600,80 T800,60 T1000,40" fill="none" stroke="#00f5d4" strokeLinecap="round" strokeWidth="4"></path>
-                                {/* Points */}
-                                <circle cx="0" cy="180" fill="#00f5d4" r="5"></circle>
-                                <circle cx="200" cy="140" fill="#00f5d4" r="5"></circle>
-                                <circle cx="400" cy="120" fill="#00f5d4" r="5"></circle>
-                                <circle cx="600" cy="80" fill="#00f5d4" r="5"></circle>
-                                <circle cx="800" cy="60" fill="#00f5d4" r="5"></circle>
-                                <circle cx="1000" cy="40" fill="#00f5d4" r="5"></circle>
-                            </svg>
-                            <div className="absolute bottom-0 left-0 w-full flex justify-between text-[10px] text-slate-500 mt-4 px-1">
-                                <span>Test 1</span>
-                                <span>Test 3</span>
-                                <span>Test 5</span>
-                                <span>Test 7</span>
-                                <span>Test 9</span>
-                                <span>Test 10</span>
-                            </div>
+                            {recentWPMs.length < 2 ? (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/40 rounded-xl border border-dashed border-white/10">
+                                    <Zap className="w-8 h-8 text-primary/40 mb-2 animate-pulse" />
+                                    <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Play more games to see your trend</p>
+                                </div>
+                            ) : (
+                                <>
+                                    <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 1000 250">
+                                        <defs>
+                                            <linearGradient id="glowGradient" x1="0" x2="0" y1="0" y2="1">
+                                                <stop offset="0%" stopColor="#00f5d4" stopOpacity="0.3"></stop>
+                                                <stop offset="100%" stopColor="#00f5d4" stopOpacity="0"></stop>
+                                            </linearGradient>
+                                        </defs>
+                                        <path d={fillD} fill="url(#glowGradient)"></path>
+                                        <path className="chart-glow" d={pathD} fill="none" stroke="#00f5d4" strokeLinecap="round" strokeWidth="4"></path>
+                                        {/* Points */}
+                                        {points.map((p, i) => (
+                                            <circle key={i} cx={p.x} cy={p.y} fill="#00f5d4" r="5" className="drop-shadow-[0_0_8px_rgba(0,245,212,0.8)]"></circle>
+                                        ))}
+                                    </svg>
+                                    <div className="absolute bottom-0 left-0 w-full flex justify-between text-[10px] text-slate-500 mt-4 px-1 font-mono">
+                                        {points.map((_, i) => (
+                                            <span key={i}>Run {i + 1}</span>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
 
                     {/* Weakest Keys Analytics */}
-                    <div className="bg-white dark:bg-primary/5 p-6 rounded-xl border border-slate-200 dark:border-primary/10">
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
-                                <AlertTriangle className="w-4 h-4 text-red-500" />
+                    {/* Keyboard Heatmap Analytics */}
+                    <div className="lg:col-span-3 bg-white dark:bg-primary/5 p-8 rounded-xl border border-slate-200 dark:border-primary/10">
+                        <div className="flex items-center justify-between mb-10">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                                    <Keyboard className="w-6 h-6 text-primary" />
+                                </div>
+                                <div>
+                                    <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Neural Heatmap</h2>
+                                    <p className="text-sm text-slate-500">Visualizing character latency & motor response</p>
+                                </div>
                             </div>
-                            <div>
-                                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Weakest Keys</h2>
-                                <p className="text-xs text-slate-500">Letters you mistype the most</p>
+                            
+                            <div className="flex gap-4 items-center bg-black/20 p-3 rounded-xl border border-white/5">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-primary/40"></div>
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">&lt;200ms</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-yellow-500/40"></div>
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">200-400ms</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-red-500/40"></div>
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">&gt;400ms</span>
+                                </div>
                             </div>
                         </div>
 
-                        {weakKeys.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-8 text-center gap-3">
-                                <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800/50 flex items-center justify-center">
-                                    <Zap className="w-6 h-6 text-slate-400" />
-                                </div>
-                                <p className="text-sm text-slate-500 font-medium">No data yet</p>
-                                <p className="text-xs text-slate-400 max-w-[180px]">Play a Solo match to generate your weakness analysis.</p>
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                {weakKeys.map(([letter, count]) => (
-                                    <div key={letter} className="group">
-                                        <div className="flex items-center justify-between mb-1.5">
-                                            <div className="flex items-center gap-2">
-                                                <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-500/20 text-red-400 font-black text-lg font-mono uppercase">
-                                                    {letter}
-                                                </span>
-                                                <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">{count} misses</span>
+                        <div className="flex flex-col gap-3 items-center pt-20 pb-10 overflow-visible">
+                            {KEYBOARD_ROWS.map((row, rowIndex) => (
+                                <div 
+                                    key={rowIndex} 
+                                    className={`flex gap-3 ${rowIndex === 1 ? 'ml-12' : rowIndex === 2 ? 'ml-24' : ''}`}
+                                >
+                                    {row.map(key => {
+                                        const data = performances[key];
+                                        return (
+                                            <div 
+                                                key={key}
+                                                className={`group relative w-16 h-16 rounded-xl border-2 flex flex-col items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 cursor-help ${getKeyColor(data?.avg)} font-mono`}
+                                            >
+                                                <span className="text-xl font-black uppercase">{key}</span>
+                                                {data && (
+                                                    <span className="text-[8px] font-bold opacity-60">{Math.round(data.avg)}ms</span>
+                                                )}
+                                                
+                                                {/* Tooltip */}
+                                                <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 w-32 bg-slate-900 text-white p-3 rounded-xl border border-white/10 opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-50 shadow-2xl scale-75 group-hover:scale-100 origin-bottom">
+                                                    <div className="text-[10px] font-black text-primary uppercase mb-1 border-b border-primary/20 pb-1">Key Profile: {key}</div>
+                                                    <div className="space-y-1">
+                                                        <div className="flex justify-between text-[10px]">
+                                                            <span className="text-slate-400">Avg Latency</span>
+                                                            <span className="font-bold">{data ? Math.round(data.avg) : '--'}ms</span>
+                                                        </div>
+                                                        <div className="flex justify-between text-[10px]">
+                                                            <span className="text-slate-400">Hits</span>
+                                                            <span className="font-bold">{data ? data.count : '0'}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-slate-900"></div>
+                                                </div>
                                             </div>
-                                            <span className="text-xs font-bold text-red-400">{Math.round((count / maxErrors) * 100)}%</span>
-                                        </div>
-                                        <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                                            <div
-                                                className="h-full bg-gradient-to-r from-red-500 to-red-400 rounded-full transition-all duration-500"
-                                                style={{ width: `${Math.round((count / maxErrors) * 100)}%` }}
-                                            />
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                                        );
+                                    })}
+                                </div>
+                            ))}
+                        </div>
 
-                        <button
-                            onClick={() => { localStorage.removeItem('weakKeys'); setWeakKeys([]); }}
-                            className="w-full mt-6 py-2 text-xs font-bold text-slate-500 border border-slate-200 dark:border-slate-700/50 rounded-lg hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30 transition-all"
-                        >
-                            Reset Analytics
-                        </button>
+                        <div className="mt-10 flex justify-between items-center border-t border-white/5 pt-6">
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest italic">
+                                * Neural response data is calculated based on characters typed in prose and code streams.
+                            </p>
+                            <button
+                                onClick={() => { localStorage.removeItem('keyPerformances'); setPerformances({}); }}
+                                className="px-6 py-2 text-[10px] font-black uppercase tracking-widest text-red-500/60 border border-red-500/20 rounded-lg hover:bg-red-500 hover:text-white transition-all"
+                            >
+                                Reset Neural Profile
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -166,54 +239,34 @@ export default function Dashboard() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-primary/5">
-                                <tr className="hover:bg-slate-50/50 dark:hover:bg-primary/5 transition-colors">
-                                    <td className="px-6 py-4 font-bold text-primary">01</td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <img className="h-8 w-8 rounded-full border border-primary/20" alt="Avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAn2MgrVu9d4njiPpNorFRqt6VcbIYXaN4wzSY0Z4_pi6TDHgAZdJDzkEhs1n9G2JUgIdPs33hM4DxLqsFNJfSP2ytbq03w5igkj08KuIW8_flONw6zOvuYMoJN_F-JmFvb1HhcvlLDElll67sQPkapGJDB9l0qRgzXu1lZL1e9RTvWPKCyk-25T8w22rY_YZl5_2ligeis4LCBFFAygjbsqIwz-ViTHYDGm8REs3rF4RtX45Ltt1FTeOzKwUBapOFu_qMRvlIAOIM" />
-                                            <span className="font-semibold text-slate-900 dark:text-slate-100">SpeedDemon_99</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 font-mono font-bold text-slate-900 dark:text-white">186</td>
-                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400">99.2%</td>
-                                    <td className="px-6 py-4"><span className="h-2 w-2 rounded-full bg-primary inline-block mr-2 animate-pulse"></span><span className="text-xs text-primary">Live</span></td>
-                                </tr>
-                                <tr className="hover:bg-slate-50/50 dark:hover:bg-primary/5 transition-colors">
-                                    <td className="px-6 py-4 font-bold text-slate-400">02</td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <img className="h-8 w-8 rounded-full border border-primary/20" alt="Avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmCZcbkv5AQCX_8lL4lKJ66OxAjOzxDhRkhA2QQmJ-KEDfl5C9D1LwsSDZxOnMMazJoHnUai9w8A2MxSjyRR4cYztYa8yzdqUcKZOEgs4bqXJjrMJE_4YoNP76e5e2n8keKYisD6lWppt0OU4tYT42AULkd-zTj5ePLoBC60QeDcrhDoIDa8gCXEy8TMS-TTn8_IMnadfoz5UI0-gHHt4MQHzFxFV3_Hg53nRcrcvvvzbiQgUcI_2K8_JNVww6yDfANYKUUemDSqw" />
-                                            <span className="font-semibold text-slate-900 dark:text-slate-100">LunarTypist</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 font-mono font-bold text-slate-900 dark:text-white">179</td>
-                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400">98.8%</td>
-                                    <td className="px-6 py-4 text-slate-400 text-xs">Offline</td>
-                                </tr>
-                                <tr className="hover:bg-slate-50/50 dark:hover:bg-primary/5 transition-colors">
-                                    <td className="px-6 py-4 font-bold text-slate-400">03</td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <img className="h-8 w-8 rounded-full border border-primary/20" alt="Avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAKm57FvjnxGUUBlXlo5d2F-Nc5S6qw-11MjNPoeEu1iztrnNR7WPbM0HzQKk3omQ7NwHpjmxS5Nf1Z_o309gJGsLBwt9Dd3aBBDK2P9Qi7UuYR8WNhlUrsiO52AzfGZJTEMs5ocPTqdVQ5c2HtZ7oQxiRcv_h1OEyKs4CPM60NCg-CeH7b_7R5BF9lva9OH-4pax1NpBtrKM_lVB5cd8fq63jhSABWTcPsC4v4Nu2wZeKTp72wCKAP4j3mEB3btnOYFoBCvvNiErI" />
-                                            <span className="font-semibold text-slate-900 dark:text-slate-100">JazzKeyz</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 font-mono font-bold text-slate-900 dark:text-white">175</td>
-                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400">99.5%</td>
-                                    <td className="px-6 py-4"><span className="h-2 w-2 rounded-full bg-primary inline-block mr-2 animate-pulse"></span><span className="text-xs text-primary">Live</span></td>
-                                </tr>
-                                <tr className="hover:bg-slate-50/50 dark:hover:bg-primary/5 transition-colors bg-primary/5 border-l-2 border-primary">
-                                    <td className="px-6 py-4 font-bold text-primary">12</td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <img className="h-8 w-8 rounded-full border border-primary/20" alt="Avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCIxYuqaYQ076-VKGL3G2WkrOLH14fN1qhOPGOJalA8Dl-TjBhAEdNwuJ46rLRPGLZIQYdQ_1ThQPW6E268gaJI9cuM8UjnSnug-YoHfQTlmPGPzbR-Dh-0cPZWRXN79DrMWpeEbNOjuXbjV7wVN2Sw4A2LT_93jJaSRMLhpEpy9obfv4Pc617bgQGiucpF6at3RYopOagk4Wz42cDu7mMipxdx1pnJn0lU3zo7gkvt21RZouBDkBlnnXBhGo2LwfQGEA_T1oTGoec" />
-                                            <span className="font-bold text-primary">Alex_Type (You)</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 font-mono font-bold text-slate-900 dark:text-white">142</td>
-                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400">98.5%</td>
-                                    <td className="px-6 py-4"><span className="h-2 w-2 rounded-full bg-primary inline-block mr-2 animate-pulse"></span><span className="text-xs text-primary">Live</span></td>
-                                </tr>
+                                {[
+                                    { rank: '01', name: 'SpeedDemon_99', wpm: 186, accuracy: '99.2%', status: 'Live', isUser: false, avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAn2MgrVu9d4njiPpNorFRqt6VcbIYXaN4wzSY0Z4_pi6TDHgAZdJDzkEhs1n9G2JUgIdPs33hM4DxLqsFNJfSP2ytbq03w5igkj08KuIW8_flONw6zOvuYMoJN_F-JmFvb1HhcvlLDElll67sQPkapGJDB9l0qRgzXu1lZL1e9RTvWPKCyk-25T8w22rY_YZl5_2ligeis4LCBFFAygjbsqIwz-ViTHYDGm8REs3rF4RtX45Ltt1FTeOzKwUBapOFu_qMRvlIAOIM' },
+                                    { rank: '02', name: 'LunarTypist', wpm: 179, accuracy: '98.8%', status: 'Offline', isUser: false, avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDmCZcbkv5AQCX_8lL4lKJ66OxAjOzxDhRkhA2QQmJ-KEDfl5C9D1LwsSDZxOnMMazJoHnUai9w8A2MxSjyRR4cYztYa8yzdqUcKZOEgs4bqXJjrMJE_4YoNP76e5e2n8keKYisD6lWppt0OU4tYT42AULkd-zTj5ePLoBC60QeDcrhDoIDa8gCXEy8TMS-TTn8_IMnadfoz5UI0-gHHt4MQHzFxFV3_Hg53nRcrcvvvzbiQgUcI_2K8_JNVww6yDfANYKUUemDSqw' },
+                                    { rank: '03', name: 'JazzKeyz', wpm: 175, accuracy: '99.5%', status: 'Live', isUser: false, avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAKm57FvjnxGUUBlXlo5d2F-Nc5S6qw-11MjNPoeEu1iztrnNR7WPbM0HzQKk3omQ7NwHpjmxS5Nf1Z_o309gJGsLBwt9Dd3aBBDK2P9Qi7UuYR8WNhlUrsiO52AzfGZJTEMs5ocPTqdVQ5c2HtZ7oQxiRcv_h1OEyKs4CPM60NCg-CeH7b_7R5BF9lva9OH-4pax1NpBtrKM_lVB5cd8fq63jhSABWTcPsC4v4Nu2wZeKTp72wCKAP4j3mEB3btnOYFoBCvvNiErI' },
+                                    { rank: '12', name: 'Alex_Type (You)', wpm: 142, accuracy: '98.5%', status: 'Live', isUser: true, avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCIxYuqaYQ076-VKGL3G2WkrOLH14fN1qhOPGOJalA8Dl-TjBhAEdNwuJ46rLRPGLZIQYdQ_1ThQPW6E268gaJI9cuM8UjnSnug-YoHfQTlmPGPzbR-Dh-0cPZWRXN79DrMWpeEbNOjuXbjV7wVN2Sw4A2LT_93jJaSRMLhpEpy9obfv4Pc617bgQGiucpF6at3RYopOagk4Wz42cDu7mMipxdx1pnJn0lU3zo7gkvt21RZouBDkBlnnXBhGo2LwfQGEA_T1oTGoec' },
+                                ].map((item, index) => (
+                                    <tr key={index} className={`hover:bg-slate-50/50 dark:hover:bg-primary/5 transition-colors ${item.isUser ? 'bg-primary/5 border-l-2 border-primary' : ''}`}>
+                                        <td className={`px-6 py-4 font-bold ${item.rank === '01' || item.isUser ? 'text-primary' : 'text-slate-400'}`}>{item.rank}</td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <img className="h-8 w-8 rounded-full border border-primary/20" alt="Avatar" src={item.avatar} />
+                                                <span className={`font-semibold ${item.isUser ? 'text-primary' : 'text-slate-900 dark:text-slate-100'}`}>{item.name}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 font-mono font-bold text-slate-900 dark:text-white">{item.wpm}</td>
+                                        <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{item.accuracy}</td>
+                                        <td className="px-6 py-4">
+                                            {item.status === 'Live' ? (
+                                                <>
+                                                    <span className="h-2 w-2 rounded-full bg-primary inline-block mr-2 animate-pulse"></span>
+                                                    <span className="text-xs text-primary">Live</span>
+                                                </>
+                                            ) : (
+                                                <span className="text-400 text-xs">Offline</span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
                             </tbody>
                         </table>
                     </div>
