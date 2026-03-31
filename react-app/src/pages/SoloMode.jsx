@@ -1,31 +1,62 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Zap, BarChart2, Settings, UserCircle, RotateCcw, Code, FileText, Skull, Ghost } from 'lucide-react';
+import { Zap, BarChart2, Settings, UserCircle, RotateCcw, Code, FileText, Skull, Ghost, Share2, Check } from 'lucide-react';
 import { io } from 'socket.io-client';
 
 const SOCKET_SERVER = 'http://localhost:3001';
 const DEFAULT_TIME = 30;
+const ADAPTIVE_DRILL_STORAGE_KEY = 'adaptiveDrill';
 
 export default function SoloMode() {
+    const [adaptiveDrillConfig] = useState(() => {
+        try {
+            return JSON.parse(localStorage.getItem(ADAPTIVE_DRILL_STORAGE_KEY) || 'null');
+        } catch {
+            return null;
+        }
+    });
+    const isAdaptiveDrill = !!adaptiveDrillConfig;
+    const adaptiveDrillDuration = isAdaptiveDrill && Number.isFinite(adaptiveDrillConfig?.duration)
+        ? adaptiveDrillConfig.duration
+        : DEFAULT_TIME;
+    const adaptiveDrillText = isAdaptiveDrill && typeof adaptiveDrillConfig?.text === 'string'
+        ? adaptiveDrillConfig.text
+        : 'Loading quote...';
+    const adaptiveDrillDifficulty = isAdaptiveDrill && typeof adaptiveDrillConfig?.difficulty === 'string'
+        ? adaptiveDrillConfig.difficulty
+        : 'medium';
+    const adaptiveDrillCategory = isAdaptiveDrill && typeof adaptiveDrillConfig?.category === 'string'
+        ? adaptiveDrillConfig.category
+        : 'prose';
+    const adaptiveDrillMode = isAdaptiveDrill && typeof adaptiveDrillConfig?.mode === 'string'
+        ? adaptiveDrillConfig.mode
+        : 'standard';
+
     const [socket, setSocket] = useState(null);
-    const [text, setText] = useState('Loading quote...');
+    const [text, setText] = useState(() => adaptiveDrillText);
     const [userInput, setUserInput] = useState('');
     const [status, setStatus] = useState('idle'); // 'idle', 'typing', 'finished'
     const [isFailed, setIsFailed] = useState(false);
-    const [timeLeft, setTimeLeft] = useState(DEFAULT_TIME);
+    const [timeLeft, setTimeLeft] = useState(() => adaptiveDrillDuration);
     const [errorMap, setErrorMap] = useState({});
-    const [difficulty, setDifficulty] = useState('medium');
-    const [category, setCategory] = useState('prose'); // 'prose', 'code'
-    const [mode, setMode] = useState('standard'); // 'standard', 'zen', 'sudden-death'
+    const [difficulty, setDifficulty] = useState(() => adaptiveDrillDifficulty);
+    const [category, setCategory] = useState(() => adaptiveDrillCategory); // 'prose', 'code'
+    const [mode, setMode] = useState(() => adaptiveDrillMode); // 'standard', 'zen', 'sudden-death'
     const [finalWPM, setFinalWPM] = useState(0);
     const [keystrokes, setKeystrokes] = useState([]);
     const [ghostData, setGhostData] = useState([]);
     const [ghostIndex, setGhostIndex] = useState(0);
+    const [isCopied, setIsCopied] = useState(false);
+    const [progressToast, setProgressToast] = useState(null);
+    const [drillWorstKeys, setDrillWorstKeys] = useState(() => (adaptiveDrillConfig?.worstKeys || []).slice(0, 3));
+    const [drillPreKeyStats, setDrillPreKeyStats] = useState(() => adaptiveDrillConfig?.preKeyStats || {});
 
     const inputRef = useRef(null);
     const startTimeRef = useRef(null);
     const endTimeRef = useRef(null);
     const lastKeystrokeTimestampRef = useRef(null);
+    const toastTimeoutRef = useRef(null);
+    const hasShownDrillStartToastRef = useRef(false);
 
     // Initialize Socket
     useEffect(() => {
@@ -33,6 +64,30 @@ export default function SoloMode() {
         setSocket(newSocket);
         return () => newSocket.disconnect();
     }, []);
+
+    // If we launched via adaptive drill, arm the run and avoid socket-based quote fetching.
+    useEffect(() => {
+        if (!isAdaptiveDrill || !adaptiveDrillConfig) return;
+
+        localStorage.removeItem(ADAPTIVE_DRILL_STORAGE_KEY);
+        setGhostData([]);
+        setGhostIndex(0);
+        setKeystrokes([]);
+        setErrorMap({});
+        setUserInput('');
+        setStatus('idle');
+        setIsFailed(false);
+
+        const keys = (adaptiveDrillConfig.worstKeys || []).slice(0, 3).join(' ');
+        setProgressToast({
+            title: 'Daily Drill Armed',
+            body: `Focus: ${keys || 'key'} • ${adaptiveDrillDuration}s • No ghosts`
+        });
+        hasShownDrillStartToastRef.current = true;
+
+        if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+        toastTimeoutRef.current = setTimeout(() => setProgressToast(null), 9000);
+    }, [isAdaptiveDrill, adaptiveDrillConfig, adaptiveDrillDuration]);
 
     // Focus input on mount and keep it focused
     useEffect(() => {
@@ -110,14 +165,22 @@ export default function SoloMode() {
             // Track Latency (Legacy system)
             if (val.length > prevLength && lastKeystrokeTimestampRef.current) {
                 const latency = now - lastKeystrokeTimestampRef.current;
-                const charTyped = text[val.length - 1].toLowerCase();
-                
-                if (charTyped && charTyped.match(/[a-z0-9]/i)) {
+                const expectedChar = text[val.length - 1];
+                const key = expectedChar?.toLowerCase();
+
+                // Ignore whitespace-only keys in the latency profile.
+                if (key && expectedChar !== ' ' && expectedChar !== '\n' && expectedChar !== '\t') {
                     const performances = JSON.parse(localStorage.getItem('keyPerformances') || '{}');
-                    const current = performances[charTyped] || { avg: 0, count: 0 };
-                    const newCount = current.count + 1;
-                    const newAvg = Math.round(((current.avg * current.count) + latency) / newCount);
-                    performances[charTyped] = { avg: newAvg, count: newCount };
+                    const current = performances[key] || { avg: 0, count: 0, errors: 0 };
+                    const newCount = (Number(current.count) || 0) + 1;
+                    const currentAvg = Number(current.avg) || 0;
+                    const newAvg = Math.round(((currentAvg * (Number(current.count) || 0)) + latency) / newCount);
+
+                    performances[key] = {
+                        ...current,
+                        avg: newAvg,
+                        count: newCount
+                    };
                     localStorage.setItem('keyPerformances', JSON.stringify(performances));
                 }
                 lastKeystrokeTimestampRef.current = now;
@@ -203,6 +266,21 @@ export default function SoloMode() {
         return ((correctChars / userInput.length) * 100).toFixed(1);
     };
 
+    const handleShareScore = async () => {
+        const accuracy = calculateAccuracy();
+        const modeEmoji = mode === 'sudden-death' ? 'HELL ☠️' : mode === 'zen' ? 'ZEN 👻' : 'STANDARD ⚡';
+        const str = `TypeMaster ⚡ | WPM: ${finalWPM} | Acc: ${accuracy}% | Mode: ${modeEmoji} | ${category === 'code' ? 'Code-Sprint' : 'Prose'}`;
+        
+        try {
+            await navigator.clipboard.writeText(str);
+            setIsCopied(true);
+            setTimeout(() => setIsCopied(false), 2000);
+        } catch (err) {
+            console.error('Failed to copy text: ', err);
+            prompt('Clipboard access denied. Copy your score manually:', str);
+        }
+    };
+
     const calculateWPM = () => {
         if (!startTimeRef.current) return 0;
         const end = endTimeRef.current || Date.now();
@@ -220,19 +298,26 @@ export default function SoloMode() {
         setUserInput('');
         setStatus('idle');
         setIsFailed(false);
-        setTimeLeft(DEFAULT_TIME);
+        setTimeLeft(isAdaptiveDrill ? adaptiveDrillDuration : DEFAULT_TIME);
         setErrorMap({});
         startTimeRef.current = null;
         endTimeRef.current = null;
         lastKeystrokeTimestampRef.current = null;
         setKeystrokes([]);
-        fetchNewQuote();
+        if (isAdaptiveDrill) {
+            setGhostData([]);
+            setGhostIndex(0);
+        }
+        if (!isAdaptiveDrill) {
+            fetchNewQuote();
+        }
         if (inputRef.current) {
             inputRef.current.focus();
         }
     };
 
     const fetchNewQuote = () => {
+        if (isAdaptiveDrill) return;
         if (!socket) return;
         socket.emit('getSoloQuote', { difficulty, category }, (res) => {
             if (res.success) {
@@ -260,48 +345,180 @@ export default function SoloMode() {
                 merged[key] = (merged[key] || 0) + count;
             }
             localStorage.setItem('weakKeys', JSON.stringify(merged));
+
+            // Persist error counts into keyPerformances so we can rank by ms/error rate.
+            const perfExisting = JSON.parse(localStorage.getItem('keyPerformances') || '{}');
+            const perfMerged = { ...perfExisting };
+            for (const [key, count] of Object.entries(errorMap)) {
+                const current = perfMerged[key] || { avg: 0, count: 0, errors: 0 };
+                perfMerged[key] = {
+                    ...current,
+                    errors: (Number(current.errors) || 0) + count
+                };
+            }
+            localStorage.setItem('keyPerformances', JSON.stringify(perfMerged));
         }
         
         if (status === 'finished') {
             const currentWPM = calculateWPM();
             setFinalWPM(currentWPM);
-            
-            // PB Logic: Overwrite only if higher WPM (or first run)
-            const savedGhost = localStorage.getItem('lastRunGhost');
-            let ghostWPM = 0;
-            if (savedGhost) {
-                const parsed = JSON.parse(savedGhost);
-                const lastTime = parsed[parsed.length - 1]?.time || 0;
-                if (lastTime > 0) {
-                    ghostWPM = Math.round((parsed.length / 5) / (lastTime / 60000));
+
+            const currentAccuracyStr = calculateAccuracy();
+            const currentAccuracy = Number(currentAccuracyStr) || 0;
+
+            // PB Logic: Overwrite only if higher WPM (or first run). Skip during adaptive drill.
+            if (!isAdaptiveDrill) {
+                const savedGhost = localStorage.getItem('lastRunGhost');
+                let ghostWPM = 0;
+                if (savedGhost) {
+                    const parsed = JSON.parse(savedGhost);
+                    const lastTime = parsed[parsed.length - 1]?.time || 0;
+                    if (lastTime > 0) {
+                        ghostWPM = Math.round((parsed.length / 5) / (lastTime / 60000));
+                    }
+                }
+                
+                if (keystrokes.length > 0 && currentWPM > ghostWPM) {
+                    localStorage.setItem('lastRunGhost', JSON.stringify(keystrokes));
+                    setGhostData(keystrokes);
                 }
             }
-            
-            if (keystrokes.length > 0 && currentWPM > ghostWPM) {
-                localStorage.setItem('lastRunGhost', JSON.stringify(keystrokes));
-                setGhostData(keystrokes);
-            }
 
-            // Global Race History for Dashboard
-            const history = JSON.parse(localStorage.getItem('raceHistory') || '[]');
-            history.push({
+            // RaceHistory is used by the main dashboard graph.
+            // Adaptive drills are flagged (`isDrill`) so the dashboard can filter them out.
+            const raceHistory = JSON.parse(localStorage.getItem('raceHistory') || '[]');
+            const drillHistory = isAdaptiveDrill
+                ? JSON.parse(localStorage.getItem('drillHistory') || '[]')
+                : [];
+
+            const prevAvgWPM = isAdaptiveDrill
+                ? (drillHistory.length > 0
+                    ? drillHistory.reduce((acc, h) => acc + Number(h.wpm || 0), 0) / drillHistory.length
+                    : currentWPM)
+                : (raceHistory.length > 0
+                    ? raceHistory.reduce((acc, h) => acc + Number(h.wpm || 0), 0) / raceHistory.length
+                    : currentWPM);
+
+            const prevAvgAcc = isAdaptiveDrill
+                ? (drillHistory.length > 0
+                    ? drillHistory.reduce((acc, h) => acc + Number(String(h.accuracy || '0').replace('%', '')), 0) / drillHistory.length
+                    : currentAccuracy)
+                : (raceHistory.length > 0
+                    ? raceHistory.reduce((acc, h) => acc + Number(String(h.accuracy || '0').replace('%', '')), 0) / raceHistory.length
+                    : currentAccuracy);
+
+            raceHistory.push({
                 wpm: currentWPM,
-                accuracy: calculateAccuracy(),
+                accuracy: currentAccuracyStr,
                 date: Date.now(),
                 mode,
-                category
+                category,
+                ...(isAdaptiveDrill ? { isDrill: true } : {})
             });
-            localStorage.setItem('raceHistory', JSON.stringify(history.slice(-100))); // Keep last 100 runs
+            localStorage.setItem('raceHistory', JSON.stringify(raceHistory.slice(-100))); // Keep last 100 runs
+
+            // Drill-only storage for toast baselines (kept isolated from the main dashboard graph).
+            if (isAdaptiveDrill) {
+                drillHistory.push({
+                    wpm: currentWPM,
+                    accuracy: currentAccuracyStr,
+                    date: Date.now(),
+                    worstKeys: drillWorstKeys
+                });
+                localStorage.setItem('drillHistory', JSON.stringify(drillHistory.slice(-100)));
+            }
+
+            // Calculate and Store Rank Data
+            const finalRaceHistory = JSON.parse(localStorage.getItem('raceHistory') || '[]');
+            const finalDrillHistory = JSON.parse(localStorage.getItem('drillHistory') || '[]');
+            const nonDrill = finalRaceHistory.filter(h => !h.isDrill);
+            
+            if (nonDrill.length > 0) {
+                const highestWPM = Math.max(...nonDrill.map(h => Number(h.wpm)));
+                const avgAcc = nonDrill.reduce((acc, h) => acc + Number(String(h.accuracy || '0').replace('%', '')), 0) / nonDrill.length;
+                const drillsCompleted = finalDrillHistory.length;
+                
+                const rankScore = Math.round(highestWPM + (avgAcc * 0.2) + (drillsCompleted * 0.5));
+                
+                let tier = 'Novice';
+                let nextTierWPM = 61;
+                if (rankScore >= 131) { tier = 'Overlord'; nextTierWPM = null; }
+                else if (rankScore >= 101) { tier = 'Elite'; nextTierWPM = 131; }
+                else if (rankScore >= 81) { tier = 'Pro'; nextTierWPM = 101; }
+                else if (rankScore >= 61) { tier = 'Cadet'; nextTierWPM = 81; }
+                
+                localStorage.setItem('rankData', JSON.stringify({
+                    score: rankScore,
+                    tier,
+                    nextTierMax: nextTierWPM,
+                    highestWPM,
+                    avgAcc: avgAcc.toFixed(1),
+                    drillsCompleted,
+                    totalRaces: nonDrill.length
+                }));
+            }
+
+            // Completion toast for adaptive drills
+            if (isAdaptiveDrill) {
+                const keyPerformancesAfter = JSON.parse(localStorage.getItem('keyPerformances') || '{}');
+                const preKeys = drillWorstKeys || [];
+                const preStats = drillPreKeyStats || {};
+
+                const deltas = preKeys.map((k) => {
+                    const pre = preStats[k] || {};
+                    const postPerf = keyPerformancesAfter[k] || {};
+
+                    const preAvg = Number(pre.avg) || 0;
+                    const postAvg = Number(postPerf.avg) || 0;
+                    const preHits = Number(pre.hits) || 0;
+                    const preErrors = Number(pre.errors) || 0;
+                    const postHits = Number(postPerf.count) || 0;
+                    const postErrors = Number(postPerf.errors ?? 0) || 0;
+
+                    const preAttempts = preHits + preErrors;
+                    const postAttempts = postHits + postErrors;
+                    const preErrRate = preAttempts > 0 ? preErrors / preAttempts : 0;
+                    const postErrRate = postAttempts > 0 ? postErrors / postAttempts : 0;
+
+                    return {
+                        key: k,
+                        latencyDelta: postAvg - preAvg,
+                        errorRateDelta: postErrRate - preErrRate
+                    };
+                }).filter(Boolean);
+
+                const avgLatencyDelta = deltas.length > 0 ? Math.round(deltas.reduce((acc, d) => acc + d.latencyDelta, 0) / deltas.length) : 0;
+                const improvedLatencyCount = deltas.filter((d) => d.latencyDelta < 0).length;
+
+                const avgErrorRateDelta = deltas.length > 0 ? deltas.reduce((acc, d) => acc + d.errorRateDelta, 0) / deltas.length : 0;
+                const improvedErrorCount = deltas.filter((d) => d.errorRateDelta < 0).length;
+
+                const wpmDelta = Math.round(currentWPM - prevAvgWPM);
+                const accDelta = Number((currentAccuracy - prevAvgAcc).toFixed(1));
+
+                setProgressToast({
+                    title: 'Neon Neural Gain',
+                    body:
+                        `WPM ${wpmDelta >= 0 ? '+' : ''}${wpmDelta} vs avg ${Math.round(prevAvgWPM)} • ` +
+                        `Acc ${accDelta >= 0 ? '+' : ''}${accDelta.toFixed(1)}% • ` +
+                        `Latency ${avgLatencyDelta >= 0 ? '+' : ''}${avgLatencyDelta}ms (${improvedLatencyCount}/${deltas.length}) • ` +
+                        `Error ${(avgErrorRateDelta * 100) >= 0 ? '+' : ''}${(avgErrorRateDelta * 100).toFixed(1)}% (${improvedErrorCount}/${deltas.length})`
+                });
+
+                if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+                toastTimeoutRef.current = setTimeout(() => setProgressToast(null), 12000);
+            }
         }
     }, [status]);
 
     // Load Ghost Data on Mount
     useEffect(() => {
+        if (isAdaptiveDrill) return;
         const savedGhost = localStorage.getItem('lastRunGhost');
         if (savedGhost) {
             setGhostData(JSON.parse(savedGhost));
         }
-    }, []);
+    }, [isAdaptiveDrill]);
 
     // Automatic Reboot on Mode/Category Change
     useEffect(() => {
@@ -358,8 +575,32 @@ export default function SoloMode() {
                     </div>
                 </div>
 
+                {progressToast && (
+                    <div className="fixed top-6 right-6 z-300 w-104 max-w-[calc(100vw-2rem)] bg-black/70 backdrop-blur-md border border-primary/30 rounded-2xl shadow-[0_0_35px_rgba(0,245,212,0.14)] p-4 animate-in fade-in duration-300">
+                        <div className="flex items-start justify-between gap-4">
+                            <div>
+                                <div className="text-[10px] font-black uppercase tracking-widest text-primary/70">
+                                    {progressToast.title}
+                                </div>
+                                <div className="mt-2 text-sm leading-relaxed font-semibold text-slate-100">
+                                    {progressToast.body}
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setProgressToast(null)}
+                                className="text-slate-300/70 hover:text-slate-200 transition-colors text-xs font-bold border border-white/10 rounded-lg px-3 py-1 bg-white/5"
+                            >
+                                Close
+                            </button>
+                        </div>
+                        <div className="mt-3 h-[2px] w-full bg-primary/20 rounded-full overflow-hidden">
+                            <div className="h-full w-full bg-primary/60 animate-[drillGlow_2s_ease-in-out_infinite] rounded-full" />
+                        </div>
+                    </div>
+                )}
+
                 {/* Control Panel */}
-                <div className="faded-ui grid grid-cols-1 md:grid-cols-3 gap-8 mb-16 bg-slate-900/40 p-6 rounded-2xl border border-white/5 relative z-20">
+                <div className={`faded-ui grid grid-cols-1 md:grid-cols-3 gap-8 mb-16 bg-slate-900/40 p-6 rounded-2xl border border-white/5 relative z-20 ${isAdaptiveDrill ? 'pointer-events-none opacity-70' : ''}`}>
                     {/* Mode Selector */}
                     <div className="flex flex-col gap-3">
                         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">System Mode</span>
@@ -417,9 +658,9 @@ export default function SoloMode() {
                         {status === 'idle' && !isFailed && (
                             <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-[2px] rounded-3xl animate-pulse">
                                 <div className="text-primary/60 text-sm font-black uppercase tracking-[0.4em] flex items-center gap-4">
-                                    <div className="w-12 h-[1px] bg-primary/20"></div>
+                                    <div className="w-12 h-px bg-primary/20"></div>
                                     Press any key to initialize...
-                                    <div className="w-12 h-[1px] bg-primary/20"></div>
+                                    <div className="w-12 h-px bg-primary/20"></div>
                                 </div>
                             </div>
                         )}
@@ -469,7 +710,7 @@ export default function SoloMode() {
                                 }
 
                                 const isCursor = index === userInput.length && status !== 'finished';
-                                const isGhost = index === ghostIndex && status === 'typing';
+                                const isGhost = ghostData.length > 0 && index === ghostIndex && status === 'typing';
 
                                 return (
                                     <span key={index} className="relative">
@@ -502,6 +743,19 @@ export default function SoloMode() {
                         >
                             <span className="text-xs font-bold uppercase tracking-widest">Abort to Core</span>
                         </Link>
+                        {status === 'finished' && (
+                            <button
+                                onClick={handleShareScore}
+                                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl border transition-all active:scale-95 text-xs font-bold uppercase tracking-widest ${
+                                    isCopied 
+                                        ? 'bg-green-500/20 text-green-400 border-green-500/50 shadow-[0_0_15px_rgba(34,197,94,0.2)]' 
+                                        : 'bg-primary/10 text-primary border-primary/30 hover:bg-primary/20 hover:border-primary/50 shadow-[0_0_10px_rgba(0,245,212,0.1)]'
+                                }`}
+                            >
+                                {isCopied ? <Check className="w-5 h-5" /> : <Share2 className="w-5 h-5" />}
+                                <span>{isCopied ? 'Score Copied!' : 'Share Score'}</span>
+                            </button>
+                        )}
                     </div>
                 </div>
             </main>

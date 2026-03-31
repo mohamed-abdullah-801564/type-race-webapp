@@ -48,11 +48,8 @@ react-app/package.json
 react-app/public/favicon.svg
 react-app/public/icons.svg
 react-app/README.md
-react-app/src/App.css
 react-app/src/App.jsx
 react-app/src/assets/hero.png
-react-app/src/assets/react.svg
-react-app/src/assets/vite.svg
 react-app/src/components/Navbar.jsx
 react-app/src/components/PlayerProgressBar.jsx
 react-app/src/components/StatCard.jsx
@@ -61,7 +58,6 @@ react-app/src/main.jsx
 react-app/src/pages/Dashboard.jsx
 react-app/src/pages/Multiplayer.jsx
 react-app/src/pages/SoloMode.jsx
-react-app/src/utils/quotes.js
 react-app/vite.config.js
 server/index.js
 server/package.json
@@ -238,193 +234,6 @@ The React Compiler is not enabled on this template because of its impact on dev 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
 </file>
 
-<file path="react-app/src/App.css">
-.counter {
-  font-size: 16px;
-  padding: 5px 10px;
-  border-radius: 5px;
-  color: var(--accent);
-  background: var(--accent-bg);
-  border: 2px solid transparent;
-  transition: border-color 0.3s;
-  margin-bottom: 24px;
-
-  &:hover {
-    border-color: var(--accent-border);
-  }
-  &:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
-}
-
-.hero {
-  position: relative;
-
-  .base,
-  .framework,
-  .vite {
-    inset-inline: 0;
-    margin: 0 auto;
-  }
-
-  .base {
-    width: 170px;
-    position: relative;
-    z-index: 0;
-  }
-
-  .framework,
-  .vite {
-    position: absolute;
-  }
-
-  .framework {
-    z-index: 1;
-    top: 34px;
-    height: 28px;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
-      scale(1.4);
-  }
-
-  .vite {
-    z-index: 0;
-    top: 107px;
-    height: 26px;
-    width: auto;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
-      scale(0.8);
-  }
-}
-
-#center {
-  display: flex;
-  flex-direction: column;
-  gap: 25px;
-  place-content: center;
-  place-items: center;
-  flex-grow: 1;
-
-  @media (max-width: 1024px) {
-    padding: 32px 20px 24px;
-    gap: 18px;
-  }
-}
-
-#next-steps {
-  display: flex;
-  border-top: 1px solid var(--border);
-  text-align: left;
-
-  & > div {
-    flex: 1 1 0;
-    padding: 32px;
-    @media (max-width: 1024px) {
-      padding: 24px 20px;
-    }
-  }
-
-  .icon {
-    margin-bottom: 16px;
-    width: 22px;
-    height: 22px;
-  }
-
-  @media (max-width: 1024px) {
-    flex-direction: column;
-    text-align: center;
-  }
-}
-
-#docs {
-  border-right: 1px solid var(--border);
-
-  @media (max-width: 1024px) {
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-  }
-}
-
-#next-steps ul {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  gap: 8px;
-  margin: 32px 0 0;
-
-  .logo {
-    height: 18px;
-  }
-
-  a {
-    color: var(--text-h);
-    font-size: 16px;
-    border-radius: 6px;
-    background: var(--social-bg);
-    display: flex;
-    padding: 6px 12px;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-    transition: box-shadow 0.3s;
-
-    &:hover {
-      box-shadow: var(--shadow);
-    }
-    .button-icon {
-      height: 18px;
-      width: 18px;
-    }
-  }
-
-  @media (max-width: 1024px) {
-    margin-top: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
-
-    li {
-      flex: 1 1 calc(50% - 8px);
-    }
-
-    a {
-      width: 100%;
-      justify-content: center;
-      box-sizing: border-box;
-    }
-  }
-}
-
-#spacer {
-  height: 88px;
-  border-top: 1px solid var(--border);
-  @media (max-width: 1024px) {
-    height: 48px;
-  }
-}
-
-.ticks {
-  position: relative;
-  width: 100%;
-
-  &::before,
-  &::after {
-    content: '';
-    position: absolute;
-    top: -4.5px;
-    border: 5px solid transparent;
-  }
-
-  &::before {
-    left: 0;
-    border-left-color: var(--border);
-  }
-  &::after {
-    right: 0;
-    border-right-color: var(--border);
-  }
-}
-</file>
-
 <file path="react-app/src/App.jsx">
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
@@ -447,67 +256,6 @@ function App() {
 }
 
 export default App;
-</file>
-
-<file path="react-app/src/assets/react.svg">
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" class="iconify iconify--logos" width="35.93" height="32" preserveAspectRatio="xMidYMid meet" viewBox="0 0 256 228"><path fill="#00D8FF" d="M210.483 73.824a171.49 171.49 0 0 0-8.24-2.597c.465-1.9.893-3.777 1.273-5.621c6.238-30.281 2.16-54.676-11.769-62.708c-13.355-7.7-35.196.329-57.254 19.526a171.23 171.23 0 0 0-6.375 5.848a155.866 155.866 0 0 0-4.241-3.917C100.759 3.829 77.587-4.822 63.673 3.233C50.33 10.957 46.379 33.89 51.995 62.588a170.974 170.974 0 0 0 1.892 8.48c-3.28.932-6.445 1.924-9.474 2.98C17.309 83.498 0 98.307 0 113.668c0 15.865 18.582 31.778 46.812 41.427a145.52 145.52 0 0 0 6.921 2.165a167.467 167.467 0 0 0-2.01 9.138c-5.354 28.2-1.173 50.591 12.134 58.266c13.744 7.926 36.812-.22 59.273-19.855a145.567 145.567 0 0 0 5.342-4.923a168.064 168.064 0 0 0 6.92 6.314c21.758 18.722 43.246 26.282 56.54 18.586c13.731-7.949 18.194-32.003 12.4-61.268a145.016 145.016 0 0 0-1.535-6.842c1.62-.48 3.21-.974 4.76-1.488c29.348-9.723 48.443-25.443 48.443-41.52c0-15.417-17.868-30.326-45.517-39.844Zm-6.365 70.984c-1.4.463-2.836.91-4.3 1.345c-3.24-10.257-7.612-21.163-12.963-32.432c5.106-11 9.31-21.767 12.459-31.957c2.619.758 5.16 1.557 7.61 2.4c23.69 8.156 38.14 20.213 38.14 29.504c0 9.896-15.606 22.743-40.946 31.14Zm-10.514 20.834c2.562 12.94 2.927 24.64 1.23 33.787c-1.524 8.219-4.59 13.698-8.382 15.893c-8.067 4.67-25.32-1.4-43.927-17.412a156.726 156.726 0 0 1-6.437-5.87c7.214-7.889 14.423-17.06 21.459-27.246c12.376-1.098 24.068-2.894 34.671-5.345a134.17 134.17 0 0 1 1.386 6.193ZM87.276 214.515c-7.882 2.783-14.16 2.863-17.955.675c-8.075-4.657-11.432-22.636-6.853-46.752a156.923 156.923 0 0 1 1.869-8.499c10.486 2.32 22.093 3.988 34.498 4.994c7.084 9.967 14.501 19.128 21.976 27.15a134.668 134.668 0 0 1-4.877 4.492c-9.933 8.682-19.886 14.842-28.658 17.94ZM50.35 144.747c-12.483-4.267-22.792-9.812-29.858-15.863c-6.35-5.437-9.555-10.836-9.555-15.216c0-9.322 13.897-21.212 37.076-29.293c2.813-.98 5.757-1.905 8.812-2.773c3.204 10.42 7.406 21.315 12.477 32.332c-5.137 11.18-9.399 22.249-12.634 32.792a134.718 134.718 0 0 1-6.318-1.979Zm12.378-84.26c-4.811-24.587-1.616-43.134 6.425-47.789c8.564-4.958 27.502 2.111 47.463 19.835a144.318 144.318 0 0 1 3.841 3.545c-7.438 7.987-14.787 17.08-21.808 26.988c-12.04 1.116-23.565 2.908-34.161 5.309a160.342 160.342 0 0 1-1.76-7.887Zm110.427 27.268a347.8 347.8 0 0 0-7.785-12.803c8.168 1.033 15.994 2.404 23.343 4.08c-2.206 7.072-4.956 14.465-8.193 22.045a381.151 381.151 0 0 0-7.365-13.322Zm-45.032-43.861c5.044 5.465 10.096 11.566 15.065 18.186a322.04 322.04 0 0 0-30.257-.006c4.974-6.559 10.069-12.652 15.192-18.18ZM82.802 87.83a323.167 323.167 0 0 0-7.227 13.238c-3.184-7.553-5.909-14.98-8.134-22.152c7.304-1.634 15.093-2.97 23.209-3.984a321.524 321.524 0 0 0-7.848 12.897Zm8.081 65.352c-8.385-.936-16.291-2.203-23.593-3.793c2.26-7.3 5.045-14.885 8.298-22.6a321.187 321.187 0 0 0 7.257 13.246c2.594 4.48 5.28 8.868 8.038 13.147Zm37.542 31.03c-5.184-5.592-10.354-11.779-15.403-18.433c4.902.192 9.899.29 14.978.29c5.218 0 10.376-.117 15.453-.343c-4.985 6.774-10.018 12.97-15.028 18.486Zm52.198-57.817c3.422 7.8 6.306 15.345 8.596 22.52c-7.422 1.694-15.436 3.058-23.88 4.071a382.417 382.417 0 0 0 7.859-13.026a347.403 347.403 0 0 0 7.425-13.565Zm-16.898 8.101a358.557 358.557 0 0 1-12.281 19.815a329.4 329.4 0 0 1-23.444.823c-7.967 0-15.716-.248-23.178-.732a310.202 310.202 0 0 1-12.513-19.846h.001a307.41 307.41 0 0 1-10.923-20.627a310.278 310.278 0 0 1 10.89-20.637l-.001.001a307.318 307.318 0 0 1 12.413-19.761c7.613-.576 15.42-.876 23.31-.876H128c7.926 0 15.743.303 23.354.883a329.357 329.357 0 0 1 12.335 19.695a358.489 358.489 0 0 1 11.036 20.54a329.472 329.472 0 0 1-11 20.722Zm22.56-122.124c8.572 4.944 11.906 24.881 6.52 51.026c-.344 1.668-.73 3.367-1.15 5.09c-10.622-2.452-22.155-4.275-34.23-5.408c-7.034-10.017-14.323-19.124-21.64-27.008a160.789 160.789 0 0 1 5.888-5.4c18.9-16.447 36.564-22.941 44.612-18.3ZM128 90.808c12.625 0 22.86 10.235 22.86 22.86s-10.235 22.86-22.86 22.86s-22.86-10.235-22.86-22.86s10.235-22.86 22.86-22.86Z"></path></svg>
-</file>
-
-<file path="react-app/src/assets/vite.svg">
-<svg xmlns="http://www.w3.org/2000/svg" width="77" height="47" fill="none" aria-labelledby="vite-logo-title" viewBox="0 0 77 47"><title id="vite-logo-title">Vite</title><style>.parenthesis{fill:#000}@media (prefers-color-scheme:dark){.parenthesis{fill:#fff}}</style><path fill="#9135ff" d="M40.151 45.71c-.663.844-2.02.374-2.02-.699V34.708a2.26 2.26 0 0 0-2.262-2.262H24.493c-.92 0-1.457-1.04-.92-1.788l7.479-10.471c1.07-1.498 0-3.578-1.842-3.578H15.443c-.92 0-1.456-1.04-.92-1.788l9.696-13.576c.213-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.472c-1.07 1.497 0 3.578 1.842 3.578h11.376c.944 0 1.474 1.087.89 1.83L40.153 45.712z"/><mask id="a" width="48" height="47" x="14" y="0" maskUnits="userSpaceOnUse" style="mask-type:alpha"><path fill="#000" d="M40.047 45.71c-.663.843-2.02.374-2.02-.699V34.708a2.26 2.26 0 0 0-2.262-2.262H24.389c-.92 0-1.457-1.04-.92-1.788l7.479-10.472c1.07-1.497 0-3.578-1.842-3.578H15.34c-.92 0-1.456-1.04-.92-1.788l9.696-13.575c.213-.297.556-.474.92-.474H53.93c.92 0 1.456 1.04.92 1.788L47.37 13.03c-1.07 1.498 0 3.578 1.842 3.578h11.376c.944 0 1.474 1.088.89 1.831L40.049 45.712z"/></mask><g mask="url(#a)"><g filter="url(#b)"><ellipse cx="5.508" cy="14.704" fill="#eee6ff" rx="5.508" ry="14.704" transform="rotate(269.814 20.96 11.29)scale(-1 1)"/></g><g filter="url(#c)"><ellipse cx="10.399" cy="29.851" fill="#eee6ff" rx="10.399" ry="29.851" transform="rotate(89.814 -16.902 -8.275)scale(1 -1)"/></g><g filter="url(#d)"><ellipse cx="5.508" cy="30.487" fill="#8900ff" rx="5.508" ry="30.487" transform="rotate(89.814 -19.197 -7.127)scale(1 -1)"/></g><g filter="url(#e)"><ellipse cx="5.508" cy="30.599" fill="#8900ff" rx="5.508" ry="30.599" transform="rotate(89.814 -25.928 4.177)scale(1 -1)"/></g><g filter="url(#f)"><ellipse cx="5.508" cy="30.599" fill="#8900ff" rx="5.508" ry="30.599" transform="rotate(89.814 -25.738 5.52)scale(1 -1)"/></g><g filter="url(#g)"><ellipse cx="14.072" cy="22.078" fill="#eee6ff" rx="14.072" ry="22.078" transform="rotate(93.35 31.245 55.578)scale(-1 1)"/></g><g filter="url(#h)"><ellipse cx="3.47" cy="21.501" fill="#8900ff" rx="3.47" ry="21.501" transform="rotate(89.009 35.419 55.202)scale(-1 1)"/></g><g filter="url(#i)"><ellipse cx="3.47" cy="21.501" fill="#8900ff" rx="3.47" ry="21.501" transform="rotate(89.009 35.419 55.202)scale(-1 1)"/></g><g filter="url(#j)"><ellipse cx="14.592" cy="9.743" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(39.51 14.592 9.743)"/></g><g filter="url(#k)"><ellipse cx="61.728" cy="-5.321" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 61.728 -5.32)"/></g><g filter="url(#l)"><ellipse cx="55.618" cy="7.104" fill="#00c2ff" rx="5.971" ry="9.665" transform="rotate(37.892 55.618 7.104)"/></g><g filter="url(#m)"><ellipse cx="12.326" cy="39.103" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 12.326 39.103)"/></g><g filter="url(#n)"><ellipse cx="12.326" cy="39.103" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 12.326 39.103)"/></g><g filter="url(#o)"><ellipse cx="49.857" cy="30.678" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 49.857 30.678)"/></g><g filter="url(#p)"><ellipse cx="52.623" cy="33.171" fill="#00c2ff" rx="5.971" ry="15.297" transform="rotate(37.892 52.623 33.17)"/></g></g><path d="M6.919 0c-9.198 13.166-9.252 33.575 0 46.789h6.215c-9.25-13.214-9.196-33.623 0-46.789zm62.424 0h-6.215c9.198 13.166 9.252 33.575 0 46.789h6.215c9.25-13.214 9.196-33.623 0-46.789" class="parenthesis"/><defs><filter id="b" width="60.045" height="41.654" x="-5.564" y="16.92" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="7.659"/></filter><filter id="c" width="90.34" height="51.437" x="-40.407" y="-6.762" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="7.659"/></filter><filter id="d" width="79.355" height="29.4" x="-35.435" y="2.801" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="e" width="79.579" height="29.4" x="-30.84" y="20.8" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="f" width="79.579" height="29.4" x="-29.307" y="21.949" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="g" width="74.749" height="58.852" x="29.961" y="-17.13" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="7.659"/></filter><filter id="h" width="61.377" height="25.362" x="37.754" y="3.055" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="i" width="61.377" height="25.362" x="37.754" y="3.055" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="j" width="56.045" height="63.649" x="-13.43" y="-22.082" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="k" width="54.814" height="64.646" x="34.321" y="-37.644" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="l" width="33.541" height="35.313" x="38.847" y="-10.552" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="m" width="54.814" height="64.646" x="-15.081" y="6.78" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="n" width="54.814" height="64.646" x="-15.081" y="6.78" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="o" width="54.814" height="64.646" x="22.45" y="-1.645" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="p" width="39.409" height="43.623" x="32.919" y="11.36" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter></defs></svg>
-</file>
-
-<file path="react-app/src/components/Navbar.jsx">
-import { Link, useLocation } from 'react-router-dom';
-import { ChevronsRight, Bell, Settings } from 'lucide-react';
-
-export default function Navbar() {
-    const location = useLocation();
-    const currentPath = location.pathname;
-
-    return (
-        <header className="flex items-center justify-between border-b border-slate-200 dark:border-primary/10 px-6 py-4 lg:px-20 bg-background-light dark:bg-background-dark/50 backdrop-blur-md sticky top-0 z-50">
-            <div className="flex flex-1 items-center gap-4">
-                <Link to="/" className="flex items-center gap-4">
-                    <div className="text-primary">
-                        <ChevronsRight className="w-8 h-8" />
-                    </div>
-                    <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-                        Type<span className="text-primary text-2xl">.</span>Master
-                    </h2>
-                </Link>
-            </div>
-
-            <nav className="hidden md:flex gap-8 items-center text-sm font-medium">
-                <Link to="/" className={`${currentPath === '/' ? 'text-primary border-b-2 border-primary pb-1' : 'text-slate-500 hover:text-primary transition-colors'}`}>
-                    Dashboard
-                </Link>
-                <Link to="/solo" className={`${currentPath === '/solo' ? 'text-primary border-b-2 border-primary pb-1' : 'text-slate-500 hover:text-primary transition-colors'}`}>
-                    Solo Mode
-                </Link>
-                <Link to="/multiplayer" className={`${currentPath === '/multiplayer' ? 'text-primary border-b-2 border-primary pb-1' : 'text-slate-500 hover:text-primary transition-colors'}`}>
-                    Multiplayer
-                </Link>
-            </nav>
-
-            <div className="flex flex-1 justify-end items-center gap-4">
-                <button className="p-2 rounded-lg bg-slate-100 dark:bg-primary/5 hover:bg-primary/10 transition-colors">
-                    <Bell className="w-6 h-6 text-slate-600 dark:text-primary" />
-                </button>
-                <button className="p-2 rounded-lg bg-slate-100 dark:bg-primary/5 hover:bg-primary/10 transition-colors">
-                    <Settings className="w-6 h-6 text-slate-600 dark:text-primary" />
-                </button>
-                <div className="h-10 w-10 rounded-full border-2 border-primary/30 p-0.5 overflow-hidden">
-                    <img
-                        alt="User Avatar"
-                        className="h-full w-full rounded-full object-cover"
-                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuCyZ8GeGyhabNC6yspB1cJTkrXNLe87u0X4LYSEMZo_zYdp1HBc86chYAHMyMJFLCRUs_vaoTLHsfSSlkqlBlf49XrgC3qw83Rzt1WQqIVEOt7x1bp-rp2IxMz6cMBUfdMYeiHT90RS5icaXocgWAsfhuxNwo7cm04_0cpJNSy2q93Yk4pqsAkQ5EdzokS5Px7Uh4jY_N-YsR0OUGJyzoCgk7iAAUAKFQki70GArm-GDC-UaSo0bIWnffEEMl04i1eoLnqNomwdGFs"
-                    />
-                </div>
-            </div>
-        </header>
-    );
-}
 </file>
 
 <file path="react-app/src/components/PlayerProgressBar.jsx">
@@ -679,102 +427,6 @@ createRoot(document.getElementById('root')).render(
 )
 </file>
 
-<file path="react-app/src/utils/quotes.js">
-const quotes = [
-    // ── Easy ─────────────────────────────────────────────────────────────────
-    {
-        text: 'the quick brown fox jumps over the lazy dog and rests by the river',
-        difficulty: 'easy',
-    },
-    {
-        text: 'she sells sea shells by the sea shore and the shells she sells are sea shells',
-        difficulty: 'easy',
-    },
-    {
-        text: 'how much wood would a woodchuck chuck if a woodchuck could chuck wood',
-        difficulty: 'easy',
-    },
-    {
-        text: 'the sun rises in the east and sets in the west every single day',
-        difficulty: 'easy',
-    },
-    {
-        text: 'a journey of a thousand miles begins with a single step forward',
-        difficulty: 'easy',
-    },
-    {
-        text: 'all that glitters is not gold and all who wander are not lost',
-        difficulty: 'easy',
-    },
-
-    // ── Medium ────────────────────────────────────────────────────────────────
-    {
-        text: 'In the middle of difficulty lies opportunity. Keep your eyes on the stars, and your feet on the ground.',
-        difficulty: 'medium',
-    },
-    {
-        text: 'Success is not final, failure is not fatal: it is the courage to continue that counts.',
-        difficulty: 'medium',
-    },
-    {
-        text: 'The only way to do great work is to love what you do. If you have not found it yet, keep looking.',
-        difficulty: 'medium',
-    },
-    {
-        text: 'It does not matter how slowly you go as long as you do not stop moving forward.',
-        difficulty: 'medium',
-    },
-    {
-        text: 'Believe you can and you are halfway there. The rest is discipline, patience, and hard work.',
-        difficulty: 'medium',
-    },
-    {
-        text: 'Two roads diverged in a wood, and I took the one less traveled by, and that has made all the difference.',
-        difficulty: 'medium',
-    },
-
-    // ── Hard ──────────────────────────────────────────────────────────────────
-    {
-        text: 'To print variables in JavaScript, use console.log("Hello, World!"); it is 100% effective and widely used.',
-        difficulty: 'hard',
-    },
-    {
-        text: 'The regex pattern /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$/ validates e-mail addresses.',
-        difficulty: 'hard',
-    },
-    {
-        text: 'Run: git commit -m "fix: resolve #42 — null-pointer exception in user-auth module" && git push origin main.',
-        difficulty: 'hard',
-    },
-    {
-        text: 'HTTP status codes: 200 OK, 301 Moved Permanently, 404 Not Found, 500 Internal Server Error.',
-        difficulty: 'hard',
-    },
-    {
-        text: 'In Python, f-strings work like this: name = "World"; print(f"Hello, {name}!") — clean & fast.',
-        difficulty: 'hard',
-    },
-    {
-        text: 'She said, "It\'s 2 AM — why are you still coding?!" He replied: "Just one more bug... I swear."',
-        difficulty: 'hard',
-    },
-];
-
-/**
- * Returns a random quote string for the given difficulty level.
- * Falls back to 'medium' if no quotes are found.
- * @param {'easy' | 'medium' | 'hard'} difficulty
- * @returns {string}
- */
-export const getRandomQuote = (difficulty = 'medium') => {
-    const pool = quotes.filter(q => q.difficulty === difficulty);
-    const source = pool.length > 0 ? pool : quotes.filter(q => q.difficulty === 'medium');
-    return source[Math.floor(Math.random() * source.length)].text;
-};
-
-export default quotes;
-</file>
-
 <file path="react-app/vite.config.js">
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
@@ -807,24 +459,382 @@ export default defineConfig({
 }
 </file>
 
-<file path="react-app/src/pages/Dashboard.jsx">
+<file path="react-app/src/components/Navbar.jsx">
 import { useState, useEffect } from 'react';
-import Navbar from '../components/Navbar';
-import StatCard from '../components/StatCard';
-import { Gauge, Target, Trophy, Zap, BookOpen, Medal, AtSign, Network, Globe, AlertTriangle } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { ChevronsRight, Bell, Settings, X, AlertTriangle, Save } from 'lucide-react';
 
-export default function Dashboard() {
-    const [weakKeys, setWeakKeys] = useState([]);
+export default function Navbar() {
+    const location = useLocation();
+    const currentPath = location.pathname;
+    
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [playerName, setPlayerName] = useState('');
 
     useEffect(() => {
-        const stored = JSON.parse(localStorage.getItem('weakKeys') || '{}');
-        const sorted = Object.entries(stored)
-            .sort(([, a], [, b]) => b - a)
-            .slice(0, 5);
-        setWeakKeys(sorted); // [['e', 12], ['t', 8], ...]
+        const stored = localStorage.getItem('playerName');
+        if (stored) setPlayerName(stored);
+    }, [isModalOpen]);
+
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+
+    const handleSaveName = (e) => {
+        e.preventDefault();
+        if (playerName.trim()) {
+            localStorage.setItem('playerName', playerName.trim());
+            setIsModalOpen(false);
+            window.location.reload();
+        }
+    };
+
+    const handleWipeData = () => {
+        setIsConfirmOpen(true);
+    };
+
+    const confirmWipeData = () => {
+        localStorage.clear();
+        window.location.reload();
+    };
+
+    return (
+        <>
+        <header className="flex items-center justify-between border-b border-slate-200 dark:border-primary/10 px-6 py-4 lg:px-20 bg-background-light dark:bg-background-dark/50 backdrop-blur-md sticky top-0 z-40">
+            <div className="flex flex-1 items-center gap-4">
+                <Link to="/" className="flex items-center gap-4">
+                    <div className="text-primary">
+                        <ChevronsRight className="w-8 h-8" />
+                    </div>
+                    <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+                        Type<span className="text-primary text-2xl">.</span>Master
+                    </h2>
+                </Link>
+            </div>
+
+            <nav className="hidden md:flex gap-8 items-center text-sm font-medium">
+                <Link to="/" className={`${currentPath === '/' ? 'text-primary border-b-2 border-primary pb-1' : 'text-slate-500 hover:text-primary transition-colors'}`}>
+                    Dashboard
+                </Link>
+                <Link to="/solo" className={`${currentPath === '/solo' ? 'text-primary border-b-2 border-primary pb-1' : 'text-slate-500 hover:text-primary transition-colors'}`}>
+                    Solo Mode
+                </Link>
+                <Link to="/multiplayer" className={`${currentPath === '/multiplayer' ? 'text-primary border-b-2 border-primary pb-1' : 'text-slate-500 hover:text-primary transition-colors'}`}>
+                    Multiplayer
+                </Link>
+            </nav>
+
+            <div className="flex flex-1 justify-end items-center gap-4">
+                <button className="p-2 rounded-lg bg-slate-100 dark:bg-primary/5 hover:bg-primary/10 transition-colors">
+                    <Bell className="w-6 h-6 text-slate-600 dark:text-primary" />
+                </button>
+                <button onClick={() => setIsModalOpen(true)} className="p-2 rounded-lg bg-slate-100 dark:bg-primary/5 hover:bg-primary/10 transition-colors">
+                    <Settings className="w-6 h-6 text-slate-600 dark:text-primary" />
+                </button>
+                <div onClick={() => setIsModalOpen(true)} className="h-10 w-10 rounded-full border-2 border-primary/30 p-0.5 overflow-hidden cursor-pointer hover:border-primary transition-colors">
+                    <img
+                        alt="User Avatar"
+                        className="h-full w-full rounded-full object-cover"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuCyZ8GeGyhabNC6yspB1cJTkrXNLe87u0X4LYSEMZo_zYdp1HBc86chYAHMyMJFLCRUs_vaoTLHsfSSlkqlBlf49XrgC3qw83Rzt1WQqIVEOt7x1bp-rp2IxMz6cMBUfdMYeiHT90RS5icaXocgWAsfhuxNwo7cm04_0cpJNSy2q93Yk4pqsAkQ5EdzokS5Px7Uh4jY_N-YsR0OUGJyzoCgk7iAAUAKFQki70GArm-GDC-UaSo0bIWnffEEMl04i1eoLnqNomwdGFs"
+                    />
+                </div>
+            </div>
+        </header>
+
+        {isModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background-dark/95 backdrop-blur-sm animate-in fade-in duration-300">
+                {isConfirmOpen && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-background-dark/80 backdrop-blur-md animate-in fade-in duration-200">
+                        <div className="bg-slate-900 border border-red-500/50 rounded-2xl p-8 max-w-sm w-full shadow-[0_0_50px_rgba(239,68,68,0.2)] relative animate-in zoom-in-95 duration-300">
+                            <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mb-6 mx-auto">
+                                <AlertTriangle className="w-6 h-6 text-red-500" />
+                            </div>
+                            <h3 className="text-xl font-black text-white text-center uppercase tracking-tighter mb-4">
+                                Critical Warning
+                            </h3>
+                            <p className="text-sm text-slate-400 text-center mb-8 leading-relaxed">
+                                WARNING: Irreversible Action. Are you sure you want to permanently delete all your Neural Heatmap data, Ghost recordings, and Race History?
+                            </p>
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={() => setIsConfirmOpen(false)}
+                                    className="flex-1 py-3 border border-slate-600 text-slate-400 rounded-lg hover:bg-slate-800 transition-colors font-bold tracking-wider text-sm"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmWipeData}
+                                    className="flex-1 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-bold tracking-wider text-sm shadow-[0_0_15px_rgba(239,68,68,0.4)]"
+                                >
+                                    Confirm Erase
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                <div className="bg-slate-900 border border-primary/20 rounded-2xl p-8 max-w-md w-full shadow-[0_0_50px_rgba(0,245,212,0.1)] relative">
+                    <button 
+                        onClick={() => setIsModalOpen(false)}
+                        className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white bg-slate-800 rounded-lg transition-colors"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                    
+                    <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-6 flex items-center gap-3">
+                        <Settings className="text-primary w-6 h-6" /> System Profile
+                    </h2>
+
+                    <form onSubmit={handleSaveName} className="mb-8 p-6 bg-white/5 rounded-xl border border-white/5">
+                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Operator Identity</label>
+                        <div className="flex gap-2">
+                            <input
+                                type="text"
+                                value={playerName}
+                                onChange={(e) => setPlayerName(e.target.value)}
+                                placeholder="ENTER NAME..."
+                                maxLength={15}
+                                className="flex-1 bg-background-dark border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary font-bold uppercase tracking-wider"
+                            />
+                            <button 
+                                type="submit"
+                                disabled={!playerName.trim()}
+                                className="px-4 py-3 bg-primary text-background-dark rounded-lg font-bold hover:bg-primary/90 transition-colors disabled:opacity-50"
+                            >
+                                <Save className="w-5 h-5" />
+                            </button>
+                        </div>
+                    </form>
+
+                    <div className="p-6 bg-red-950/20 rounded-xl border border-red-900/30">
+                        <h3 className="text-sm font-bold text-red-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                            <AlertTriangle className="w-4 h-4" /> Danger Zone
+                        </h3>
+                        <p className="text-xs text-slate-500 mb-4">
+                            Irreversibly erase all stored heatmaps, practice history, and neural latency profiles from this device.
+                        </p>
+                        <button
+                            onClick={handleWipeData}
+                            className="w-full py-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-lg font-bold uppercase tracking-wider transition-colors text-sm"
+                        >
+                            Erase All Neural Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+        </>
+    );
+}
+</file>
+
+<file path="react-app/src/pages/Dashboard.jsx">
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Navbar from '../components/Navbar';
+import StatCard from '../components/StatCard';
+import { Gauge, Target, Trophy, Zap, AlertTriangle, AtSign, Network, Globe, Keyboard } from 'lucide-react';
+
+const KEYBOARD_ROWS = [
+    ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
+    ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
+    ['z', 'x', 'c', 'v', 'b', 'n', 'm']
+];
+
+export default function Dashboard() {
+    const navigate = useNavigate();
+    const [stats, setStats] = useState({ maxWPM: 0, avgAccuracy: 0, totalTests: 0 });
+    const [performances, setPerformances] = useState({});
+    const [recentWPMs, setRecentWPMs] = useState([]);
+    const [recentHistory, setRecentHistory] = useState([]);
+    const [hoveredDataPoint, setHoveredDataPoint] = useState(null);
+
+    useEffect(() => {
+        // Load Race History
+        const history = JSON.parse(localStorage.getItem('raceHistory') || '[]');
+        const nonDrillHistory = history.filter((h) => !h.isDrill);
+
+        if (nonDrillHistory.length > 0) {
+            const maxWPM = Math.max(...nonDrillHistory.map(h => h.wpm));
+            const avgAcc = nonDrillHistory.reduce((acc, h) => acc + parseFloat(h.accuracy), 0) / nonDrillHistory.length;
+            setStats({
+                maxWPM,
+                avgAccuracy: avgAcc.toFixed(1),
+                totalTests: nonDrillHistory.length
+            });
+            const last10 = nonDrillHistory.slice(-10);
+            setRecentHistory(last10);
+            setRecentWPMs(last10.map(h => h.wpm));
+        }
+
+        // Load Key Performances
+        const perfs = JSON.parse(localStorage.getItem('keyPerformances') || '{}');
+        setPerformances(perfs);
     }, []);
 
-    const maxErrors = weakKeys[0]?.[1] || 1;
+    const getKeyColor = (latency) => {
+        if (!latency) return 'bg-slate-800/40 text-slate-600 border-slate-700/50';
+        if (latency < 200) return 'bg-primary/10 text-primary border-primary/40 shadow-[0_0_10px_rgba(0,245,212,0.1)]';
+        if (latency < 400) return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/40';
+        return 'bg-red-500/10 text-red-500 border-red-500/40 shadow-[0_0_10px_rgba(239,68,68,0.1)]';
+    };
+
+    const ADAPTIVE_DRILL_STORAGE_KEY = 'adaptiveDrill';
+    const COMMON_CODE_CHARS = new Set([
+        ...'abcdefghijklmnopqrstuvwxyz'.split(''),
+        ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
+        ...'0123456789'.split(''),
+        ' ', '\n', '\t',
+        '{', '}', '[', ']', '(', ')',
+        ';', ':', ',', '.', '=', '+', '-', '*', '/', '%',
+        '<', '>', '!', '?', '&', '|', '^', '~',
+        '"', "'", '`', '\\'
+    ]);
+
+    const safeParseJSON = (raw, fallback) => {
+        try {
+            return JSON.parse(raw);
+        } catch {
+            return fallback;
+        }
+    };
+
+    const getWorstKeys = (perfs, weakKeys) => {
+        const keys = Array.from(new Set([
+            ...Object.keys(perfs || {}),
+            ...Object.keys(weakKeys || {})
+        ])).filter(k => typeof k === 'string' && k.length === 1);
+
+        if (keys.length === 0) return ['{', '}', ';'];
+
+        const scored = keys.map((k) => {
+            const perf = perfs?.[k] || {};
+            const avg = Number(perf.avg) || 0;
+            const hits = Number(perf.count) || 0;
+            const errors = Number(perf.errors ?? weakKeys?.[k] ?? 0) || 0;
+            const attempts = hits + errors;
+            const errorRate = attempts > 0 ? errors / attempts : 0;
+
+            // Higher score => worse key (slower + higher mistakes).
+            const score = errors > 0 ? avg * errorRate : avg * 0.15;
+            return { k, avg, hits, errors, errorRate, score };
+        });
+
+        scored.sort((a, b) => b.score - a.score);
+        const top = scored.slice(0, 3).map(s => s.k);
+
+        // Ensure we always have 3 keys to build a stable drill template.
+        while (top.length < 3) top.push(['{', '}', ';'][top.length]);
+        return top.slice(0, 3);
+    };
+
+    const generateDailyDrillText = (weakKeys) => {
+        const normalized = (weakKeys || [])
+            .filter(k => typeof k === 'string' && k.length >= 1)
+            .map(k => k[0]);
+
+        const alphaWeak = normalized.filter(k => /^[a-z0-9]$/i.test(k));
+        const punctWeak = normalized.filter(k => !/^[a-z0-9]$/i.test(k));
+
+        const quoteChar = punctWeak.find(k => k === "'" || k === '"' || k === '`') || "'";
+        const idMainChar = alphaWeak[0] || 'e';
+        const idMain = `hello${idMainChar}`;
+        const msg = `hi${alphaWeak[1] ? alphaWeak[1] : ''}`;
+        const semi = punctWeak.includes(';') ? ';' : ';';
+        const braceOpen = punctWeak.includes('{') ? '{' : '{';
+        const braceClose = punctWeak.includes('}') ? '}' : '}';
+
+        const tokens = [
+            'function', idMain, '(', ')', braceOpen,
+            'console', '.', 'log', '(', quoteChar, msg, quoteChar, ')', semi,
+            'return', idMain, semi,
+            braceClose,
+            'const', `x${alphaWeak[2] || '1'}`, '=', '(', '1', '+', '2', ')', semi,
+            'if', '(', idMain, '>', '0', ')', '{',
+            'console', '.', 'log', '(', quoteChar, msg, quoteChar, ')', semi,
+            '}'
+        ];
+
+        // Add a couple of extra appearances of other weak punctuation keys.
+        const specialPunct = punctWeak
+            .filter(k => !['{', '}', ';', '(', ')', "'", '"', '`'].includes(k))
+            .slice(0, 4);
+
+        for (const p of specialPunct) {
+            if (tokens.length + 3 > 60) break;
+            tokens.push('/*', p, '*/');
+        }
+
+        // Pad with more log calls to reach the minimum word count.
+        while (tokens.length < 30) {
+            if (tokens.length + 9 > 60) break;
+            tokens.push('console', '.', 'log', '(', quoteChar, msg, quoteChar, ')', semi);
+        }
+
+        // Enforce 30-60 word constraint.
+        const finalTokens = tokens.slice(0, 60);
+        const allowed = new Set(COMMON_CODE_CHARS);
+        for (const k of normalized) allowed.add(k);
+
+        const drillText = finalTokens.join(' ');
+        for (const ch of drillText) {
+            if (!allowed.has(ch)) {
+                // If we ever hit a rare unexpected character, replace it with a safe space.
+                // This keeps the drill within "weak keys + common code chars" scope.
+                return drillText.replaceAll(ch, ' ');
+            }
+        }
+
+        return drillText;
+    };
+
+    const handleStartDailyDrill = () => {
+        const perfs = safeParseJSON(localStorage.getItem('keyPerformances') || '{}', {});
+        const weakKeys = safeParseJSON(localStorage.getItem('weakKeys') || '{}', {});
+
+        const worstKeys = getWorstKeys(perfs, weakKeys);
+        const drillText = generateDailyDrillText(worstKeys);
+
+        const preKeyStats = {};
+        for (const k of worstKeys) {
+            const perf = perfs?.[k] || {};
+            const hits = Number(perf.count) || 0;
+            const errors = Number(perf.errors ?? weakKeys?.[k] ?? 0) || 0;
+            const avg = Number(perf.avg) || 0;
+            const attempts = hits + errors;
+            const errorRate = attempts > 0 ? errors / attempts : 0;
+            preKeyStats[k] = { avg, hits, errors, errorRate };
+        }
+
+        localStorage.setItem(
+            ADAPTIVE_DRILL_STORAGE_KEY,
+            JSON.stringify({
+                text: drillText,
+                duration: 60,
+                worstKeys,
+                preKeyStats,
+                category: 'code',
+                difficulty: 'medium',
+                mode: 'standard'
+            })
+        );
+
+        navigate('/solo');
+    };
+
+    // Graph Calculation
+    const maxRecentWPM = Math.max(...recentWPMs, 100);
+    const points = recentWPMs.map((wpm, i) => ({
+        x: recentWPMs.length > 1 ? (i / (recentWPMs.length - 1)) * 1000 : 500,
+        y: 250 - (wpm / maxRecentWPM) * 200 - 25,
+        wpm: wpm,
+        acc: recentHistory[i] ? parseFloat(recentHistory[i].accuracy).toFixed(1) : 0
+    }));
+
+    const pathD = points.length >= 2 
+        ? `M${points[0].x},${points[0].y} ${points.slice(1).map(p => `L${p.x},${p.y}`).join(' ')}`
+        : "";
+
+    const fillD = points.length >= 2
+        ? `${pathD} V250 H${points[0].x} Z`
+        : "";
     return (
         <div className="layout-container flex h-full grow flex-col">
             <Navbar />
@@ -835,33 +845,33 @@ export default function Dashboard() {
                     <StatCard
                         title="Highest WPM"
                         icon={<Gauge size={24} />}
-                        value="142"
+                        value={stats.maxWPM || "0"}
                         trend="+4.2%"
-                        subtitle="Personal record achieved 2 days ago"
+                        subtitle="Your all-time peak performance"
                     />
                     <StatCard
                         title="Avg Accuracy"
                         icon={<Target size={24} />}
-                        value="98.5"
+                        value={stats.avgAccuracy || "0"}
                         valueSuffix="%"
                         trend="+0.2%"
-                        subtitle="Based on your last 50 tests"
+                        subtitle={`Average over ${stats.totalTests} tests`}
                     />
                     <StatCard
-                        title="Total Wins"
+                        title="Total Sessions"
                         icon={<Trophy size={24} />}
-                        value="842"
-                        trendLabel="#12 Rank"
-                        subtitle="Top 5% of all active typists"
+                        value={stats.totalTests || "0"}
+                        trendLabel="Live"
+                        subtitle="Solo runs completed"
                     />
                 </div>
 
                 {/* Analytics & Charts */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-2 bg-white dark:bg-primary/5 p-8 rounded-xl border border-slate-200 dark:border-primary/10">
-                        <div className="flex items-center justify-between mb-8">
+                        <div className="flex items-center justify-between mb-8 pb-6 border-b border-slate-200 dark:border-primary/10">
                             <div>
-                                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Performance Trend</h2>
+                                <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Performance Trend</h3>
                                 <p className="text-sm text-slate-500">WPM over your last 10 practice tests</p>
                             </div>
                             <div className="flex gap-2">
@@ -870,85 +880,159 @@ export default function Dashboard() {
                                 </span>
                             </div>
                         </div>
-                        <div className="h-[250px] w-full relative">
-                            <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 1000 250">
-                                <defs>
-                                    <linearGradient id="glowGradient" x1="0" x2="0" y1="0" y2="1">
-                                        <stop offset="0%" stopColor="#00f5d4" stopOpacity="0.3"></stop>
-                                        <stop offset="100%" stopColor="#00f5d4" stopOpacity="0"></stop>
-                                    </linearGradient>
-                                </defs>
-                                <path d="M0,180 Q100,160 200,140 T400,120 T600,80 T800,60 T1000,40 V250 H0 Z" fill="url(#glowGradient)"></path>
-                                <path className="chart-glow" d="M0,180 Q100,160 200,140 T400,120 T600,80 T800,60 T1000,40" fill="none" stroke="#00f5d4" strokeLinecap="round" strokeWidth="4"></path>
-                                {/* Points */}
-                                <circle cx="0" cy="180" fill="#00f5d4" r="5"></circle>
-                                <circle cx="200" cy="140" fill="#00f5d4" r="5"></circle>
-                                <circle cx="400" cy="120" fill="#00f5d4" r="5"></circle>
-                                <circle cx="600" cy="80" fill="#00f5d4" r="5"></circle>
-                                <circle cx="800" cy="60" fill="#00f5d4" r="5"></circle>
-                                <circle cx="1000" cy="40" fill="#00f5d4" r="5"></circle>
-                            </svg>
-                            <div className="absolute bottom-0 left-0 w-full flex justify-between text-[10px] text-slate-500 mt-4 px-1">
-                                <span>Test 1</span>
-                                <span>Test 3</span>
-                                <span>Test 5</span>
-                                <span>Test 7</span>
-                                <span>Test 9</span>
-                                <span>Test 10</span>
+                        <div className="w-full pt-12 px-6 pb-6 overflow-visible">
+                            <div className="h-[250px] w-full relative overflow-visible">
+                                {recentWPMs.length < 2 ? (
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/40 rounded-xl border border-dashed border-white/10">
+                                        <Zap className="w-8 h-8 text-primary/40 mb-2 animate-pulse" />
+                                        <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Play more games to see your trend</p>
+                                    </div>
+                                ) : (
+                                    <>
+                                    <svg className="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 1000 250">
+                                        <defs>
+                                            <linearGradient id="glowGradient" x1="0" x2="0" y1="0" y2="1">
+                                                <stop offset="0%" stopColor="#00f5d4" stopOpacity="0.3"></stop>
+                                                <stop offset="100%" stopColor="#00f5d4" stopOpacity="0"></stop>
+                                            </linearGradient>
+                                        </defs>
+                                        <path d={fillD} fill="url(#glowGradient)"></path>
+                                        <path className="chart-glow" d={pathD} fill="none" stroke="#00f5d4" strokeLinecap="round" strokeWidth="4"></path>
+                                        {/* Points */}
+                                        {points.map((p, i) => (
+                                            <circle 
+                                                key={i} 
+                                                cx={p.x} 
+                                                cy={p.y} 
+                                                fill="#00f5d4" 
+                                                r="6" 
+                                                className="drop-shadow-[0_0_8px_rgba(0,245,212,0.8)] cursor-pointer transition-all duration-300 transform-gpu hover:scale-150 origin-center"
+                                                style={{ transformOrigin: `${p.x}px ${p.y}px` }}
+                                                onMouseEnter={() => setHoveredDataPoint({ ...p, index: i + 1 })}
+                                                onMouseLeave={() => setHoveredDataPoint(null)}
+                                            ></circle>
+                                        ))}
+
+                                        {/* Dynamic Tooltip */}
+                                    </svg>
+                                    {hoveredDataPoint && (
+                                        <div
+                                            className={`absolute z-100 pointer-events-none transition-all duration-300 
+                                                ${hoveredDataPoint.x > 700 ? '-translate-x-[110%]' : 'translate-x-[20%]'}
+                                                ${hoveredDataPoint.y < 50 ? 'translate-y-[20%]' : '-translate-y-[120%]'}
+                                            `}
+                                            style={{
+                                                left: `${(hoveredDataPoint.x / 1000) * 100}%`,
+                                                top: `${(hoveredDataPoint.y / 250) * 100}%`
+                                            }}
+                                        >
+                                            <div className="bg-slate-900 border border-primary text-white text-xs font-mono font-bold px-4 py-2 rounded-lg shadow-2xl whitespace-nowrap">
+                                                Run {hoveredDataPoint.index} | WPM: {hoveredDataPoint.wpm} | Acc: {hoveredDataPoint.acc}%
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="absolute -bottom-6 left-0 w-full flex justify-between text-[10px] text-slate-500 px-1 font-mono">
+                                        {points.map((_, i) => (
+                                            <span key={i}>Run {i + 1}</span>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
                             </div>
                         </div>
                     </div>
 
                     {/* Weakest Keys Analytics */}
-                    <div className="bg-white dark:bg-primary/5 p-6 rounded-xl border border-slate-200 dark:border-primary/10">
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
-                                <AlertTriangle className="w-4 h-4 text-red-500" />
+                    {/* Keyboard Heatmap Analytics */}
+                    <div className="lg:col-span-3 bg-white dark:bg-primary/5 p-8 rounded-xl border border-slate-200 dark:border-primary/10">
+                        <div className="flex items-center justify-between mb-10">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                                    <Keyboard className="w-6 h-6 text-primary" />
+                                </div>
+                                <div>
+                                    <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Neural Heatmap</h2>
+                                    <p className="text-sm text-slate-500">Visualizing character latency & motor response</p>
+                                </div>
                             </div>
-                            <div>
-                                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Weakest Keys</h2>
-                                <p className="text-xs text-slate-500">Letters you mistype the most</p>
+                            <button
+                                onClick={handleStartDailyDrill}
+                                className="px-6 py-3 rounded-xl bg-primary/15 border border-primary/30 hover:bg-primary/25 hover:border-primary/50 shadow-[0_0_25px_rgba(0,245,212,0.18)] transition-all active:scale-95"
+                            >
+                                <span className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary">
+                                    <Zap className="w-4 h-4" />
+                                    Daily Drill
+                                </span>
+                            </button>
+                            
+                            <div className="flex gap-4 items-center bg-black/20 p-3 rounded-xl border border-white/5">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-primary/40"></div>
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">&lt;200ms</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-yellow-500/40"></div>
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">200-400ms</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-red-500/40"></div>
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">&gt;400ms</span>
+                                </div>
                             </div>
                         </div>
 
-                        {weakKeys.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-8 text-center gap-3">
-                                <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800/50 flex items-center justify-center">
-                                    <Zap className="w-6 h-6 text-slate-400" />
-                                </div>
-                                <p className="text-sm text-slate-500 font-medium">No data yet</p>
-                                <p className="text-xs text-slate-400 max-w-[180px]">Play a Solo match to generate your weakness analysis.</p>
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                {weakKeys.map(([letter, count]) => (
-                                    <div key={letter} className="group">
-                                        <div className="flex items-center justify-between mb-1.5">
-                                            <div className="flex items-center gap-2">
-                                                <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-500/20 text-red-400 font-black text-lg font-mono uppercase">
-                                                    {letter}
-                                                </span>
-                                                <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">{count} misses</span>
+                        <div className="flex flex-col gap-3 items-center pt-20 pb-10 overflow-visible">
+                            {KEYBOARD_ROWS.map((row, rowIndex) => (
+                                <div 
+                                    key={rowIndex} 
+                                    className={`flex gap-3 ${rowIndex === 1 ? 'ml-12' : rowIndex === 2 ? 'ml-24' : ''}`}
+                                >
+                                    {row.map(key => {
+                                        const data = performances[key];
+                                        return (
+                                            <div 
+                                                key={key}
+                                                className={`group relative w-16 h-16 rounded-xl border-2 flex flex-col items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 cursor-help ${getKeyColor(data?.avg)} font-mono`}
+                                            >
+                                                <span className="text-xl font-black uppercase">{key}</span>
+                                                {data && (
+                                                    <span className="text-[8px] font-bold opacity-60">{Math.round(data.avg)}ms</span>
+                                                )}
+                                                
+                                                {/* Tooltip */}
+                                                <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 w-32 bg-slate-900 text-white p-3 rounded-xl border border-white/10 opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-50 shadow-2xl scale-75 group-hover:scale-100 origin-bottom">
+                                                    <div className="text-[10px] font-black text-primary uppercase mb-1 border-b border-primary/20 pb-1">Key Profile: {key}</div>
+                                                    <div className="space-y-1">
+                                                        <div className="flex justify-between text-[10px]">
+                                                            <span className="text-slate-400">Avg Latency</span>
+                                                            <span className="font-bold">{data ? Math.round(data.avg) : '--'}ms</span>
+                                                        </div>
+                                                        <div className="flex justify-between text-[10px]">
+                                                            <span className="text-slate-400">Hits</span>
+                                                            <span className="font-bold">{data ? data.count : '0'}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-slate-900"></div>
+                                                </div>
                                             </div>
-                                            <span className="text-xs font-bold text-red-400">{Math.round((count / maxErrors) * 100)}%</span>
-                                        </div>
-                                        <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                                            <div
-                                                className="h-full bg-gradient-to-r from-red-500 to-red-400 rounded-full transition-all duration-500"
-                                                style={{ width: `${Math.round((count / maxErrors) * 100)}%` }}
-                                            />
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                                        );
+                                    })}
+                                </div>
+                            ))}
+                        </div>
 
-                        <button
-                            onClick={() => { localStorage.removeItem('weakKeys'); setWeakKeys([]); }}
-                            className="w-full mt-6 py-2 text-xs font-bold text-slate-500 border border-slate-200 dark:border-slate-700/50 rounded-lg hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30 transition-all"
-                        >
-                            Reset Analytics
-                        </button>
+                        <div className="mt-10 flex justify-between items-center border-t border-white/5 pt-6">
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest italic">
+                                * Neural response data is calculated based on characters typed in prose and code streams.
+                            </p>
+                            <button
+                                onClick={() => { localStorage.removeItem('keyPerformances'); setPerformances({}); }}
+                                className="px-6 py-2 text-[10px] font-black uppercase tracking-widest text-red-500/60 border border-red-500/20 rounded-lg hover:bg-red-500 hover:text-white transition-all"
+                            >
+                                Reset Neural Profile
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -956,7 +1040,7 @@ export default function Dashboard() {
                 <div className="bg-white dark:bg-primary/5 rounded-xl border border-slate-200 dark:border-primary/10 overflow-hidden">
                     <div className="p-6 border-b border-slate-200 dark:border-primary/10 flex justify-between items-center">
                         <div>
-                            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Global Leaderboard</h2>
+                            <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Season 1: Neon Genesis</h2>
                             <p className="text-sm text-slate-500">Top 10 typists this season</p>
                         </div>
                         <div className="flex bg-slate-100 dark:bg-primary/10 p-1 rounded-lg">
@@ -976,54 +1060,34 @@ export default function Dashboard() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-primary/5">
-                                <tr className="hover:bg-slate-50/50 dark:hover:bg-primary/5 transition-colors">
-                                    <td className="px-6 py-4 font-bold text-primary">01</td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <img className="h-8 w-8 rounded-full border border-primary/20" alt="Avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAn2MgrVu9d4njiPpNorFRqt6VcbIYXaN4wzSY0Z4_pi6TDHgAZdJDzkEhs1n9G2JUgIdPs33hM4DxLqsFNJfSP2ytbq03w5igkj08KuIW8_flONw6zOvuYMoJN_F-JmFvb1HhcvlLDElll67sQPkapGJDB9l0qRgzXu1lZL1e9RTvWPKCyk-25T8w22rY_YZl5_2ligeis4LCBFFAygjbsqIwz-ViTHYDGm8REs3rF4RtX45Ltt1FTeOzKwUBapOFu_qMRvlIAOIM" />
-                                            <span className="font-semibold text-slate-900 dark:text-slate-100">SpeedDemon_99</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 font-mono font-bold text-slate-900 dark:text-white">186</td>
-                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400">99.2%</td>
-                                    <td className="px-6 py-4"><span className="h-2 w-2 rounded-full bg-primary inline-block mr-2 animate-pulse"></span><span className="text-xs text-primary">Live</span></td>
-                                </tr>
-                                <tr className="hover:bg-slate-50/50 dark:hover:bg-primary/5 transition-colors">
-                                    <td className="px-6 py-4 font-bold text-slate-400">02</td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <img className="h-8 w-8 rounded-full border border-primary/20" alt="Avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmCZcbkv5AQCX_8lL4lKJ66OxAjOzxDhRkhA2QQmJ-KEDfl5C9D1LwsSDZxOnMMazJoHnUai9w8A2MxSjyRR4cYztYa8yzdqUcKZOEgs4bqXJjrMJE_4YoNP76e5e2n8keKYisD6lWppt0OU4tYT42AULkd-zTj5ePLoBC60QeDcrhDoIDa8gCXEy8TMS-TTn8_IMnadfoz5UI0-gHHt4MQHzFxFV3_Hg53nRcrcvvvzbiQgUcI_2K8_JNVww6yDfANYKUUemDSqw" />
-                                            <span className="font-semibold text-slate-900 dark:text-slate-100">LunarTypist</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 font-mono font-bold text-slate-900 dark:text-white">179</td>
-                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400">98.8%</td>
-                                    <td className="px-6 py-4 text-slate-400 text-xs">Offline</td>
-                                </tr>
-                                <tr className="hover:bg-slate-50/50 dark:hover:bg-primary/5 transition-colors">
-                                    <td className="px-6 py-4 font-bold text-slate-400">03</td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <img className="h-8 w-8 rounded-full border border-primary/20" alt="Avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAKm57FvjnxGUUBlXlo5d2F-Nc5S6qw-11MjNPoeEu1iztrnNR7WPbM0HzQKk3omQ7NwHpjmxS5Nf1Z_o309gJGsLBwt9Dd3aBBDK2P9Qi7UuYR8WNhlUrsiO52AzfGZJTEMs5ocPTqdVQ5c2HtZ7oQxiRcv_h1OEyKs4CPM60NCg-CeH7b_7R5BF9lva9OH-4pax1NpBtrKM_lVB5cd8fq63jhSABWTcPsC4v4Nu2wZeKTp72wCKAP4j3mEB3btnOYFoBCvvNiErI" />
-                                            <span className="font-semibold text-slate-900 dark:text-slate-100">JazzKeyz</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 font-mono font-bold text-slate-900 dark:text-white">175</td>
-                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400">99.5%</td>
-                                    <td className="px-6 py-4"><span className="h-2 w-2 rounded-full bg-primary inline-block mr-2 animate-pulse"></span><span className="text-xs text-primary">Live</span></td>
-                                </tr>
-                                <tr className="hover:bg-slate-50/50 dark:hover:bg-primary/5 transition-colors bg-primary/5 border-l-2 border-primary">
-                                    <td className="px-6 py-4 font-bold text-primary">12</td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <img className="h-8 w-8 rounded-full border border-primary/20" alt="Avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCIxYuqaYQ076-VKGL3G2WkrOLH14fN1qhOPGOJalA8Dl-TjBhAEdNwuJ46rLRPGLZIQYdQ_1ThQPW6E268gaJI9cuM8UjnSnug-YoHfQTlmPGPzbR-Dh-0cPZWRXN79DrMWpeEbNOjuXbjV7wVN2Sw4A2LT_93jJaSRMLhpEpy9obfv4Pc617bgQGiucpF6at3RYopOagk4Wz42cDu7mMipxdx1pnJn0lU3zo7gkvt21RZouBDkBlnnXBhGo2LwfQGEA_T1oTGoec" />
-                                            <span className="font-bold text-primary">Alex_Type (You)</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 font-mono font-bold text-slate-900 dark:text-white">142</td>
-                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400">98.5%</td>
-                                    <td className="px-6 py-4"><span className="h-2 w-2 rounded-full bg-primary inline-block mr-2 animate-pulse"></span><span className="text-xs text-primary">Live</span></td>
-                                </tr>
+                                {[
+                                    { rank: '01', name: 'SpeedDemon_99', wpm: 186, accuracy: '99.2%', status: 'Live', isUser: false, avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAn2MgrVu9d4njiPpNorFRqt6VcbIYXaN4wzSY0Z4_pi6TDHgAZdJDzkEhs1n9G2JUgIdPs33hM4DxLqsFNJfSP2ytbq03w5igkj08KuIW8_flONw6zOvuYMoJN_F-JmFvb1HhcvlLDElll67sQPkapGJDB9l0qRgzXu1lZL1e9RTvWPKCyk-25T8w22rY_YZl5_2ligeis4LCBFFAygjbsqIwz-ViTHYDGm8REs3rF4RtX45Ltt1FTeOzKwUBapOFu_qMRvlIAOIM' },
+                                    { rank: '02', name: 'LunarTypist', wpm: 179, accuracy: '98.8%', status: 'Offline', isUser: false, avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDmCZcbkv5AQCX_8lL4lKJ66OxAjOzxDhRkhA2QQmJ-KEDfl5C9D1LwsSDZxOnMMazJoHnUai9w8A2MxSjyRR4cYztYa8yzdqUcKZOEgs4bqXJjrMJE_4YoNP76e5e2n8keKYisD6lWppt0OU4tYT42AULkd-zTj5ePLoBC60QeDcrhDoIDa8gCXEy8TMS-TTn8_IMnadfoz5UI0-gHHt4MQHzFxFV3_Hg53nRcrcvvvzbiQgUcI_2K8_JNVww6yDfANYKUUemDSqw' },
+                                    { rank: '03', name: 'JazzKeyz', wpm: 175, accuracy: '99.5%', status: 'Live', isUser: false, avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAKm57FvjnxGUUBlXlo5d2F-Nc5S6qw-11MjNPoeEu1iztrnNR7WPbM0HzQKk3omQ7NwHpjmxS5Nf1Z_o309gJGsLBwt9Dd3aBBDK2P9Qi7UuYR8WNhlUrsiO52AzfGZJTEMs5ocPTqdVQ5c2HtZ7oQxiRcv_h1OEyKs4CPM60NCg-CeH7b_7R5BF9lva9OH-4pax1NpBtrKM_lVB5cd8fq63jhSABWTcPsC4v4Nu2wZeKTp72wCKAP4j3mEB3btnOYFoBCvvNiErI' },
+                                    { rank: '12', name: `${localStorage.getItem('playerName') || 'Guest'} (You)`, wpm: stats.maxWPM || 0, accuracy: `${stats.avgAccuracy || 0}%`, status: 'Live', isUser: true, avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCIxYuqaYQ076-VKGL3G2WkrOLH14fN1qhOPGOJalA8Dl-TjBhAEdNwuJ46rLRPGLZIQYdQ_1ThQPW6E268gaJI9cuM8UjnSnug-YoHfQTlmPGPzbR-Dh-0cPZWRXN79DrMWpeEbNOjuXbjV7wVN2Sw4A2LT_93jJaSRMLhpEpy9obfv4Pc617bgQGiucpF6at3RYopOagk4Wz42cDu7mMipxdx1pnJn0lU3zo7gkvt21RZouBDkBlnnXBhGo2LwfQGEA_T1oTGoec' },
+                                ].map((item, index) => (
+                                    <tr key={index} className={`hover:bg-slate-50/50 dark:hover:bg-primary/5 transition-colors ${item.isUser ? 'bg-primary/10 border-l-4 border-primary shadow-[inset_0_0_20px_rgba(0,245,212,0.05)]' : ''}`}>
+                                        <td className={`px-6 py-4 font-bold ${item.rank === '01' || item.isUser ? 'text-primary' : 'text-slate-400'}`}>{item.rank}</td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <img className="h-8 w-8 rounded-full border border-primary/20" alt="Avatar" src={item.avatar} />
+                                                <span className={`font-semibold ${item.isUser ? 'text-primary' : 'text-slate-900 dark:text-slate-100'}`}>{item.name}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 font-mono font-bold text-slate-900 dark:text-white">{item.wpm}</td>
+                                        <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{item.accuracy}</td>
+                                        <td className="px-6 py-4">
+                                            {item.status === 'Live' ? (
+                                                <>
+                                                    <span className="h-2 w-2 rounded-full bg-primary inline-block mr-2 animate-pulse"></span>
+                                                    <span className="text-xs text-primary">Live</span>
+                                                </>
+                                            ) : (
+                                                <span className="text-400 text-xs">Offline</span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
                             </tbody>
                         </table>
                     </div>
@@ -1051,8 +1115,9 @@ export default function Dashboard() {
 <file path="react-app/src/pages/Multiplayer.jsx">
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
+import { Link } from 'react-router-dom';
 import PlayerProgressBar from '../components/PlayerProgressBar';
-import { Network, Copy, Play, ArrowRight, UserPlus, Trophy, RotateCcw } from 'lucide-react';
+import { Network, Copy, Play, ArrowRight, UserPlus, Trophy, RotateCcw, Ghost, Code, FileText } from 'lucide-react';
 
 const SOCKET_SERVER = 'http://localhost:3001';
 
@@ -1074,17 +1139,38 @@ export default function Multiplayer() {
     const [userInput, setUserInput] = useState('');
     const [timeLeft, setTimeLeft] = useState(30);
     const [difficulty, setDifficulty] = useState('medium');
+    const [category, setCategory] = useState('prose');
     const [countdown, setCountdown] = useState(3);
+    const [progress, setProgress] = useState(0);
+    const [currentWpm, setCurrentWpm] = useState(0);
+    const [championGhost, setChampionGhost] = useState(null);
+    const [ghostIndex, setGhostIndex] = useState(0);
+
     const inputRef = useRef(null);
     const timerRef = useRef(null);
+    const keystrokesRef = useRef([]);
+
+    // Check localStorage for player name on mount
+    useEffect(() => {
+        const storedName = localStorage.getItem('playerName');
+        if (storedName) {
+            setPlayerName(storedName);
+        }
+    }, []);
+
     // Server-authoritative race start time — used for WPM and timer sync
     const startTimeRef = useRef(null);
     // Ref so socket listeners always get the latest playerName without stale closure
     const playerNameRef = useRef('');
     const userInputRef = useRef('');
+    const roomIdRef = useRef('');
+    const playersRef = useRef([]);
 
     // Keep playerNameRef in sync with state
     useEffect(() => { playerNameRef.current = playerName; }, [playerName]);
+    useEffect(() => { userInputRef.current = userInput; }, [userInput]);
+    useEffect(() => { roomIdRef.current = roomId; }, [roomId]);
+    useEffect(() => { playersRef.current = players; }, [players]);
 
     // 1. Initialize Socket
     useEffect(() => {
@@ -1109,12 +1195,27 @@ export default function Multiplayer() {
             if (socket.id === newHost) setIsHost(true);
         });
 
+        // progressUpdated
+        socket.on('progressUpdated', ({ playerId, progressPercentage, wpm }) => {
+            setPlayers(prev => prev.map(p => {
+                if (p.id === playerId) {
+                    return { ...p, progress: progressPercentage, wpm };
+                }
+                return p;
+            }));
+        });
+
         // raceStarted
-        socket.on('raceStarted', ({ text, startTime }) => {
+        socket.on('raceStarted', ({ text, startTime, championGhost }) => {
             setText(text);
+            setChampionGhost(championGhost || null);
             setGameState('countdown');
             setUserInput('');
             setTimeLeft(30);
+            setProgress(0);
+            setCurrentWpm(0);
+            setGhostIndex(0);
+            keystrokesRef.current = [];
             startTimeRef.current = startTime;
 
             const timeUntilStart = startTime - Date.now();
@@ -1122,20 +1223,21 @@ export default function Multiplayer() {
             setCountdown(count);
 
             const countInterval = setInterval(() => {
-                count--;
-                if (count > 0) {
-                    setCountdown(count);
+                const now = Date.now();
+                const remaining = Math.ceil((startTimeRef.current - now) / 1000);
+                
+                if (remaining > 0) {
+                    setCountdown(remaining);
                 } else {
                     clearInterval(countInterval);
                     setGameState('racing');
                 }
-            }, 1000);
+            }, 100);
         });
 
         // raceOver
         socket.on('raceOver', (data) => {
             console.log('--- FRONTEND RECEIVED RACE OVER ---');
-            console.log('Winner Data from server:', data);
             if (timerRef.current) clearInterval(timerRef.current);
             setTimeLeft(0);
             setGameState('finished');
@@ -1149,17 +1251,62 @@ export default function Multiplayer() {
             setWinnerData(null);
             setUserInput('');
             setTimeLeft(30);
+            setProgress(0);
+            setCurrentWpm(0);
         });
 
         return () => {
             socket.off('playerJoined');
             socket.off('playerLeft');
-            socket.off('raceStarted');
             socket.off('progressUpdated');
+            socket.off('raceStarted');
             socket.off('raceOver');
             socket.off('roomReset');
         };
     }, [socket]);
+
+    // Throttled Progress Update
+    useEffect(() => {
+        if (gameState !== 'racing' || !socket || !roomIdRef.current) return;
+
+        const emitProgress = () => {
+            socket.emit('updateProgress', {
+                roomId: roomIdRef.current,
+                playerId: socket.id,
+                progressPercentage: progress,
+                wpm: currentWpm
+            });
+        };
+
+        const timeout = setTimeout(emitProgress, 500); // 500ms throttle
+        return () => clearTimeout(timeout);
+    }, [progress, currentWpm, socket, gameState]);
+
+    // Ghost Cursor Animation Loop
+    useEffect(() => {
+        let animationFrame;
+        if (gameState === 'racing' && championGhost?.keystrokes?.length > 0) {
+            const start = startTimeRef.current;
+            const animate = () => {
+                const elapsed = Date.now() - start;
+                let index = 0;
+                const strokes = championGhost.keystrokes;
+                for (let i = 0; i < strokes.length; i++) {
+                    if (strokes[i].time <= elapsed) {
+                        index = i + 1;
+                    } else {
+                        break;
+                    }
+                }
+                setGhostIndex(index);
+                animationFrame = requestAnimationFrame(animate);
+            };
+            animationFrame = requestAnimationFrame(animate);
+        } else {
+            setGhostIndex(0);
+        }
+        return () => cancelAnimationFrame(animationFrame);
+    }, [gameState, championGhost]);
 
     // Handle Race Timer — synced to server startTime so all clients tick identically
     useEffect(() => {
@@ -1167,28 +1314,46 @@ export default function Multiplayer() {
 
         timerRef.current = setInterval(() => {
             if (!startTimeRef.current) return;
-            const elapsed = (Date.now() - startTimeRef.current) / 1000;
+            const now = Date.now();
+            const elapsed = (now - startTimeRef.current) / 1000;
             const remaining = Math.max(0, Math.round(30 - elapsed));
             setTimeLeft(remaining);
+
             if (remaining <= 0) {
                 clearInterval(timerRef.current);
 
-                const currentInput = userInputRef.current; // Get the latest typed text!
-                const elapsedMins = 30 / 60; // 0.5 minutes
-                const correct = currentInput.split('').filter((char, i) => char === text[i]).length;
+                const currentVal = userInputRef.current;
+                const correct = currentVal.split('').filter((char, i) => char === text[i]).length;
+                const elapsedMins = 0.5; // 30 seconds
                 const finalWpm = Math.round((correct / 5) / elapsedMins) || 0;
-                const finalAcc = currentInput.length > 0 ? Math.round((correct / currentInput.length) * 100) : 0;
+                const finalAcc = currentVal.length > 0 ? Math.round((correct / currentVal.length) * 100) : 0;
 
-                setWinnerData(prev => prev || {
-                    winnerName: 'Time limit reached!',
-                    wpm: finalWpm,
-                    accuracy: finalAcc,
-                    winnerId: null
-                });
+                const currentPlayers = playersRef.current;
+                if (currentPlayers.length > 0) {
+                    const sorted = [...currentPlayers].sort((a, b) => {
+                        if (b.progress !== a.progress) return b.progress - a.progress;
+                        return b.wpm - a.wpm;
+                    });
+                    const topPlayer = sorted[0];
+
+                    setWinnerData(prev => prev || {
+                        winnerName: topPlayer.name,
+                        wpm: topPlayer.wpm,
+                        accuracy: topPlayer.id === socket?.id ? finalAcc : 100, // Approximate accuracy if not us
+                        winnerId: topPlayer.id
+                    });
+                } else {
+                    setWinnerData(prev => prev || {
+                        winnerName: 'Time limit reached!',
+                        wpm: finalWpm,
+                        accuracy: finalAcc,
+                        winnerId: null
+                    });
+                }
 
                 setGameState('finished');
             }
-        }, 500); // poll every 500ms for accurate display
+        }, 100);
 
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
@@ -1232,8 +1397,8 @@ export default function Multiplayer() {
     };
 
     const handleStartRace = () => {
-        if (isHost && roomId) {
-            socket.emit('startRace', { roomId, difficulty });
+        if (isHost && roomIdRef.current) {
+            socket.emit('startRace', { roomId: roomIdRef.current, difficulty, category });
         }
     };
 
@@ -1242,69 +1407,96 @@ export default function Multiplayer() {
     };
 
     const handlePlayAgain = () => {
-        if (isHost && roomId) {
-            socket.emit('resetRoom', { roomId });
+        if (isHost && roomIdRef.current) {
+            socket.emit('resetRoom', { roomId: roomIdRef.current });
         }
     };
 
     // 4. Typing Mechanics
-    const handleInputChange = (e) => {
+    // Keep track of errors for weakKeys
+    const [errorMap, setErrorMap] = useState({});
+
+    const processKeystroke = (val) => {
         if (gameState !== 'racing') return;
 
-        const val = e.target.value;
         if (val.length <= text.length) {
+            if (val.length > userInput.length) {
+                const typedChar = val[val.length - 1];
+                const expectedChar = text[val.length - 1];
+                if (typedChar !== expectedChar && expectedChar !== ' ') {
+                    const missedChar = expectedChar.toLowerCase();
+                    setErrorMap(prev => ({ ...prev, [missedChar]: (prev[missedChar] || 0) + 1 }));
+                }
+
+                if (startTimeRef.current) {
+                    const timeOffset = Date.now() - startTimeRef.current;
+                    keystrokesRef.current.push({ char: typedChar, time: timeOffset });
+                }
+            }
+
             setUserInput(val);
-            userInputRef.current = val;
 
-            // Use server start time for accurate, drift-free elapsed calculation
-            const elapsedSec = startTimeRef.current
-                ? (Date.now() - startTimeRef.current) / 1000
-                : 0;
+            const now = Date.now();
+            const elapsedMs = Math.max(1, now - startTimeRef.current);
+            const elapsedMins = elapsedMs / 60000;
 
-            // Calculate progress and real-time WPM
-            const progressPercentage = (val.length / text.length) * 100;
+            const progressPercentage = Math.round((val.length / text.length) * 100);
             const correctChars = val.split('').filter((char, i) => char === text[i]).length;
-            const currentWpm = elapsedSec > 0 ? Math.round((correctChars / 5) / (elapsedSec / 60)) : 0;
+            const calculatedWpm = Math.max(0, Math.round((correctChars / 5) / elapsedMins));
 
-            // Update local player state
+            setProgress(progressPercentage);
+            setCurrentWpm(calculatedWpm);
+
             setPlayers(prev => prev.map(p => {
                 if (p.id === socket?.id) {
-                    return { ...p, progress: progressPercentage, wpm: currentWpm };
+                    return { ...p, progress: progressPercentage, wpm: calculatedWpm };
                 }
                 return p;
             }));
 
-            socket.emit('updateProgress', {
-                roomId,
-                playerId: socket?.id,
-                progressPercentage,
-                wpm: currentWpm
-            });
-
-            if (val.length === text.length) {
-                // Ensure at least 1 second elapsed to prevent Math/Infinity errors
-                const elapsedMs = Math.max(1000, Date.now() - startTimeRef.current);
-                const elapsedMins = elapsedMs / 60000;
-
-                const correctChars = val.split('').filter((char, i) => char === text[i]).length;
-                const finalWpm = Math.round((text.length / 5) / elapsedMins) || 0;
+            if (val.length === text.length && text.length > 0) {
                 const finalAccuracy = Math.round((correctChars / text.length) * 100) || 0;
-
-                console.log('--- FRONTEND EMITTING FINISH ---');
-                console.log('Room ID:', roomId);
-                console.log('startTimeRef.current:', startTimeRef.current);
-                console.log('Elapsed Ms:', elapsedMs);
-                console.log('WPM Calculated:', finalWpm);
-                console.log('Accuracy Calculated:', finalAccuracy);
-
                 socket.emit('playerFinished', {
-                    roomId,
-                    wpm: finalWpm,
-                    accuracy: finalAccuracy
+                    roomId: roomIdRef.current,
+                    wpm: calculatedWpm,
+                    accuracy: finalAccuracy,
+                    keystrokes: keystrokesRef.current
                 });
             }
         }
     };
+
+    const handleInputChange = (e) => processKeystroke(e.target.value);
+
+    const handleKeyDown = (e) => {
+        if (gameState === 'racing' && category === 'code') {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const nextChunk = text.slice(userInput.length);
+                const indentMatch = nextChunk.match(/^ +/);
+                const indent = indentMatch ? indentMatch[0] : "    ";
+                processKeystroke(userInput + indent);
+            } else if (e.key === 'Enter') {
+                const expectedChar = text[userInput.length];
+                if (expectedChar === '\n') {
+                    e.preventDefault();
+                    processKeystroke(userInput + '\n');
+                }
+            }
+        }
+    };
+
+    // Save weakKeys on finish
+    useEffect(() => {
+        if (gameState === 'finished' && Object.keys(errorMap).length > 0) {
+            const existing = JSON.parse(localStorage.getItem('weakKeys') || '{}');
+            const merged = { ...existing };
+            for (const [key, count] of Object.entries(errorMap)) {
+                merged[key] = (merged[key] || 0) + count;
+            }
+            localStorage.setItem('weakKeys', JSON.stringify(merged));
+        }
+    }, [gameState]);
 
     // UI Renderers
     const renderLobby = () => {
@@ -1387,14 +1579,14 @@ export default function Multiplayer() {
 
                 <div className="flex flex-col items-center gap-6 px-4">
                     {isHost && (
-                        <div className="flex flex-col items-center gap-3">
+                        <div className="flex flex-col items-center gap-3 w-full max-w-sm">
                             <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Select Difficulty</span>
-                            <div className="flex gap-1 bg-slate-800/30 p-1 rounded-xl border border-slate-700/30">
+                            <div className="flex gap-1 bg-slate-800/30 p-1 rounded-xl border border-slate-700/30 w-full">
                                 {['easy', 'medium', 'hard'].map((d) => (
                                     <button
                                         key={d}
                                         onClick={() => setDifficulty(d)}
-                                        className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
+                                        className={`flex-1 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
                                             difficulty === d 
                                             ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(0,245,212,0.1)]' 
                                             : 'text-slate-500 hover:text-slate-300'
@@ -1403,6 +1595,30 @@ export default function Multiplayer() {
                                         {d}
                                     </button>
                                 ))}
+                            </div>
+
+                            <span className="text-xs font-bold uppercase tracking-widest text-slate-500 mt-4">Data Stream</span>
+                            <div className="flex gap-1 bg-slate-800/30 p-1 rounded-xl border border-slate-700/30 w-full">
+                                <button
+                                    onClick={() => setCategory('prose')}
+                                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
+                                        category === 'prose' 
+                                        ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(0,245,212,0.1)]' 
+                                        : 'text-slate-500 hover:text-slate-300'
+                                    }`}
+                                >
+                                    <FileText className="w-3.5 h-3.5" /> Prose
+                                </button>
+                                <button
+                                    onClick={() => setCategory('code')}
+                                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
+                                        category === 'code' 
+                                        ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(0,245,212,0.1)]' 
+                                        : 'text-slate-500 hover:text-slate-300'
+                                    }`}
+                                >
+                                    <Code className="w-3.5 h-3.5" /> Code
+                                </button>
                             </div>
                         </div>
                     )}
@@ -1459,11 +1675,17 @@ export default function Multiplayer() {
                         className="w-full text-2xl lg:text-3xl leading-relaxed font-mono tracking-tight text-left relative cursor-text min-h-[300px]"
                         onClick={() => inputRef.current && inputRef.current.focus()}
                     >
+                        {championGhost && championGhost.wpm > 0 && (
+                            <div className="absolute -top-10 left-0 bg-yellow-400/10 border border-yellow-400/30 text-yellow-500 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-2 shadow-[0_0_10px_rgba(250,204,21,0.2)]">
+                                👑 Champion: {championGhost.name} ({championGhost.wpm} WPM)
+                            </div>
+                        )}
                         <input
                             ref={inputRef}
                             type="text"
                             value={userInput}
                             onChange={handleInputChange}
+                            onKeyDown={handleKeyDown}
                             className="absolute opacity-0 -z-10 focus:outline-none"
                             autoFocus
                             autoComplete="off"
@@ -1482,11 +1704,15 @@ export default function Multiplayer() {
                                 }
 
                                 const isCursor = index === userInput.length && gameState === 'racing';
+                                const isGhost = index === ghostIndex && gameState === 'racing' && championGhost;
 
                                 return (
                                     <span key={index} className="relative transition-colors duration-75">
                                         {isCursor && (
                                             <span className="absolute left-0 top-0 h-full w-[2px] bg-primary animate-pulse shadow-[0_0_8px_#00f5d4] z-10 -ml-1" />
+                                        )}
+                                        {isGhost && (
+                                            <span className="absolute left-0 top-0 h-full w-[2px] bg-yellow-400/50 shadow-[0_0_8px_rgba(250,204,21,0.5)] z-0 -ml-1 transition-all duration-300 ease-linear" />
                                         )}
                                         <span className={`${colorClass} ${char === ' ' && userInput[index] !== char && index < userInput.length ? 'px-1' : ''}`}>
                                             {char}
@@ -1578,6 +1804,7 @@ export default function Multiplayer() {
                         e.preventDefault();
                         if (tempName.trim()) {
                             const name = tempName.trim();
+                            localStorage.setItem('playerName', name);
                             playerNameRef.current = name; // update ref immediately, synchronously
                             setPlayerName(name);
                         }
@@ -1624,67 +1851,263 @@ export default function Multiplayer() {
 <file path="react-app/src/pages/SoloMode.jsx">
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Zap, BarChart2, Settings, UserCircle, RotateCcw } from 'lucide-react';
-import { getRandomQuote } from '../utils/quotes';
+import { Zap, BarChart2, Settings, UserCircle, RotateCcw, Code, FileText, Skull, Ghost, Share2, Check } from 'lucide-react';
+import { io } from 'socket.io-client';
 
+const SOCKET_SERVER = 'http://localhost:3001';
 const DEFAULT_TIME = 30;
+const ADAPTIVE_DRILL_STORAGE_KEY = 'adaptiveDrill';
 
 export default function SoloMode() {
-    const [text, setText] = useState(() => getRandomQuote('medium'));
+    const [adaptiveDrillConfig] = useState(() => {
+        try {
+            return JSON.parse(localStorage.getItem(ADAPTIVE_DRILL_STORAGE_KEY) || 'null');
+        } catch {
+            return null;
+        }
+    });
+    const isAdaptiveDrill = !!adaptiveDrillConfig;
+    const adaptiveDrillDuration = isAdaptiveDrill && Number.isFinite(adaptiveDrillConfig?.duration)
+        ? adaptiveDrillConfig.duration
+        : DEFAULT_TIME;
+    const adaptiveDrillText = isAdaptiveDrill && typeof adaptiveDrillConfig?.text === 'string'
+        ? adaptiveDrillConfig.text
+        : 'Loading quote...';
+    const adaptiveDrillDifficulty = isAdaptiveDrill && typeof adaptiveDrillConfig?.difficulty === 'string'
+        ? adaptiveDrillConfig.difficulty
+        : 'medium';
+    const adaptiveDrillCategory = isAdaptiveDrill && typeof adaptiveDrillConfig?.category === 'string'
+        ? adaptiveDrillConfig.category
+        : 'prose';
+    const adaptiveDrillMode = isAdaptiveDrill && typeof adaptiveDrillConfig?.mode === 'string'
+        ? adaptiveDrillConfig.mode
+        : 'standard';
+
+    const [socket, setSocket] = useState(null);
+    const [text, setText] = useState(() => adaptiveDrillText);
     const [userInput, setUserInput] = useState('');
-    const [status, setStatus] = useState('idle');
-    const [timeLeft, setTimeLeft] = useState(DEFAULT_TIME);
+    const [status, setStatus] = useState('idle'); // 'idle', 'typing', 'finished'
+    const [isFailed, setIsFailed] = useState(false);
+    const [timeLeft, setTimeLeft] = useState(() => adaptiveDrillDuration);
     const [errorMap, setErrorMap] = useState({});
-    const [difficulty, setDifficulty] = useState('medium');
+    const [difficulty, setDifficulty] = useState(() => adaptiveDrillDifficulty);
+    const [category, setCategory] = useState(() => adaptiveDrillCategory); // 'prose', 'code'
+    const [mode, setMode] = useState(() => adaptiveDrillMode); // 'standard', 'zen', 'sudden-death'
+    const [finalWPM, setFinalWPM] = useState(0);
+    const [keystrokes, setKeystrokes] = useState([]);
+    const [ghostData, setGhostData] = useState([]);
+    const [ghostIndex, setGhostIndex] = useState(0);
+    const [isCopied, setIsCopied] = useState(false);
+    const [progressToast, setProgressToast] = useState(null);
+    const [drillWorstKeys, setDrillWorstKeys] = useState(() => (adaptiveDrillConfig?.worstKeys || []).slice(0, 3));
+    const [drillPreKeyStats, setDrillPreKeyStats] = useState(() => adaptiveDrillConfig?.preKeyStats || {});
 
     const inputRef = useRef(null);
+    const startTimeRef = useRef(null);
+    const endTimeRef = useRef(null);
+    const lastKeystrokeTimestampRef = useRef(null);
+    const toastTimeoutRef = useRef(null);
+    const hasShownDrillStartToastRef = useRef(false);
+
+    // Initialize Socket
+    useEffect(() => {
+        const newSocket = io(SOCKET_SERVER);
+        setSocket(newSocket);
+        return () => newSocket.disconnect();
+    }, []);
+
+    // If we launched via adaptive drill, arm the run and avoid socket-based quote fetching.
+    useEffect(() => {
+        if (!isAdaptiveDrill || !adaptiveDrillConfig) return;
+
+        localStorage.removeItem(ADAPTIVE_DRILL_STORAGE_KEY);
+        setGhostData([]);
+        setGhostIndex(0);
+        setKeystrokes([]);
+        setErrorMap({});
+        setUserInput('');
+        setStatus('idle');
+        setIsFailed(false);
+
+        const keys = (adaptiveDrillConfig.worstKeys || []).slice(0, 3).join(' ');
+        setProgressToast({
+            title: 'Daily Drill Armed',
+            body: `Focus: ${keys || 'key'} • ${adaptiveDrillDuration}s • No ghosts`
+        });
+        hasShownDrillStartToastRef.current = true;
+
+        if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+        toastTimeoutRef.current = setTimeout(() => setProgressToast(null), 9000);
+    }, [isAdaptiveDrill, adaptiveDrillConfig, adaptiveDrillDuration]);
 
     // Focus input on mount and keep it focused
     useEffect(() => {
         if (inputRef.current) {
             inputRef.current.focus();
         }
-    }, []);
+    }, [status, mode]); // Re-focus on status or mode change
 
     // Timer logic
     useEffect(() => {
         let timer;
         if (status === 'typing' && timeLeft > 0) {
             timer = setInterval(() => {
-                setTimeLeft((prev) => prev - 1);
+                setTimeLeft((prev) => {
+                    if (prev <= 1) {
+                        setStatus('finished');
+                        endTimeRef.current = Date.now();
+                        return 0;
+                    }
+                    return prev - 1;
+                });
             }, 1000);
-        } else if (timeLeft === 0 && status === 'typing') {
-            setStatus('finished');
         }
         return () => clearInterval(timer);
     }, [status, timeLeft]);
+
+    // Ghost Cursor Logic
+    useEffect(() => {
+        let animationFrame;
+        if (status === 'typing' && ghostData.length > 0) {
+            const start = startTimeRef.current;
+            const animate = () => {
+                const elapsed = Date.now() - start;
+                let index = 0;
+                for (let i = 0; i < ghostData.length; i++) {
+                    if (ghostData[i].time <= elapsed) {
+                        index = i + 1;
+                    } else {
+                        break;
+                    }
+                }
+                setGhostIndex(index);
+                animationFrame = requestAnimationFrame(animate);
+            };
+            animationFrame = requestAnimationFrame(animate);
+        } else {
+            setGhostIndex(0);
+        }
+        return () => cancelAnimationFrame(animationFrame);
+    }, [status, ghostData]);
 
     const handleInputChange = (e) => {
         if (status === 'finished') return;
 
         const val = e.target.value;
+        const now = Date.now();
 
         if (status === 'idle' && val.length > 0) {
             setStatus('typing');
+            startTimeRef.current = now;
+            lastKeystrokeTimestampRef.current = now;
         }
 
         if (val.length <= text.length) {
+            const prevLength = userInput.length;
+            const nowTime = Date.now();
+            
+            // Track Keystrokes for Ghost Pacer
+            if (val.length > prevLength && startTimeRef.current) {
+                const char = val[val.length - 1];
+                const timeOffset = nowTime - startTimeRef.current;
+                setKeystrokes(prev => [...prev, { char, time: timeOffset }]);
+            }
+
+            // Track Latency (Legacy system)
+            if (val.length > prevLength && lastKeystrokeTimestampRef.current) {
+                const latency = now - lastKeystrokeTimestampRef.current;
+                const expectedChar = text[val.length - 1];
+                const key = expectedChar?.toLowerCase();
+
+                // Ignore whitespace-only keys in the latency profile.
+                if (key && expectedChar !== ' ' && expectedChar !== '\n' && expectedChar !== '\t') {
+                    const performances = JSON.parse(localStorage.getItem('keyPerformances') || '{}');
+                    const current = performances[key] || { avg: 0, count: 0, errors: 0 };
+                    const newCount = (Number(current.count) || 0) + 1;
+                    const currentAvg = Number(current.avg) || 0;
+                    const newAvg = Math.round(((currentAvg * (Number(current.count) || 0)) + latency) / newCount);
+
+                    performances[key] = {
+                        ...current,
+                        avg: newAvg,
+                        count: newCount
+                    };
+                    localStorage.setItem('keyPerformances', JSON.stringify(performances));
+                }
+                lastKeystrokeTimestampRef.current = now;
+            }
+
             setUserInput(val);
 
-            // Detect a new character typed that is wrong
-            if (val.length > userInput.length) {
+            // Detect Error / Sudden Death
+            if (val.length > prevLength) {
                 const typedChar = val[val.length - 1];
                 const expectedChar = text[val.length - 1];
-                if (typedChar !== expectedChar && expectedChar !== ' ') {
-                    const missedChar = expectedChar.toLowerCase();
-                    setErrorMap(prev => ({ ...prev, [missedChar]: (prev[missedChar] || 0) + 1 }));
+                
+                if (typedChar !== expectedChar) {
+                    if (mode === 'sudden-death') {
+                        setStatus('finished');
+                        setIsFailed(true);
+                        endTimeRef.current = now;
+                        return;
+                    }
+                    if (expectedChar !== ' ' && expectedChar !== '\n') {
+                        const missedChar = expectedChar.toLowerCase();
+                        setErrorMap(prev => ({ ...prev, [missedChar]: (prev[missedChar] || 0) + 1 }));
+                    }
                 }
             }
         }
 
         // Auto-finish if type all text
-        if (val.length === text.length) {
+        if (val.length === text.length && text.length > 0) {
             setStatus('finished');
+            endTimeRef.current = now;
+        }
+    };
+
+    const handleKeyDown = (e) => {
+        if (status === 'finished') {
+            if (e.key.toLowerCase() === 'r' || e.key === 'Tab') {
+                e.preventDefault();
+                resetTest();
+            }
+            return;
+        }
+
+        if (category === 'code') {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                // Find how many spaces/indentation are next in the text
+                const nextChunk = text.slice(userInput.length);
+                const indentMatch = nextChunk.match(/^ +/);
+                if (indentMatch) {
+                    setUserInput(prev => prev + indentMatch[0]);
+                } else {
+                    // Just add 4 spaces if no match but Tab was pressed (fallback)
+                    setUserInput(prev => prev + "    ");
+                }
+                if (status === 'idle') {
+                    setStatus('typing');
+                    startTimeRef.current = Date.now();
+                }
+            } else if (e.key === 'Enter') {
+                const expectedChar = text[userInput.length];
+                if (expectedChar === '\n') {
+                    e.preventDefault();
+                    setUserInput(prev => prev + '\n');
+                    if (status === 'idle') {
+                        setStatus('typing');
+                        startTimeRef.current = Date.now();
+                    }
+                }
+            }
+        }
+        
+        // General Restart shortcut during typing/idle
+        if ((e.key.toLowerCase() === 'r' && e.ctrlKey) || (e.key === 'Tab' && status === 'idle')) {
+            e.preventDefault();
+            resetTest();
         }
     };
 
@@ -1694,23 +2117,74 @@ export default function SoloMode() {
         return ((correctChars / userInput.length) * 100).toFixed(1);
     };
 
+    const handleShareScore = async () => {
+        const accuracy = calculateAccuracy();
+        const modeEmoji = mode === 'sudden-death' ? 'HELL ☠️' : mode === 'zen' ? 'ZEN 👻' : 'STANDARD ⚡';
+        const str = `TypeMaster ⚡ | WPM: ${finalWPM} | Acc: ${accuracy}% | Mode: ${modeEmoji} | ${category === 'code' ? 'Code-Sprint' : 'Prose'}`;
+        
+        try {
+            await navigator.clipboard.writeText(str);
+            setIsCopied(true);
+            setTimeout(() => setIsCopied(false), 2000);
+        } catch (err) {
+            console.error('Failed to copy text: ', err);
+            prompt('Clipboard access denied. Copy your score manually:', str);
+        }
+    };
+
     const calculateWPM = () => {
-        const timeElapsed = DEFAULT_TIME - timeLeft;
-        if (timeElapsed === 0) return 0;
+        if (!startTimeRef.current) return 0;
+        const end = endTimeRef.current || Date.now();
+        const elapsedSeconds = (end - startTimeRef.current) / 1000;
+        const elapsedMins = elapsedSeconds / 60;
+        
+        if (elapsedMins <= 0) return 0;
+        
         const correctChars = userInput.split('').filter((char, i) => char === text[i]).length;
-        const words = correctChars / 5;
-        const minutes = timeElapsed / 60;
-        return Math.round(words / minutes);
+        // WPM formula: (Characters / 5) / Minutes
+        return Math.round((correctChars / 5) / elapsedMins);
     };
 
     const resetTest = () => {
         setUserInput('');
         setStatus('idle');
-        setTimeLeft(DEFAULT_TIME);
+        setIsFailed(false);
+        setTimeLeft(isAdaptiveDrill ? adaptiveDrillDuration : DEFAULT_TIME);
         setErrorMap({});
+        startTimeRef.current = null;
+        endTimeRef.current = null;
+        lastKeystrokeTimestampRef.current = null;
+        setKeystrokes([]);
+        if (isAdaptiveDrill) {
+            setGhostData([]);
+            setGhostIndex(0);
+        }
+        if (!isAdaptiveDrill) {
+            fetchNewQuote();
+        }
         if (inputRef.current) {
             inputRef.current.focus();
         }
+    };
+
+    const fetchNewQuote = () => {
+        if (isAdaptiveDrill) return;
+        if (!socket) return;
+        socket.emit('getSoloQuote', { difficulty, category }, (res) => {
+            if (res.success) {
+                setText(res.text);
+                setUserInput('');
+                setStatus('idle');
+                setIsFailed(false);
+                setTimeLeft(DEFAULT_TIME);
+                setErrorMap({});
+                startTimeRef.current = null;
+                endTimeRef.current = null;
+                lastKeystrokeTimestampRef.current = null;
+                setKeystrokes([]);
+                if (inputRef.current) inputRef.current.focus();
+            }
+        });
     };
 
     // Save errorMap to localStorage when the test finishes
@@ -1722,37 +2196,171 @@ export default function SoloMode() {
                 merged[key] = (merged[key] || 0) + count;
             }
             localStorage.setItem('weakKeys', JSON.stringify(merged));
+
+            // Persist error counts into keyPerformances so we can rank by ms/error rate.
+            const perfExisting = JSON.parse(localStorage.getItem('keyPerformances') || '{}');
+            const perfMerged = { ...perfExisting };
+            for (const [key, count] of Object.entries(errorMap)) {
+                const current = perfMerged[key] || { avg: 0, count: 0, errors: 0 };
+                perfMerged[key] = {
+                    ...current,
+                    errors: (Number(current.errors) || 0) + count
+                };
+            }
+            localStorage.setItem('keyPerformances', JSON.stringify(perfMerged));
+        }
+        
+        if (status === 'finished') {
+            const currentWPM = calculateWPM();
+            setFinalWPM(currentWPM);
+
+            const currentAccuracyStr = calculateAccuracy();
+            const currentAccuracy = Number(currentAccuracyStr) || 0;
+
+            // PB Logic: Overwrite only if higher WPM (or first run). Skip during adaptive drill.
+            if (!isAdaptiveDrill) {
+                const savedGhost = localStorage.getItem('lastRunGhost');
+                let ghostWPM = 0;
+                if (savedGhost) {
+                    const parsed = JSON.parse(savedGhost);
+                    const lastTime = parsed[parsed.length - 1]?.time || 0;
+                    if (lastTime > 0) {
+                        ghostWPM = Math.round((parsed.length / 5) / (lastTime / 60000));
+                    }
+                }
+                
+                if (keystrokes.length > 0 && currentWPM > ghostWPM) {
+                    localStorage.setItem('lastRunGhost', JSON.stringify(keystrokes));
+                    setGhostData(keystrokes);
+                }
+            }
+
+            // RaceHistory is used by the main dashboard graph.
+            // Adaptive drills are flagged (`isDrill`) so the dashboard can filter them out.
+            const raceHistory = JSON.parse(localStorage.getItem('raceHistory') || '[]');
+            const drillHistory = isAdaptiveDrill
+                ? JSON.parse(localStorage.getItem('drillHistory') || '[]')
+                : [];
+
+            const prevAvgWPM = isAdaptiveDrill
+                ? (drillHistory.length > 0
+                    ? drillHistory.reduce((acc, h) => acc + Number(h.wpm || 0), 0) / drillHistory.length
+                    : currentWPM)
+                : (raceHistory.length > 0
+                    ? raceHistory.reduce((acc, h) => acc + Number(h.wpm || 0), 0) / raceHistory.length
+                    : currentWPM);
+
+            const prevAvgAcc = isAdaptiveDrill
+                ? (drillHistory.length > 0
+                    ? drillHistory.reduce((acc, h) => acc + Number(String(h.accuracy || '0').replace('%', '')), 0) / drillHistory.length
+                    : currentAccuracy)
+                : (raceHistory.length > 0
+                    ? raceHistory.reduce((acc, h) => acc + Number(String(h.accuracy || '0').replace('%', '')), 0) / raceHistory.length
+                    : currentAccuracy);
+
+            raceHistory.push({
+                wpm: currentWPM,
+                accuracy: currentAccuracyStr,
+                date: Date.now(),
+                mode,
+                category,
+                ...(isAdaptiveDrill ? { isDrill: true } : {})
+            });
+            localStorage.setItem('raceHistory', JSON.stringify(raceHistory.slice(-100))); // Keep last 100 runs
+
+            // Drill-only storage for toast baselines (kept isolated from the main dashboard graph).
+            if (isAdaptiveDrill) {
+                drillHistory.push({
+                    wpm: currentWPM,
+                    accuracy: currentAccuracyStr,
+                    date: Date.now(),
+                    worstKeys: drillWorstKeys
+                });
+                localStorage.setItem('drillHistory', JSON.stringify(drillHistory.slice(-100)));
+            }
+
+            // Completion toast for adaptive drills
+            if (isAdaptiveDrill) {
+                const keyPerformancesAfter = JSON.parse(localStorage.getItem('keyPerformances') || '{}');
+                const preKeys = drillWorstKeys || [];
+                const preStats = drillPreKeyStats || {};
+
+                const deltas = preKeys.map((k) => {
+                    const pre = preStats[k] || {};
+                    const postPerf = keyPerformancesAfter[k] || {};
+
+                    const preAvg = Number(pre.avg) || 0;
+                    const postAvg = Number(postPerf.avg) || 0;
+                    const preHits = Number(pre.hits) || 0;
+                    const preErrors = Number(pre.errors) || 0;
+                    const postHits = Number(postPerf.count) || 0;
+                    const postErrors = Number(postPerf.errors ?? 0) || 0;
+
+                    const preAttempts = preHits + preErrors;
+                    const postAttempts = postHits + postErrors;
+                    const preErrRate = preAttempts > 0 ? preErrors / preAttempts : 0;
+                    const postErrRate = postAttempts > 0 ? postErrors / postAttempts : 0;
+
+                    return {
+                        key: k,
+                        latencyDelta: postAvg - preAvg,
+                        errorRateDelta: postErrRate - preErrRate
+                    };
+                }).filter(Boolean);
+
+                const avgLatencyDelta = deltas.length > 0 ? Math.round(deltas.reduce((acc, d) => acc + d.latencyDelta, 0) / deltas.length) : 0;
+                const improvedLatencyCount = deltas.filter((d) => d.latencyDelta < 0).length;
+
+                const avgErrorRateDelta = deltas.length > 0 ? deltas.reduce((acc, d) => acc + d.errorRateDelta, 0) / deltas.length : 0;
+                const improvedErrorCount = deltas.filter((d) => d.errorRateDelta < 0).length;
+
+                const wpmDelta = Math.round(currentWPM - prevAvgWPM);
+                const accDelta = Number((currentAccuracy - prevAvgAcc).toFixed(1));
+
+                setProgressToast({
+                    title: 'Neon Neural Gain',
+                    body:
+                        `WPM ${wpmDelta >= 0 ? '+' : ''}${wpmDelta} vs avg ${Math.round(prevAvgWPM)} • ` +
+                        `Acc ${accDelta >= 0 ? '+' : ''}${accDelta.toFixed(1)}% • ` +
+                        `Latency ${avgLatencyDelta >= 0 ? '+' : ''}${avgLatencyDelta}ms (${improvedLatencyCount}/${deltas.length}) • ` +
+                        `Error ${(avgErrorRateDelta * 100) >= 0 ? '+' : ''}${(avgErrorRateDelta * 100).toFixed(1)}% (${improvedErrorCount}/${deltas.length})`
+                });
+
+                if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+                toastTimeoutRef.current = setTimeout(() => setProgressToast(null), 12000);
+            }
         }
     }, [status]);
 
-    // Fetch a new quote whenever difficulty changes
+    // Load Ghost Data on Mount
     useEffect(() => {
-        setText(getRandomQuote(difficulty));
-        setUserInput('');
-        setStatus('idle');
-        setTimeLeft(DEFAULT_TIME);
-        setErrorMap({});
-        if (inputRef.current) inputRef.current.focus();
-    }, [difficulty]);
+        if (isAdaptiveDrill) return;
+        const savedGhost = localStorage.getItem('lastRunGhost');
+        if (savedGhost) {
+            setGhostData(JSON.parse(savedGhost));
+        }
+    }, [isAdaptiveDrill]);
 
-    // Allow resetting with Tab + Enter
+    // Automatic Reboot on Mode/Category Change
     useEffect(() => {
-        const handleKeyDown = (e) => {
-            if (e.key === 'Tab') {
-                e.preventDefault();
-                resetTest();
-            }
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, []);
+        if (status !== 'idle' || userInput.length > 0) {
+            resetTest();
+        }
+    }, [mode, category, difficulty]);
+
+    // Fetch a new quote whenever difficulty/category changes or socket is ready
+    useEffect(() => {
+        fetchNewQuote();
+    }, [difficulty, category, socket]);
+
+    const isZenHiding = mode === 'zen' && status === 'typing';
 
     return (
-        <div className="layout-container flex flex-col min-h-screen">
+        <div className="layout-container flex flex-col min-h-screen bg-background-dark selecting:bg-primary/20">
             <header className="flex items-center justify-between px-8 py-6 border-b border-primary/10 faded-ui">
-                <div className="flex items-center gap-2 text-primary">
-                    <Zap className="w-8 h-8" />
-                    <h2 className="text-xl font-bold tracking-tight">TypingBolt</h2>
+                <div className="flex items-center gap-2 text-primary drop-shadow-[0_0_8px_rgba(0,245,212,0.4)]">
+                    <Zap className="w-8 h-8 animate-pulse" />
+                    <h2 className="text-xl font-bold tracking-tight uppercase">TypeMaster <span className="text-[10px] bg-primary/20 px-1.5 py-0.5 rounded ml-1 border border-primary/30">PRO</span></h2>
                 </div>
                 <nav className="flex items-center gap-6">
                     <Link to="/" className="flex items-center justify-center p-2 rounded-lg hover:bg-primary/10 text-slate-400 hover:text-primary transition-colors">
@@ -1762,77 +2370,149 @@ export default function SoloMode() {
                         <Settings className="w-6 h-6" />
                     </button>
                     <div className="w-px h-6 bg-slate-700 mx-2"></div>
-                    <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-primary/20 hover:border-primary/50 text-sm font-medium transition-all">
+                    <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-primary/20 hover:border-primary/50 text-sm font-medium transition-all text-primary/80">
                         <UserCircle className="w-5 h-5" />
-                        <span>Pro Gamer</span>
+                        <span>CyberTypist</span>
                     </button>
                 </nav>
             </header>
 
-            <main className="flex-1 flex flex-col max-w-5xl mx-auto w-full px-8 py-12">
-                <div className="faded-ui flex flex-col gap-6 mb-20">
-                    <div className="flex items-center justify-center gap-12">
-                        <div className="flex gap-1 bg-slate-800/30 p-1 rounded-xl">
-                            <button className="px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider bg-primary text-background-dark">Time</button>
-                            <button className="px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-slate-200">Words</button>
-                            <button className="px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-slate-200">Custom</button>
+            <main className="flex-1 flex flex-col max-w-5xl mx-auto w-full px-8 py-8">
+                {/* Stats Header Area */}
+                <div className={`flex justify-between items-end mb-12 px-4 transition-all duration-700 ease-in-out ${isZenHiding ? 'opacity-0 scale-95 translate-y-4' : 'opacity-100'}`}>
+                    <div className="flex flex-col">
+                        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/40">
+                            {status === 'finished' ? 'Final Output' : 'Chronometer'}
+                        </span>
+                        <div className="text-6xl font-black text-primary drop-shadow-[0_0_15px_rgba(0,245,212,0.3)] font-mono">
+                            {status === 'finished' ? finalWPM : timeLeft} <span className="text-lg font-medium opacity-50">{status === 'finished' ? 'WPM' : 's'}</span>
                         </div>
-                        <div className="flex gap-1 bg-slate-800/30 p-1 rounded-xl">
-                            <button className="px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-slate-200">15s</button>
-                            <button className="px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider bg-primary/20 text-primary">30s</button>
-                            <button className="px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-slate-200">60s</button>
+                    </div>
+                    <div className="flex flex-col items-end">
+                        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Precision</span>
+                        <div className="text-4xl font-bold text-slate-300 font-mono tracking-tighter">
+                            {calculateAccuracy()}<span className="text-base opacity-50">%</span>
                         </div>
-                        <div className="flex gap-1 bg-slate-800/30 p-1 rounded-xl">
-                            <button 
-                                onClick={() => setDifficulty('easy')}
-                                className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${difficulty === 'easy' ? 'bg-primary/10 text-primary border border-primary/20' : 'text-slate-400 hover:text-slate-200'}`}
+                    </div>
+                </div>
+
+                {progressToast && (
+                    <div className="fixed top-6 right-6 z-300 w-104 max-w-[calc(100vw-2rem)] bg-black/70 backdrop-blur-md border border-primary/30 rounded-2xl shadow-[0_0_35px_rgba(0,245,212,0.14)] p-4 animate-in fade-in duration-300">
+                        <div className="flex items-start justify-between gap-4">
+                            <div>
+                                <div className="text-[10px] font-black uppercase tracking-widest text-primary/70">
+                                    {progressToast.title}
+                                </div>
+                                <div className="mt-2 text-sm leading-relaxed font-semibold text-slate-100">
+                                    {progressToast.body}
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setProgressToast(null)}
+                                className="text-slate-300/70 hover:text-slate-200 transition-colors text-xs font-bold border border-white/10 rounded-lg px-3 py-1 bg-white/5"
                             >
-                                Easy
+                                Close
                             </button>
-                            <button 
-                                onClick={() => setDifficulty('medium')}
-                                className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${difficulty === 'medium' ? 'bg-primary/10 text-primary border border-primary/20' : 'text-slate-400 hover:text-slate-200'}`}
-                            >
-                                Medium
+                        </div>
+                        <div className="mt-3 h-[2px] w-full bg-primary/20 rounded-full overflow-hidden">
+                            <div className="h-full w-full bg-primary/60 animate-[drillGlow_2s_ease-in-out_infinite] rounded-full" />
+                        </div>
+                    </div>
+                )}
+
+                {/* Control Panel */}
+                <div className={`faded-ui grid grid-cols-1 md:grid-cols-3 gap-8 mb-16 bg-slate-900/40 p-6 rounded-2xl border border-white/5 relative z-20 ${isAdaptiveDrill ? 'pointer-events-none opacity-70' : ''}`}>
+                    {/* Mode Selector */}
+                    <div className="flex flex-col gap-3">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">System Mode</span>
+                        <div className="flex gap-1 bg-black/40 p-1 rounded-xl border border-white/5">
+                            <button onClick={() => setMode('standard')} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold uppercase transition-all ${mode === 'standard' ? 'bg-primary text-background-dark' : 'text-slate-400 hover:text-slate-200'}`}>
+                                <Zap className="w-3.5 h-3.5" />
+                                Std
                             </button>
-                            <button 
-                                onClick={() => setDifficulty('hard')}
-                                className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${difficulty === 'hard' ? 'bg-primary/10 text-primary border border-primary/20' : 'text-slate-400 hover:text-slate-200'}`}
-                            >
-                                Hard
+                            <button onClick={() => setMode('zen')} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold uppercase transition-all ${mode === 'zen' ? 'bg-primary text-background-dark' : 'text-slate-400 hover:text-slate-200'}`}>
+                                <Ghost className="w-3.5 h-3.5" />
+                                Zen
                             </button>
+                            <button onClick={() => setMode('sudden-death')} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold uppercase transition-all ${mode === 'sudden-death' ? 'bg-red-500 text-white shadow-[0_0_10px_rgba(239,68,68,0.4)]' : 'text-slate-400 hover:text-slate-200'}`}>
+                                <Skull className="w-3.5 h-3.5" />
+                                Hell
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Category Selector */}
+                    <div className="flex flex-col gap-3">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">Data Stream</span>
+                        <div className="flex gap-1 bg-black/40 p-1 rounded-xl border border-white/5">
+                            <button onClick={() => setCategory('prose')} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold uppercase transition-all ${category === 'prose' ? 'bg-primary/20 text-primary border border-primary/30' : 'text-slate-400 hover:text-slate-200'}`}>
+                                <FileText className="w-3.5 h-3.5" />
+                                Prose
+                            </button>
+                            <button onClick={() => setCategory('code')} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold uppercase transition-all ${category === 'code' ? 'bg-primary/20 text-primary border border-primary/30' : 'text-slate-400 hover:text-slate-200'}`}>
+                                <Code className="w-3.5 h-3.5" />
+                                Code
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Difficulty */}
+                    <div className="flex flex-col gap-3">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">Complexity Level</span>
+                        <div className="flex gap-1 bg-black/40 p-1 rounded-xl border border-white/5">
+                            {['easy', 'medium', 'hard'].map(d => (
+                                <button key={d} onClick={() => setDifficulty(d)} className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase transition-all ${difficulty === d ? 'text-primary' : 'text-slate-400 hover:text-slate-200'}`}>
+                                    {d}
+                                </button>
+                            ))}
                         </div>
                     </div>
                 </div>
 
                 <div className="flex flex-col flex-1 items-center justify-center relative">
-                    <div className="absolute -top-16 left-0 right-0 flex justify-between items-end px-4">
-                        <div className="flex flex-col">
-                            <span className="text-xs font-bold uppercase tracking-[0.2em] text-primary/40">
-                                {status === 'finished' ? 'Final WPM' : 'Time Left'}
-                            </span>
-                            <div className="text-6xl font-black text-primary drop-shadow-[0_0_15px_rgba(0,245,212,0.3)] font-mono">
-                                {status === 'finished' ? calculateWPM() : timeLeft} <span className="text-lg font-medium opacity-50">{status === 'finished' ? 'WPM' : 's'}</span>
-                            </div>
-                        </div>
-                        <div className="flex flex-col items-end">
-                            <span className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Accuracy</span>
-                            <div className="text-4xl font-bold text-slate-300 font-mono">
-                                {calculateAccuracy()}<span className="text-base opacity-50">%</span>
-                            </div>
-                        </div>
-                    </div>
 
                     <div
-                        className="w-full text-3xl leading-relaxed font-mono tracking-tight text-left relative cursor-text"
+                        className={`w-full text-2xl leading-relaxed font-mono tracking-tight text-left relative cursor-text bg-black/20 p-12 rounded-3xl border transition-all duration-500 ${mode === 'sudden-death' ? 'shadow-[0_0_30px_rgba(239,68,68,0.15)] border-red-500/20' : 'border-white/5 shadow-2xl'} backdrop-blur-sm`}
                         onClick={() => inputRef.current && inputRef.current.focus()}
                     >
+                        {/* Start Overlay */}
+                        {status === 'idle' && !isFailed && (
+                            <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-[2px] rounded-3xl animate-pulse">
+                                <div className="text-primary/60 text-sm font-black uppercase tracking-[0.4em] flex items-center gap-4">
+                                    <div className="w-12 h-px bg-primary/20"></div>
+                                    Press any key to initialize...
+                                    <div className="w-12 h-px bg-primary/20"></div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Failed Overlay */}
+                        {isFailed && (
+                            <div className="absolute inset-0 z-50 flex items-center justify-center bg-red-950/40 backdrop-blur-md rounded-3xl border-2 border-red-500/50 animate-in fade-in zoom-in duration-300">
+                                <div className="text-center p-8 bg-black/60 rounded-2xl border border-red-500/20 shadow-2xl">
+                                    <Skull className="w-20 h-20 text-red-500 mx-auto mb-6 animate-bounce" />
+                                    <h3 className="text-5xl font-black text-red-500 uppercase tracking-tighter drop-shadow-[0_0_15px_#ef4444] mb-2">System Failure</h3>
+                                    <p className="text-red-400 font-bold tracking-[0.2em] uppercase text-xs mb-10 opacity-70">Sudden Death Clause Triggered</p>
+                                    
+                                    <button 
+                                        onClick={resetTest}
+                                        className="group flex items-center gap-3 mx-auto px-8 py-4 bg-red-600 hover:bg-red-500 text-white rounded-xl font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(239,68,68,0.4)]"
+                                    >
+                                        <RotateCcw className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
+                                        Reboot (Tab)
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Hidden Input */}
                         <input
                             ref={inputRef}
                             type="text"
                             value={userInput}
                             onChange={handleInputChange}
+                            onKeyDown={handleKeyDown}
+                            disabled={isFailed}
                             className="absolute opacity-0 -z-10 focus:outline-none"
                             autoFocus
                             autoComplete="off"
@@ -1841,63 +2521,79 @@ export default function SoloMode() {
                             spellCheck="false"
                         />
                         {/* Text Renderer */}
-                        <div className="select-none">
+                        <div className="select-none whitespace-pre-wrap relative">
                             {text.split('').map((char, index) => {
-                                let colorClass = "text-slate-500"; // dim gray initially
+                                let colorClass = "text-slate-600"; // dim gray initially
 
                                 if (index < userInput.length) {
                                     const isCorrect = userInput[index] === char;
-                                    colorClass = isCorrect ? "text-primary" : "text-red-500 bg-red-500/20";
+                                    colorClass = isCorrect ? "text-primary drop-shadow-[0_0_5px_rgba(0,245,212,0.4)]" : "text-white bg-red-500/60 rounded-[2px]";
                                 }
 
                                 const isCursor = index === userInput.length && status !== 'finished';
+                                const isGhost = ghostData.length > 0 && index === ghostIndex && status === 'typing';
 
                                 return (
                                     <span key={index} className="relative">
-                                        {/* The caret acts as the blinking cursor right before the character */}
                                         {isCursor && (
-                                            <span className="absolute left-0 top-0 h-full w-[2px] bg-primary animate-pulse shadow-[0_0_8px_#00f5d4] z-10 -ml-1" />
+                                            <span className="absolute left-0 top-0 h-full w-[3px] bg-primary animate-pulse shadow-[0_0_12px_#00f5d4] z-10 transition-all duration-75 ease-out" />
                                         )}
-                                        <span className={`${colorClass} ${char === ' ' && userInput[index] !== char && index < userInput.length ? 'px-1' : ''}`}>
+                                        {isGhost && (
+                                            <span className="absolute left-0 top-0 h-full w-[2px] bg-primary/20 shadow-[0_0_8px_rgba(0,245,212,0.2)] z-0 transition-all duration-300 ease-linear" />
+                                        )}
+                                        <span className={`${colorClass} transition-colors duration-150`}>
                                             {char}
                                         </span>
                                     </span>
                                 );
                             })}
-                            {userInput.length === text.length && status !== 'finished' && (
-                                <span className="absolute h-full w-[2px] bg-primary animate-pulse shadow-[0_0_8px_#00f5d4] z-10" />
-                            )}
                         </div>
                     </div>
 
-                    <div className="mt-20 faded-ui flex items-center gap-4">
+                    <div className="mt-16 faded-ui flex items-center gap-4">
                         <button
                             onClick={resetTest}
-                            className="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors px-6 py-2 rounded-lg bg-slate-800/20"
+                            className="flex items-center gap-2 text-slate-500 hover:text-primary transition-all px-6 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 active:scale-95"
                         >
                             <RotateCcw className="w-5 h-5" />
-                            <span className="text-sm font-medium">Restart Test (Tab)</span>
+                            <span className="text-xs font-bold uppercase tracking-widest">Reboot System (Tab)</span>
                         </button>
                         <Link 
                             to="/" 
-                            className="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors px-6 py-2 rounded-lg border border-slate-800/40 hover:bg-slate-800/20"
+                            className="flex items-center gap-2 text-slate-500 hover:text-primary transition-all px-6 py-2.5 rounded-xl border border-white/5 hover:bg-white/5 active:scale-95"
                         >
-                            <span className="text-sm font-medium">Return to Dashboard</span>
+                            <span className="text-xs font-bold uppercase tracking-widest">Abort to Core</span>
                         </Link>
+                        {status === 'finished' && (
+                            <button
+                                onClick={handleShareScore}
+                                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl border transition-all active:scale-95 text-xs font-bold uppercase tracking-widest ${
+                                    isCopied 
+                                        ? 'bg-green-500/20 text-green-400 border-green-500/50 shadow-[0_0_15px_rgba(34,197,94,0.2)]' 
+                                        : 'bg-primary/10 text-primary border-primary/30 hover:bg-primary/20 hover:border-primary/50 shadow-[0_0_10px_rgba(0,245,212,0.1)]'
+                                }`}
+                            >
+                                {isCopied ? <Check className="w-5 h-5" /> : <Share2 className="w-5 h-5" />}
+                                <span>{isCopied ? 'Score Copied!' : 'Share Score'}</span>
+                            </button>
+                        )}
                     </div>
                 </div>
             </main>
 
             <footer className="p-8 flex justify-between items-center faded-ui">
-                <div className="flex gap-4 text-xs font-medium text-slate-500 uppercase tracking-widest">
-                    <a className="hover:text-primary transition-colors" href="#">Privacy</a>
-                    <a className="hover:text-primary transition-colors" href="#">Support</a>
-                    <a className="hover:text-primary transition-colors" href="#">GitHub</a>
+                <div className="flex gap-6 text-[10px] font-bold text-slate-600 uppercase tracking-[0.25em]">
+                    <a className="hover:text-primary transition-colors" href="#">Security_Protocol</a>
+                    <a className="hover:text-primary transition-colors" href="#">Neural_Link</a>
+                    <a className="hover:text-primary transition-colors" href="#">Source_Code</a>
                 </div>
                 <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 px-3 py-1 bg-slate-800/40 rounded-full border border-slate-700">
-                        <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                        <span className="text-[10px] font-bold text-slate-400">1,248 TYPISTS ONLINE</span>
+                    <div className="flex items-center gap-3 px-4 py-1.5 bg-black/40 rounded-full border border-white/5 shadow-inner">
+                        <div className="flex gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-ping"></span>
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                        </div>
+                        <span className="text-[9px] font-black text-primary tracking-tighter italic">LINK ESTABLISHED // 1,248 NODES ACTIVE</span>
                     </div>
                 </div>
             </footer>
@@ -1932,19 +2628,21 @@ const generateRoomCode = () => {
 };
 
 const QUOTES = [
-    { text: 'the quick brown fox jumps over the lazy dog and rests by the river', difficulty: 'easy' },
-    { text: 'she sells sea shells by the sea shore and the shells she sells are sea shells', difficulty: 'easy' },
-    { text: 'how much wood would a woodchuck chuck if a woodchuck could chuck wood', difficulty: 'easy' },
-    { text: 'a journey of a thousand miles begins with a single step forward', difficulty: 'easy' },
-    { text: 'In the middle of difficulty lies opportunity. Keep your eyes on the stars.', difficulty: 'medium' },
-    { text: 'Success is not final, failure is not fatal: it is the courage to continue.', difficulty: 'medium' },
-    { text: 'The only way to do great work is to love what you do. Keep looking.', difficulty: 'medium' },
-    { text: 'Believe you can and you are halfway there. The rest is discipline.', difficulty: 'medium' },
-    { text: 'To print variables in JS, use console.log("Hello!"); it is 100% effective.', difficulty: 'hard' },
-    { text: 'The regex pattern /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-z]{2,}$/ validates email.', difficulty: 'hard' },
-    { text: 'Run: git commit -m "fix: resolve #42 — null-pointer exception" && git push.', difficulty: 'hard' },
-    { text: 'She said, "It\'s 2 AM — why are you still coding?!" He replied: "One more bug."', difficulty: 'hard' },
+    { text: 'the quick brown fox jumps over the lazy dog and rests by the river', difficulty: 'easy', category: 'prose' },
+    { text: 'she sells sea shells by the sea shore and the shells she sells are sea shells', difficulty: 'easy', category: 'prose' },
+    { text: 'how much wood would a woodchuck chuck if a woodchuck could chuck wood', difficulty: 'easy', category: 'prose' },
+    { text: 'a journey of a thousand miles begins with a single step forward', difficulty: 'easy', category: 'prose' },
+    { text: 'In the middle of difficulty lies opportunity. Keep your eyes on the stars.', difficulty: 'medium', category: 'prose' },
+    { text: 'Success is not final, failure is not fatal: it is the courage to continue.', difficulty: 'medium', category: 'prose' },
+    { text: 'The only way to do great work is to love what you do. Keep looking.', difficulty: 'medium', category: 'prose' },
+    { text: 'Believe you can and you are halfway there. The rest is discipline.', difficulty: 'medium', category: 'prose' },
+    { text: 'To print variables in JS, use console.log("Hello!"); it is 100% effective.', difficulty: 'hard', category: 'prose' },
+    { text: 'The regex pattern /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-z]{2,}$/ validates email.', difficulty: 'hard', category: 'prose' },
+    { text: 'Run: git commit -m "fix: resolve #42 — null-pointer exception" && git push.', difficulty: 'hard', category: 'prose' },
+    { text: 'She said, "It\'s 2 AM — why are you still coding?!" He replied: "One more bug."', difficulty: 'hard', category: 'prose' },
 ];
+
+let globalChampionGhost = { wpm: 0, name: '', keystrokes: [] };
 
 io.on('connection', (socket) => {
     console.log(`User connected: ${socket.id}`);
@@ -2007,7 +2705,7 @@ io.on('connection', (socket) => {
     });
 
     // Start the race
-    socket.on('startRace', ({ roomId, difficulty }, callback) => {
+    socket.on('startRace', ({ roomId, difficulty, category }, callback) => {
         const room = rooms[roomId];
         if (!room) return;
 
@@ -2016,18 +2714,21 @@ io.on('connection', (socket) => {
             return;
         }
 
-        // Pick a random quote based on difficulty
+        // Pick a random quote based on difficulty and category
         const diff = difficulty || 'medium';
-        const pool = QUOTES.filter(q => q.difficulty === diff);
-        const selectedQuote = pool[Math.floor(Math.random() * pool.length)].text;
+        const cat = category || 'prose';
+        const source = cat === 'code' ? CODE_SNIPPETS : QUOTES;
+        const pool = source.filter(q => q.difficulty === diff);
+        const selectedQuote = pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)].text : source[0].text;
 
         room.status = 'playing';
-        console.log(`[${roomId}] Race started with difficulty: ${diff}`);
+        console.log(`[${roomId}] Race started with difficulty: ${diff}, category: ${cat}`);
 
         // Broadcast to EVERYONE in the room including the host
         io.to(roomId).emit('raceStarted', {
             text: selectedQuote,
-            startTime: Date.now() + 3000 // Give frontend ~3s to count down
+            startTime: Date.now() + 3000, // Give frontend ~3s to count down
+            championGhost: globalChampionGhost
         });
     });
 
@@ -2053,6 +2754,36 @@ io.on('connection', (socket) => {
         }
     });
 
+const CODE_SNIPPETS = [
+    { text: 'function debounce(fn, delay) {\n    let timer;\n    return (...args) => {\n        clearTimeout(timer);\n        timer = setTimeout(() => fn(...args), delay);\n    };\n}', difficulty: 'medium', category: 'code', language: 'javascript' },
+    { text: 'def get_fibonacci(n):\n    a, b = 0, 1\n    for _ in range(n):\n        yield a\n        a, b = b, a + b', difficulty: 'medium', category: 'code', language: 'python' },
+    { text: 'SELECT users.name, COUNT(orders.id) AS total_orders\nFROM users\nLEFT JOIN orders ON users.id = orders.user_id\nGROUP BY users.id\nHAVING total_orders > 5;', difficulty: 'hard', category: 'code', language: 'sql' },
+    { text: 'const root = ReactDOM.createRoot(document.getElementById("root"));\nroot.render(<App />);', difficulty: 'easy', category: 'code', language: 'javascript' },
+    { text: 'class Circle:\n    def __init__(self, radius):\n        self.radius = radius\n    def area(self):\n        return 3.14 * self.radius ** 2', difficulty: 'medium', category: 'code', language: 'python' }
+];
+
+// ... existing code ...
+
+    // Provide a random quote for SoloMode
+    socket.on('getQuote', ({ difficulty, category }, callback) => {
+        const diff = difficulty || 'medium';
+        const cat = category || 'prose';
+        const source = cat === 'code' ? CODE_SNIPPETS : QUOTES;
+        const pool = source.filter(q => q.difficulty === diff);
+        const selected = pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : source[0];
+        if (callback) callback({ text: selected.text });
+    });
+
+    // NEW: Single source of truth for SoloMode quotes
+    socket.on('getSoloQuote', ({ difficulty, category }, callback) => {
+        const diff = difficulty || 'medium';
+        const cat = category || 'prose';
+        const source = cat === 'code' ? CODE_SNIPPETS : QUOTES;
+        const pool = source.filter(q => q.difficulty === diff);
+        const selected = pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : source[0];
+        if (callback) callback({ success: true, text: selected.text });
+    });
+
     // Handle player finishing the race
     socket.on('playerFinished', (data) => {
         console.log('--- SERVER RECEIVED PLAYER FINISHED ---');
@@ -2064,7 +2795,7 @@ io.on('connection', (socket) => {
             console.log('Did server find player?:', player);
         }
 
-        const { roomId, wpm, accuracy } = data;
+        const { roomId, wpm, accuracy, keystrokes } = data;
         if (!room) return;
 
         const player = room.players.find(p => p.id === socket.id);
@@ -2074,11 +2805,20 @@ io.on('connection', (socket) => {
             player.accuracy = accuracy;
             player.finished = true;
 
+            if (wpm > globalChampionGhost.wpm) {
+                globalChampionGhost = {
+                    wpm,
+                    name: player.name,
+                    keystrokes: keystrokes || []
+                };
+                console.log(`[Global Champion] New record: ${wpm} WPM by ${player.name}`);
+            }
+
             if (room.status !== 'finished') {
                 room.status = 'finished';
                 console.log(`[${roomId}] Race Over! Winner: ${player.name}`);
                 io.to(roomId).emit('raceOver', {
-                    winnerId: player.id, // CRITICAL FIX
+                    winnerId: player.id,
                     winnerName: player.name,
                     wpm,
                     accuracy

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import StatCard from '../components/StatCard';
-import { Gauge, Target, Trophy, Zap, AlertTriangle, AtSign, Network, Globe, Keyboard } from 'lucide-react';
+import { Gauge, Target, Trophy, Zap, AlertTriangle, AtSign, Network, Globe, Keyboard, Shield, Crown, Star, Medal } from 'lucide-react';
 
 const KEYBOARD_ROWS = [
     ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
@@ -10,24 +11,36 @@ const KEYBOARD_ROWS = [
 ];
 
 export default function Dashboard() {
+    const navigate = useNavigate();
     const [stats, setStats] = useState({ maxWPM: 0, avgAccuracy: 0, totalTests: 0 });
     const [performances, setPerformances] = useState({});
     const [recentWPMs, setRecentWPMs] = useState([]);
     const [recentHistory, setRecentHistory] = useState([]);
     const [hoveredDataPoint, setHoveredDataPoint] = useState(null);
+    const [rankData, setRankData] = useState(null);
+
+    const TIER_STYLES = {
+        Novice: { Icon: Star },
+        Cadet: { Icon: Shield },
+        Pro: { Icon: Zap },
+        Elite: { Icon: Medal },
+        Overlord: { Icon: Crown }
+    };
 
     useEffect(() => {
         // Load Race History
         const history = JSON.parse(localStorage.getItem('raceHistory') || '[]');
-        if (history.length > 0) {
-            const maxWPM = Math.max(...history.map(h => h.wpm));
-            const avgAcc = history.reduce((acc, h) => acc + parseFloat(h.accuracy), 0) / history.length;
+        const nonDrillHistory = history.filter((h) => !h.isDrill);
+
+        if (nonDrillHistory.length > 0) {
+            const maxWPM = Math.max(...nonDrillHistory.map(h => h.wpm));
+            const avgAcc = nonDrillHistory.reduce((acc, h) => acc + parseFloat(h.accuracy), 0) / nonDrillHistory.length;
             setStats({
                 maxWPM,
                 avgAccuracy: avgAcc.toFixed(1),
-                totalTests: history.length
+                totalTests: nonDrillHistory.length
             });
-            const last10 = history.slice(-10);
+            const last10 = nonDrillHistory.slice(-10);
             setRecentHistory(last10);
             setRecentWPMs(last10.map(h => h.wpm));
         }
@@ -35,6 +48,25 @@ export default function Dashboard() {
         // Load Key Performances
         const perfs = JSON.parse(localStorage.getItem('keyPerformances') || '{}');
         setPerformances(perfs);
+
+        // Load or Calculate Rank Data
+        const savedRankData = JSON.parse(localStorage.getItem('rankData') || 'null');
+        if (savedRankData) {
+            setRankData(savedRankData);
+        } else if (nonDrillHistory.length > 0) {
+            const drills = JSON.parse(localStorage.getItem('drillHistory') || '[]');
+            const hwpm = Math.max(...nonDrillHistory.map(h => Number(h.wpm)));
+            const aacc = nonDrillHistory.reduce((a, b) => a + Number(String(b.accuracy||'0').replace('%','')), 0) / nonDrillHistory.length;
+            const score = Math.round(hwpm + (aacc * 0.2) + (drills.length * 0.5));
+            let t = 'Novice', nt = 61;
+            if (score >= 131) { t = 'Overlord'; nt = null; }
+            else if (score >= 101) { t = 'Elite'; nt = 131; }
+            else if (score >= 81) { t = 'Pro'; nt = 101; }
+            else if (score >= 61) { t = 'Cadet'; nt = 81; }
+            const newRank = { score, tier: t, nextTierMax: nt, highestWPM: hwpm, avgAcc: aacc.toFixed(1), drillsCompleted: drills.length, totalRaces: nonDrillHistory.length };
+            setRankData(newRank);
+            localStorage.setItem('rankData', JSON.stringify(newRank));
+        }
     }, []);
 
     const getKeyColor = (latency) => {
@@ -42,6 +74,149 @@ export default function Dashboard() {
         if (latency < 200) return 'bg-primary/10 text-primary border-primary/40 shadow-[0_0_10px_rgba(0,245,212,0.1)]';
         if (latency < 400) return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/40';
         return 'bg-red-500/10 text-red-500 border-red-500/40 shadow-[0_0_10px_rgba(239,68,68,0.1)]';
+    };
+
+    const ADAPTIVE_DRILL_STORAGE_KEY = 'adaptiveDrill';
+    const COMMON_CODE_CHARS = new Set([
+        ...'abcdefghijklmnopqrstuvwxyz'.split(''),
+        ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
+        ...'0123456789'.split(''),
+        ' ', '\n', '\t',
+        '{', '}', '[', ']', '(', ')',
+        ';', ':', ',', '.', '=', '+', '-', '*', '/', '%',
+        '<', '>', '!', '?', '&', '|', '^', '~',
+        '"', "'", '`', '\\'
+    ]);
+
+    const safeParseJSON = (raw, fallback) => {
+        try {
+            return JSON.parse(raw);
+        } catch {
+            return fallback;
+        }
+    };
+
+    const getWorstKeys = (perfs, weakKeys) => {
+        const keys = Array.from(new Set([
+            ...Object.keys(perfs || {}),
+            ...Object.keys(weakKeys || {})
+        ])).filter(k => typeof k === 'string' && k.length === 1);
+
+        if (keys.length === 0) return ['{', '}', ';'];
+
+        const scored = keys.map((k) => {
+            const perf = perfs?.[k] || {};
+            const avg = Number(perf.avg) || 0;
+            const hits = Number(perf.count) || 0;
+            const errors = Number(perf.errors ?? weakKeys?.[k] ?? 0) || 0;
+            const attempts = hits + errors;
+            const errorRate = attempts > 0 ? errors / attempts : 0;
+
+            // Higher score => worse key (slower + higher mistakes).
+            const score = errors > 0 ? avg * errorRate : avg * 0.15;
+            return { k, avg, hits, errors, errorRate, score };
+        });
+
+        scored.sort((a, b) => b.score - a.score);
+        const top = scored.slice(0, 3).map(s => s.k);
+
+        // Ensure we always have 3 keys to build a stable drill template.
+        while (top.length < 3) top.push(['{', '}', ';'][top.length]);
+        return top.slice(0, 3);
+    };
+
+    const generateDailyDrillText = (weakKeys) => {
+        const normalized = (weakKeys || [])
+            .filter(k => typeof k === 'string' && k.length >= 1)
+            .map(k => k[0]);
+
+        const alphaWeak = normalized.filter(k => /^[a-z0-9]$/i.test(k));
+        const punctWeak = normalized.filter(k => !/^[a-z0-9]$/i.test(k));
+
+        const quoteChar = punctWeak.find(k => k === "'" || k === '"' || k === '`') || "'";
+        const idMainChar = alphaWeak[0] || 'e';
+        const idMain = `hello${idMainChar}`;
+        const msg = `hi${alphaWeak[1] ? alphaWeak[1] : ''}`;
+        const semi = punctWeak.includes(';') ? ';' : ';';
+        const braceOpen = punctWeak.includes('{') ? '{' : '{';
+        const braceClose = punctWeak.includes('}') ? '}' : '}';
+
+        const tokens = [
+            'function', idMain, '(', ')', braceOpen,
+            'console', '.', 'log', '(', quoteChar, msg, quoteChar, ')', semi,
+            'return', idMain, semi,
+            braceClose,
+            'const', `x${alphaWeak[2] || '1'}`, '=', '(', '1', '+', '2', ')', semi,
+            'if', '(', idMain, '>', '0', ')', '{',
+            'console', '.', 'log', '(', quoteChar, msg, quoteChar, ')', semi,
+            '}'
+        ];
+
+        // Add a couple of extra appearances of other weak punctuation keys.
+        const specialPunct = punctWeak
+            .filter(k => !['{', '}', ';', '(', ')', "'", '"', '`'].includes(k))
+            .slice(0, 4);
+
+        for (const p of specialPunct) {
+            if (tokens.length + 3 > 60) break;
+            tokens.push('/*', p, '*/');
+        }
+
+        // Pad with more log calls to reach the minimum word count.
+        while (tokens.length < 30) {
+            if (tokens.length + 9 > 60) break;
+            tokens.push('console', '.', 'log', '(', quoteChar, msg, quoteChar, ')', semi);
+        }
+
+        // Enforce 30-60 word constraint.
+        const finalTokens = tokens.slice(0, 60);
+        const allowed = new Set(COMMON_CODE_CHARS);
+        for (const k of normalized) allowed.add(k);
+
+        const drillText = finalTokens.join(' ');
+        for (const ch of drillText) {
+            if (!allowed.has(ch)) {
+                // If we ever hit a rare unexpected character, replace it with a safe space.
+                // This keeps the drill within "weak keys + common code chars" scope.
+                return drillText.replaceAll(ch, ' ');
+            }
+        }
+
+        return drillText;
+    };
+
+    const handleStartDailyDrill = () => {
+        const perfs = safeParseJSON(localStorage.getItem('keyPerformances') || '{}', {});
+        const weakKeys = safeParseJSON(localStorage.getItem('weakKeys') || '{}', {});
+
+        const worstKeys = getWorstKeys(perfs, weakKeys);
+        const drillText = generateDailyDrillText(worstKeys);
+
+        const preKeyStats = {};
+        for (const k of worstKeys) {
+            const perf = perfs?.[k] || {};
+            const hits = Number(perf.count) || 0;
+            const errors = Number(perf.errors ?? weakKeys?.[k] ?? 0) || 0;
+            const avg = Number(perf.avg) || 0;
+            const attempts = hits + errors;
+            const errorRate = attempts > 0 ? errors / attempts : 0;
+            preKeyStats[k] = { avg, hits, errors, errorRate };
+        }
+
+        localStorage.setItem(
+            ADAPTIVE_DRILL_STORAGE_KEY,
+            JSON.stringify({
+                text: drillText,
+                duration: 60,
+                worstKeys,
+                preKeyStats,
+                category: 'code',
+                difficulty: 'medium',
+                mode: 'standard'
+            })
+        );
+
+        navigate('/solo');
     };
 
     // Graph Calculation
@@ -65,6 +240,54 @@ export default function Dashboard() {
             <Navbar />
 
             <main className="flex-1 px-6 py-8 lg:px-20 space-y-8">
+                {/* Rank Banner */}
+                {rankData && (
+                    <div className="bg-slate-900 border border-primary/20 p-6 rounded-2xl flex flex-col md:flex-row items-center gap-6 relative overflow-hidden shadow-[0_0_15px_rgba(0,245,212,0.1)] hover:shadow-[0_0_25px_rgba(0,245,212,0.2)] transition-shadow duration-300">
+                        {/* Glow effect background */}
+                        <div className="absolute -right-20 -top-20 w-64 h-64 rounded-full blur-3xl opacity-20 bg-current pointer-events-none text-primary" />
+                        
+                        <div className="shrink-0 w-24 h-24 rounded-2xl border-2 flex items-center justify-center bg-primary/20 text-primary border-primary/30 shadow-[0_0_20px_rgba(0,245,212,0.4)] hover:shadow-[0_0_30px_rgba(0,245,212,0.6)] transition-all duration-300 group">
+                            {(() => {
+                                const IconComponent = TIER_STYLES[rankData.tier]?.Icon || Star;
+                                return <IconComponent className="w-12 h-12 text-primary drop-shadow-[0_0_10px_rgba(0,245,212,0.8)] group-hover:scale-110 transition-transform duration-300" />;
+                            })()}
+                        </div>
+                        
+                        <div className="flex-1 text-center md:text-left z-10">
+                            <h2 className="text-sm font-bold uppercase tracking-[0.2em] mb-1 text-primary/70">Current Tier</h2>
+                            <div className="text-4xl font-black text-primary uppercase tracking-tighter drop-shadow-[0_0_10px_rgba(0,245,212,0.5)] mb-2">{rankData.tier}</div>
+                            <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-xs font-mono text-slate-400">
+                                <span>Score: <strong className="text-white">{rankData.score}</strong></span>
+                                <span className="w-1 h-1 rounded-full bg-slate-600"></span>
+                                <span>PB: <strong className="text-white">{rankData.highestWPM} WPM</strong></span>
+                                <span className="w-1 h-1 rounded-full bg-slate-600"></span>
+                                <span className="text-primary/80">+{Math.round(rankData.avgAcc * 0.2)} Acc Bonus</span>
+                                <span className="w-1 h-1 rounded-full bg-slate-600"></span>
+                                <span className="text-primary/60">+{Math.round(rankData.drillsCompleted * 0.5)} Drill Multiplier</span>
+                            </div>
+                        </div>
+
+                        {rankData.nextTierMax && (
+                            <div className="md:ml-auto flex flex-col items-center md:items-end z-10 w-full md:w-auto mt-4 md:mt-0">
+                                <span className="text-xs font-bold text-primary/70 uppercase tracking-widest mb-2">Distance to Next</span>
+                                <div className="text-2xl font-black text-white font-mono">{rankData.nextTierMax - rankData.score} <span className="text-sm text-slate-500">Points</span></div>
+                                <div className="w-full md:w-48 h-2 bg-black/50 rounded-full mt-2 overflow-hidden border border-primary/20 p-px">
+                                    <div 
+                                        className="h-full bg-gradient-to-r from-primary to-emerald-400 drop-shadow-[0_0_10px_rgba(0,245,212,0.8)] rounded-full w-full max-w-full" 
+                                        style={{ width: `${Math.min(100, (rankData.score / rankData.nextTierMax) * 100)}%` }}
+                                    ></div>
+                                </div>
+                            </div>
+                        )}
+                        {!rankData.nextTierMax && (
+                            <div className="md:ml-auto flex flex-col items-center md:items-end z-10 w-full md:w-auto mt-4 md:mt-0">
+                                <span className="text-xs font-bold text-primary uppercase tracking-widest mb-2 animate-pulse drop-shadow-[0_0_8px_rgba(0,245,212,0.5)]">Maximum Rank Achieved</span>
+                                <div className="text-2xl font-black text-white font-mono drop-shadow-[0_0_10px_rgba(0,245,212,0.8)]">SUPREME</div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 {/* Top Widgets */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <StatCard
@@ -142,7 +365,7 @@ export default function Dashboard() {
                                     </svg>
                                     {hoveredDataPoint && (
                                         <div
-                                            className={`absolute z-[100] pointer-events-none transition-all duration-300 
+                                            className={`absolute z-100 pointer-events-none transition-all duration-300 
                                                 ${hoveredDataPoint.x > 700 ? '-translate-x-[110%]' : 'translate-x-[20%]'}
                                                 ${hoveredDataPoint.y < 50 ? 'translate-y-[20%]' : '-translate-y-[120%]'}
                                             `}
@@ -181,6 +404,15 @@ export default function Dashboard() {
                                     <p className="text-sm text-slate-500">Visualizing character latency & motor response</p>
                                 </div>
                             </div>
+                            <button
+                                onClick={handleStartDailyDrill}
+                                className="px-6 py-3 rounded-xl bg-primary/15 border border-primary/30 hover:bg-primary/25 hover:border-primary/50 shadow-[0_0_25px_rgba(0,245,212,0.18)] transition-all active:scale-95"
+                            >
+                                <span className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary">
+                                    <Zap className="w-4 h-4" />
+                                    Daily Drill
+                                </span>
+                            </button>
                             
                             <div className="flex gap-4 items-center bg-black/20 p-3 rounded-xl border border-white/5">
                                 <div className="flex items-center gap-2">
