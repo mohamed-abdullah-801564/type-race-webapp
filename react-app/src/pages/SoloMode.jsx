@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Zap, BarChart2, Settings, UserCircle, RotateCcw, Code, FileText, Skull, Ghost, Share2, Check } from 'lucide-react';
 import { io } from 'socket.io-client';
+import { auth, database } from '../firebase';
+import { ref, set } from 'firebase/database';
 
 const SOCKET_SERVER = 'http://localhost:3001';
 const DEFAULT_TIME = 30;
@@ -456,6 +458,34 @@ export default function SoloMode() {
                     drillsCompleted,
                     totalRaces: nonDrill.length
                 }));
+            }
+
+            if (auth.currentUser) {
+                const uid = auth.currentUser.uid;
+                const userRef = ref(database, `users/${uid}`);
+                const localRaces = JSON.parse(localStorage.getItem('raceHistory') || '[]').filter(r => !r.isDrill);
+                const localKeyPerf = JSON.parse(localStorage.getItem('keyPerformances') || '{}');
+                const localRank = JSON.parse(localStorage.getItem('rankData') || 'null');
+                
+                set(userRef, {
+                    races: localRaces,
+                    keyPerf: localKeyPerf,
+                    rank: localRank
+                }).catch(err => console.error("Firebase sync failed:", err));
+
+                if (!isAdaptiveDrill && localRank) {
+                    const lbRef = ref(database, `leaderboard/top10/${uid}`);
+                    const email = auth.currentUser.email || 'Operator';
+                    const operatorName = localStorage.getItem('playerName') || email.split('@')[0];
+                    set(lbRef, {
+                        name: operatorName,
+                        wpm: localRank.highestWPM,
+                        acc: localRank.avgAcc,
+                        score: localRank.score,
+                        tier: localRank.tier,
+                        updatedAt: Date.now()
+                    }).catch(err => console.error("Leaderboard update failed:", err));
+                }
             }
 
             // Completion toast for adaptive drills

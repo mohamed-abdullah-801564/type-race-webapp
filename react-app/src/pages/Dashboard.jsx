@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import StatCard from '../components/StatCard';
 import { Gauge, Target, Trophy, Zap, AlertTriangle, AtSign, Network, Globe, Keyboard, Shield, Crown, Star, Medal } from 'lucide-react';
+import { database } from '../firebase';
+import { ref, onValue } from 'firebase/database';
 
 const KEYBOARD_ROWS = [
     ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
@@ -18,6 +20,7 @@ export default function Dashboard() {
     const [recentHistory, setRecentHistory] = useState([]);
     const [hoveredDataPoint, setHoveredDataPoint] = useState(null);
     const [rankData, setRankData] = useState(null);
+    const [leaderboard, setLeaderboard] = useState([]);
 
     const TIER_STYLES = {
         Novice: { Icon: Star },
@@ -67,6 +70,16 @@ export default function Dashboard() {
             setRankData(newRank);
             localStorage.setItem('rankData', JSON.stringify(newRank));
         }
+
+        // Leaderboard listener
+        const lbRef = ref(database, 'leaderboard/top10');
+        const unsubscribe = onValue(lbRef, (snapshot) => {
+            const data = snapshot.val() || {};
+            const lbArray = Object.values(data).sort((a, b) => b.wpm - a.wpm).slice(0, 10);
+            setLeaderboard(lbArray);
+        });
+
+        return () => unsubscribe();
     }, []);
 
     const getKeyColor = (latency) => {
@@ -508,34 +521,32 @@ export default function Dashboard() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-primary/5">
-                                {[
-                                    { rank: '01', name: 'SpeedDemon_99', wpm: 186, accuracy: '99.2%', status: 'Live', isUser: false, avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAn2MgrVu9d4njiPpNorFRqt6VcbIYXaN4wzSY0Z4_pi6TDHgAZdJDzkEhs1n9G2JUgIdPs33hM4DxLqsFNJfSP2ytbq03w5igkj08KuIW8_flONw6zOvuYMoJN_F-JmFvb1HhcvlLDElll67sQPkapGJDB9l0qRgzXu1lZL1e9RTvWPKCyk-25T8w22rY_YZl5_2ligeis4LCBFFAygjbsqIwz-ViTHYDGm8REs3rF4RtX45Ltt1FTeOzKwUBapOFu_qMRvlIAOIM' },
-                                    { rank: '02', name: 'LunarTypist', wpm: 179, accuracy: '98.8%', status: 'Offline', isUser: false, avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDmCZcbkv5AQCX_8lL4lKJ66OxAjOzxDhRkhA2QQmJ-KEDfl5C9D1LwsSDZxOnMMazJoHnUai9w8A2MxSjyRR4cYztYa8yzdqUcKZOEgs4bqXJjrMJE_4YoNP76e5e2n8keKYisD6lWppt0OU4tYT42AULkd-zTj5ePLoBC60QeDcrhDoIDa8gCXEy8TMS-TTn8_IMnadfoz5UI0-gHHt4MQHzFxFV3_Hg53nRcrcvvvzbiQgUcI_2K8_JNVww6yDfANYKUUemDSqw' },
-                                    { rank: '03', name: 'JazzKeyz', wpm: 175, accuracy: '99.5%', status: 'Live', isUser: false, avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAKm57FvjnxGUUBlXlo5d2F-Nc5S6qw-11MjNPoeEu1iztrnNR7WPbM0HzQKk3omQ7NwHpjmxS5Nf1Z_o309gJGsLBwt9Dd3aBBDK2P9Qi7UuYR8WNhlUrsiO52AzfGZJTEMs5ocPTqdVQ5c2HtZ7oQxiRcv_h1OEyKs4CPM60NCg-CeH7b_7R5BF9lva9OH-4pax1NpBtrKM_lVB5cd8fq63jhSABWTcPsC4v4Nu2wZeKTp72wCKAP4j3mEB3btnOYFoBCvvNiErI' },
-                                    { rank: '12', name: `${localStorage.getItem('playerName') || 'Guest'} (You)`, wpm: stats.maxWPM || 0, accuracy: `${stats.avgAccuracy || 0}%`, status: 'Live', isUser: true, avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCIxYuqaYQ076-VKGL3G2WkrOLH14fN1qhOPGOJalA8Dl-TjBhAEdNwuJ46rLRPGLZIQYdQ_1ThQPW6E268gaJI9cuM8UjnSnug-YoHfQTlmPGPzbR-Dh-0cPZWRXN79DrMWpeEbNOjuXbjV7wVN2Sw4A2LT_93jJaSRMLhpEpy9obfv4Pc617bgQGiucpF6at3RYopOagk4Wz42cDu7mMipxdx1pnJn0lU3zo7gkvt21RZouBDkBlnnXBhGo2LwfQGEA_T1oTGoec' },
-                                ].map((item, index) => (
-                                    <tr key={index} className={`hover:bg-slate-50/50 dark:hover:bg-primary/5 transition-colors ${item.isUser ? 'bg-primary/10 border-l-4 border-primary shadow-[inset_0_0_20px_rgba(0,245,212,0.05)]' : ''}`}>
-                                        <td className={`px-6 py-4 font-bold ${item.rank === '01' || item.isUser ? 'text-primary' : 'text-slate-400'}`}>{item.rank}</td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <img className="h-8 w-8 rounded-full border border-primary/20" alt="Avatar" src={item.avatar} />
-                                                <span className={`font-semibold ${item.isUser ? 'text-primary' : 'text-slate-900 dark:text-slate-100'}`}>{item.name}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 font-mono font-bold text-slate-900 dark:text-white">{item.wpm}</td>
-                                        <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{item.accuracy}</td>
-                                        <td className="px-6 py-4">
-                                            {item.status === 'Live' ? (
-                                                <>
-                                                    <span className="h-2 w-2 rounded-full bg-primary inline-block mr-2 animate-pulse"></span>
-                                                    <span className="text-xs text-primary">Live</span>
-                                                </>
-                                            ) : (
-                                                <span className="text-400 text-xs">Offline</span>
-                                            )}
+                                {leaderboard.length > 0 ? leaderboard.map((item, index) => {
+                                    const isUser = item.name === (localStorage.getItem('playerName') || 'Operator');
+                                    return (
+                                        <tr key={index} className={`hover:bg-slate-50/50 dark:hover:bg-primary/5 transition-colors ${isUser ? 'bg-primary/10 border-l-4 border-primary shadow-[inset_0_0_20px_rgba(0,245,212,0.05)]' : ''}`}>
+                                            <td className={`px-6 py-4 font-bold ${index === 0 || isUser ? 'text-primary' : 'text-slate-400'}`}>0{index + 1}</td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="h-8 w-8 rounded-full border border-primary/20 bg-primary/10 flex items-center justify-center font-bold text-primary">{item.name[0]?.toUpperCase() || '?'}</div>
+                                                    <span className={`font-semibold ${isUser ? 'text-primary' : 'text-slate-900 dark:text-slate-100'}`}>{item.name} {item.tier && <span className="text-[10px] text-primary/50 ml-2">[{item.tier}]</span>}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 font-mono font-bold text-slate-900 dark:text-white">{item.wpm}</td>
+                                            <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{item.acc}%</td>
+                                            <td className="px-6 py-4">
+                                                <span className="h-2 w-2 rounded-full bg-primary inline-block mr-2 animate-pulse"></span>
+                                                <span className="text-xs text-primary">Live</span>
+                                            </td>
+                                        </tr>
+                                    );
+                                }) : (
+                                    <tr>
+                                        <td colSpan="5" className="px-6 py-8 text-center text-slate-500 font-mono">
+                                            No sync data detected on the Neural Link.
                                         </td>
                                     </tr>
-                                ))}
+                                )}
                             </tbody>
                         </table>
                     </div>

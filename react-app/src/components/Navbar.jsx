@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronsRight, Bell, Settings, X, AlertTriangle, Save } from 'lucide-react';
+import AuthModal from './AuthModal';
+import { auth } from '../firebase';
+import { signOut } from 'firebase/auth';
 
 export default function Navbar() {
     const location = useLocation();
@@ -8,11 +11,18 @@ export default function Navbar() {
     
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [playerName, setPlayerName] = useState('');
+    const [user, setUser] = useState(null);
+    const [showAuthModal, setShowAuthModal] = useState(false);
 
     useEffect(() => {
         const stored = localStorage.getItem('playerName');
         if (stored) setPlayerName(stored);
     }, [isModalOpen]);
+
+    useEffect(() => {
+        const unsub = auth.onAuthStateChanged((u) => setUser(u));
+        return () => unsub();
+    }, []);
 
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
@@ -141,6 +151,25 @@ export default function Navbar() {
                         </div>
                     </form>
 
+                    <div className="mb-8 p-6 bg-white/5 rounded-xl border border-white/5">
+                        <h3 className="text-xs font-bold text-primary uppercase tracking-widest mb-4 flex items-center justify-between">
+                            Cloud Link Status
+                            {user ? (
+                                <span className="flex items-center gap-2 text-primary text-[10px]"><div className="w-2 h-2 rounded-full bg-primary animate-pulse" /> LINK ESTABLISHED</span>
+                            ) : (
+                                <span className="flex items-center gap-2 text-slate-500 text-[10px]"><div className="w-2 h-2 rounded-full bg-slate-500" /> OFFLINE</span>
+                            )}
+                        </h3>
+                        {user ? (
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm text-slate-300 font-mono truncate mr-4">{user.email}</span>
+                                <button onClick={() => signOut(auth)} className="px-4 py-2 bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 text-xs font-bold uppercase tracking-widest rounded-lg transition-colors">Terminate</button>
+                            </div>
+                        ) : (
+                            <button onClick={() => setShowAuthModal(true)} className="w-full py-3 bg-primary/10 border border-primary/30 text-primary hover:bg-primary/20 rounded-lg font-bold text-sm uppercase tracking-widest transition-all hover:shadow-[0_0_15px_rgba(0,245,212,0.3)]">Authenticate Node</button>
+                        )}
+                    </div>
+
                     <div className="p-6 bg-red-950/20 rounded-xl border border-red-900/30">
                         <h3 className="text-sm font-bold text-red-400 uppercase tracking-widest mb-2 flex items-center gap-2">
                             <AlertTriangle className="w-4 h-4" /> Danger Zone
@@ -158,6 +187,8 @@ export default function Navbar() {
                 </div>
             </div>
         )}
+
+        {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} onLoginSuccess={() => setShowAuthModal(false)} />}
         </>
     );
 }
