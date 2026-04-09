@@ -61,8 +61,10 @@ react-app/src/firebase.js
 react-app/src/index.css
 react-app/src/main.jsx
 react-app/src/pages/Dashboard.jsx
+react-app/src/pages/GhostVault.jsx
 react-app/src/pages/Multiplayer.jsx
 react-app/src/pages/SoloMode.jsx
+react-app/src/utils/storageUtils.js
 react-app/vite.config.js
 server/index.js
 server/package.json
@@ -70,6 +72,248 @@ server/package.json
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path="react-app/src/pages/GhostVault.jsx">
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Ghost, Shield, Zap, Globe, Lock, ChevronRight, Terminal, Search, Activity, Cpu } from 'lucide-react';
+import Navbar from '../components/Navbar';
+import { auth, db } from '../firebase';
+import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import { loadData } from '../utils/storageUtils';
+
+export default function GhostVault() {
+    const navigate = useNavigate();
+    const [privateGhosts, setPrivateGhosts] = useState([]);
+    const [globalGhosts, setGlobalGhosts] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState('private'); // 'private' or 'global'
+
+    useEffect(() => {
+        const fetchGhosts = async () => {
+            setIsLoading(true);
+            try {
+                // Load Private Ghosts
+                const local = loadData('ghostLibrary', []);
+                setPrivateGhosts(local);
+
+                // Load Global Ghosts
+                const q = query(collection(db, 'global_ghosts'), orderBy('wpm', 'desc'), limit(10));
+                const snapshot = await getDocs(q);
+                const global = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setGlobalGhosts(global);
+            } catch (err) {
+                console.error("Failed to fetch ghosts:", err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchGhosts();
+    }, []);
+
+    const handleChallenge = (ghost) => {
+        navigate('/solo', { 
+            state: { 
+                ghostData: ghost.keystrokes, 
+                text: ghost.text,
+                ghostName: ghost.name || ghost.operatorName,
+                isGhostChallenge: true
+            } 
+        });
+    };
+
+    const getDifficulty = (wpm) => {
+        if (wpm > 120) return { label: 'LEGENDARY', color: 'text-red-500' };
+        if (wpm > 90) return { label: 'ELITE', color: 'text-orange-500' };
+        if (wpm > 60) return { label: 'EXPERT', color: 'text-yellow-500' };
+        return { label: 'ADVANCED', color: 'text-green-500' };
+    };
+
+    const GhostCard = ({ ghost, type }) => {
+        const difficulty = getDifficulty(ghost.wpm);
+        const name = ghost.name || ghost.operatorName || 'Unknown Ghost';
+        const date = ghost.date ? new Date(ghost.date).toLocaleDateString() : (ghost.timestamp ? new Date(ghost.timestamp).toLocaleDateString() : 'Unknown Date');
+
+        return (
+            <div className="group relative bg-black/40 border-2 border-primary/10 hover:border-primary/40 rounded-2xl p-6 transition-all duration-300 hover:shadow-[0_0_20px_rgba(0,245,212,0.1)] overflow-hidden">
+                {/* Subtle Green Glow for Card */}
+                <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-primary/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                
+                <div className="flex justify-between items-start mb-4">
+                    <div className="flex flex-col">
+                        <span className="text-[10px] font-black text-primary/50 uppercase tracking-[0.2em] mb-1">Entity ID</span>
+                        <h3 className="text-xl font-bold text-white truncate max-w-[180px]">{name}</h3>
+                    </div>
+                    <div className="text-right">
+                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] block mb-1">Frequency</span>
+                        <div className="text-2xl font-black text-primary font-mono">{ghost.wpm}<span className="text-[10px] ml-1">WPM</span></div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="bg-white/[0.03] p-3 rounded-xl border border-white/5">
+                        <span className="text-[9px] text-slate-500 uppercase font-black tracking-widest block mb-1 text-center">Stability</span>
+                        <div className="text-sm font-bold text-slate-200 text-center">{ghost.accuracy || '98'}%</div>
+                    </div>
+                    <div className="bg-white/[0.03] p-3 rounded-xl border border-white/5">
+                        <span className="text-[9px] text-slate-500 uppercase font-black tracking-widest block mb-1 text-center">Timestamp</span>
+                        <div className="text-[10px] font-bold text-slate-400 text-center">{date}</div>
+                    </div>
+                </div>
+
+                {type === 'global' && (
+                    <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0 translate-x-2 group-hover:translate-x-0 pointer-events-none">
+                        <div className="bg-black/80 backdrop-blur-md border border-primary/20 p-2 rounded-lg text-[8px] font-black uppercase text-primary">
+                            Win Rate: {Math.max(1, 100 - Math.round(ghost.wpm / 2))}%
+                        </div>
+                    </div>
+                )}
+
+                <button 
+                    onClick={() => handleChallenge(ghost)}
+                    className="w-full py-3 bg-primary/10 border border-primary/20 hover:bg-primary text-primary hover:text-background-dark font-black uppercase tracking-[0.2em] text-[10px] rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2 group/btn"
+                >
+                    <Activity className={`w-4 h-4 group-hover/btn:animate-pulse`} />
+                    Initiate Challenge
+                </button>
+            </div>
+        );
+    };
+
+    return (
+        <div className="layout-container flex h-full grow flex-col bg-background-dark selecting:bg-primary/20">
+            <Navbar />
+            
+            {/* Terminal Background Effect */}
+            <div className="fixed inset-0 pointer-events-none opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%] z-0" />
+
+            <main className="flex-1 px-8 py-12 lg:px-24 z-10 relative">
+                {/* Header Section */}
+                <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-8">
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-2 mb-4">
+                            <div className="bg-primary/20 p-2 rounded-lg border border-primary/30">
+                                <Terminal className="w-5 h-5 text-primary" />
+                            </div>
+                            <span className="text-xs font-black text-primary uppercase tracking-[0.4em]">Subsystem: GHOST_VAULT v4.1</span>
+                        </div>
+                        <h1 className="text-5xl font-black text-white italic tracking-tighter uppercase whitespace-nowrap">Neural Capture <span className="text-primary tracking-normal not-italic underline decoration-primary/30 decoration-8 underline-offset-4">Archive</span></h1>
+                        <p className="text-slate-500 font-medium max-w-xl uppercase text-[10px] tracking-[0.2em]">Established link with the distributed ghost network. Browsing encrypted keystroke recordings from the local grid and global nexus.</p>
+                    </div>
+
+                    <div className="flex bg-slate-900/80 backdrop-blur-xl p-1.5 rounded-2xl border border-white/5 shadow-2xl">
+                        <button 
+                            onClick={() => setActiveTab('private')}
+                            className={`flex items-center gap-3 px-8 py-4 rounded-xl transition-all duration-500 font-black text-[10px] uppercase tracking-widest ${activeTab === 'private' ? 'bg-primary text-background-dark shadow-[0_0_20px_rgba(0,245,212,0.3)]' : 'text-slate-500 hover:text-slate-300'}`}
+                        >
+                            <Lock className="w-4 h-4" /> Private Archive
+                        </button>
+                        <button 
+                            onClick={() => setActiveTab('global')}
+                            className={`flex items-center gap-3 px-8 py-4 rounded-xl transition-all duration-500 font-black text-[10px] uppercase tracking-widest ${activeTab === 'global' ? 'bg-primary text-background-dark shadow-[0_0_20px_rgba(0,245,212,0.3)]' : 'text-slate-500 hover:text-slate-300'}`}
+                        >
+                            <Globe className="w-4 h-4" /> Global Nexus
+                        </button>
+                    </div>
+                </div>
+
+                {/* Dashboard Stats Row */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-12">
+                    <div className="bg-white/[0.02] border border-white/5 p-4 rounded-xl flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
+                            <Activity className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest block">Active Links</span>
+                            <span className="text-lg font-bold text-white font-mono">{privateGhosts.length + globalGhosts.length}</span>
+                        </div>
+                    </div>
+                    <div className="bg-white/[0.02] border border-white/5 p-4 rounded-xl flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-lg bg-cyan-500/10 flex items-center justify-center text-cyan-400 border border-cyan-500/20">
+                            <Cpu className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest block">Neural Sync</span>
+                            <span className="text-lg font-bold text-cyan-400 font-mono">READY</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Grid Content */}
+                {isLoading ? (
+                    <div className="min-h-[400px] flex flex-col items-center justify-center space-y-4">
+                        <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin shadow-[0_0_15px_rgba(0,245,212,0.2)]" />
+                        <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] animate-pulse">Decrypting Archive...</span>
+                    </div>
+                ) : (
+                    <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+                            {(activeTab === 'private' ? privateGhosts : globalGhosts).map((ghost, index) => (
+                                <div key={ghost.id} className="animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: `${index * 50}ms` }}>
+                                    <GhostCard ghost={ghost} type={activeTab} />
+                                </div>
+                            ))}
+                        </div>
+
+                        {(activeTab === 'private' ? privateGhosts : globalGhosts).length === 0 && (
+                            <div className="min-h-[400px] flex flex-col items-center justify-center bg-black/20 rounded-3xl border border-dashed border-white/10 p-12">
+                                <Search className="w-16 h-16 text-slate-700 mb-6" />
+                                <h3 className="text-xl font-bold text-slate-500 uppercase tracking-widest mb-2">No Neural Signatures Detected</h3>
+                                <p className="text-sm text-slate-600 uppercase font-black text-center max-w-sm tracking-tight italic">Initiate more races in Solo or Multiplayer mode to capture new ghosts for the archive.</p>
+                            </div>
+                        )}
+                    </>
+                )}
+            </main>
+        </div>
+    );
+}
+</file>
+
+<file path="react-app/src/utils/storageUtils.js">
+import { auth } from '../firebase';
+
+/**
+ * Higher-order storage utility to handle Guest vs. Operator persistence.
+ * If user is logged in, use localStorage.
+ * If guest, use sessionStorage (cleared on tab close).
+ */
+
+export const saveData = (key, data) => {
+    const storage = auth.currentUser ? localStorage : sessionStorage;
+    storage.setItem(key, typeof data === 'string' ? data : JSON.stringify(data));
+};
+
+export const loadData = (key, fallback = null) => {
+    // We check both but prioritize the correct one based on auth
+    const storage = auth.currentUser ? localStorage : sessionStorage;
+    const data = storage.getItem(key);
+    
+    if (!data) return fallback;
+    
+    try {
+        return JSON.parse(data);
+    } catch {
+        return data; // Return as string if not JSON
+    }
+};
+
+export const clearAllData = () => {
+    localStorage.clear();
+    sessionStorage.clear();
+};
+
+export const getStorageType = () => {
+    return auth.currentUser ? 'persistent' : 'session';
+};
+</file>
+
+<file path=".gitignore">
+react-app/node_modules/
+server/node_modules/
+.env
+</file>
 
 <file path="react-app/.firebaserc">
 {
@@ -79,179 +323,6 @@ This section contains the contents of the repository's files.
   "targets": {},
   "etags": {}
 }
-</file>
-
-<file path="react-app/database.rules.json">
-{
-  "rules": {
-    "users": {
-      "$uid": {
-        ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null && auth.uid === $uid"
-      }
-    },
-    "leaderboard": {
-      "top10": {
-        ".read": true,
-        "$uid": {
-          ".write": "auth != null && auth.uid === $uid"
-        }
-      }
-    }
-  }
-}
-</file>
-
-<file path="react-app/firebase.json">
-{
-  "database": {
-    "rules": "database.rules.json"
-  },
-  "auth": {
-    "providers": {
-      "emailPassword": true
-    }
-  }
-}
-</file>
-
-<file path="react-app/src/components/AuthModal.jsx">
-import { useState } from 'react';
-import { auth, database } from '../firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { ref, get, set } from 'firebase/database';
-import { X, CloudLightning, Loader2 } from 'lucide-react';
-
-export default function AuthModal({ onClose, onLoginSuccess }) {
-    const [isLogin, setIsLogin] = useState(true);
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        setError(null);
-        try {
-            let userCredential;
-            if (isLogin) {
-                userCredential = await signInWithEmailAndPassword(auth, email, password);
-            } else {
-                userCredential = await createUserWithEmailAndPassword(auth, email, password);
-            }
-            // Sync Logic with Timeout fallback
-            try {
-                const userRef = ref(database, `users/${uid}`);
-                const snapshot = await get(userRef);
-                
-                if (snapshot.exists() && isLogin) {
-                    // Pull from cloud to local
-                    const data = snapshot.val();
-                    if (data.races) localStorage.setItem('raceHistory', JSON.stringify(data.races));
-                    if (data.keyPerf) localStorage.setItem('keyPerformances', JSON.stringify(data.keyPerf));
-                    if (data.rank) localStorage.setItem('rankData', JSON.stringify(data.rank));
-                } else {
-                    // Push local to cloud
-                    const localRaces = JSON.parse(localStorage.getItem('raceHistory') || '[]').filter(r => !r.isDrill);
-                    const localKeyPerf = JSON.parse(localStorage.getItem('keyPerformances') || '{}');
-                    const localRank = JSON.parse(localStorage.getItem('rankData') || 'null');
-                    await set(userRef, {
-                        races: localRaces,
-                        keyPerf: localKeyPerf,
-                        rank: localRank
-                    });
-                }
-            } catch (syncErr) {
-                console.warn("Initial sync failed, proceeding to session:", syncErr);
-            }
-            
-            onLoginSuccess();
-            window.location.reload(); 
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-background-dark/95 backdrop-blur-md animate-in fade-in duration-300">
-            <div className="bg-slate-900 border-2 border-primary/30 rounded-2xl p-8 max-w-sm w-full shadow-[0_0_40px_rgba(0,245,212,0.2)] relative animate-in zoom-in-95 duration-300">
-                <button onClick={onClose} className="absolute top-4 right-4 p-2 text-primary/50 hover:text-primary transition-colors">
-                    <X className="w-5 h-5" />
-                </button>
-                <div className="flex justify-center mb-6">
-                    <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-center shadow-[0_0_20px_rgba(0,245,212,0.3)]">
-                        <CloudLightning className="w-8 h-8 text-primary" />
-                    </div>
-                </div>
-                <h2 className="text-2xl font-black text-white text-center uppercase tracking-tighter mb-2">Neural Sync</h2>
-                <p className="text-xs text-primary/70 text-center uppercase tracking-widest mb-8">Establish secure cloud link</p>
-                
-                {error && <div className="p-3 mb-6 bg-red-500/10 border border-red-500/30 text-red-400 text-xs rounded-lg text-center font-mono">{error}</div>}
-                
-                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                    <input 
-                        type="email" 
-                        placeholder="OPERATOR EMAIL" 
-                        required 
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="w-full bg-black/40 border border-primary/20 focus:border-primary text-white text-sm font-mono px-4 py-3 rounded-lg outline-none transition-all placeholder:text-slate-600"
-                    />
-                    <input 
-                        type="password" 
-                        placeholder="ACCESS CODE" 
-                        required 
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full bg-black/40 border border-primary/20 focus:border-primary text-white text-sm px-4 py-3 rounded-lg outline-none transition-all placeholder:text-slate-600 tracking-widest"
-                    />
-                    <button 
-                        type="submit" 
-                        disabled={loading}
-                        className="w-full mt-4 py-4 bg-primary text-background-dark font-black uppercase tracking-[0.2em] rounded-lg hover:shadow-[0_0_20px_rgba(0,245,212,0.6)] transition-all flex items-center justify-center disabled:opacity-50"
-                    >
-                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (isLogin ? 'Initiate Link' : 'Register Node')}
-                    </button>
-                </form>
-                
-                <div className="mt-6 text-center">
-                    <button type="button" onClick={() => setIsLogin(!isLogin)} className="text-xs font-bold text-slate-500 hover:text-primary transition-colors tracking-widest uppercase">
-                        {isLogin ? 'Create new connection' : 'Use existing link'}
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-}
-</file>
-
-<file path="react-app/src/firebase.js">
-import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getDatabase } from "firebase/database";
-
-const firebaseConfig = {
-  projectId: "typemaster-prod-9a2b8c",
-  appId: "1:870212554435:web:cf56573731d8a034455c76",
-  storageBucket: "typemaster-prod-9a2b8c.firebasestorage.app",
-  apiKey: "AIzaSyAlU5edlt-VJdqjdvmoTSxK7uFMOScDGHw",
-  authDomain: "typemaster-prod-9a2b8c.firebaseapp.com",
-  messagingSenderId: "870212554435",
-  databaseURL: "https://typemaster-prod-9a2b8c-default-rtdb.firebaseio.com/" 
-};
-
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const database = getDatabase(app);
-</file>
-
-<file path=".gitignore">
-react-app/node_modules/
-server/node_modules/
-.env
 </file>
 
 <file path="react-app/.gitignore">
@@ -279,6 +350,27 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+</file>
+
+<file path="react-app/database.rules.json">
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "leaderboard": {
+      "top10": {
+        ".read": true,
+        "$uid": {
+          ".write": "auth != null && auth.uid === $uid"
+        }
+      }
+    }
+  }
+}
 </file>
 
 <file path="react-app/eslint.config.js">
@@ -313,6 +405,19 @@ export default defineConfig([
 ])
 </file>
 
+<file path="react-app/firebase.json">
+{
+  "database": {
+    "rules": "database.rules.json"
+  },
+  "auth": {
+    "providers": {
+      "emailPassword": true
+    }
+  }
+}
+</file>
+
 <file path="react-app/index.html">
 <!doctype html>
 <html lang="en">
@@ -327,44 +432,6 @@ export default defineConfig([
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
-</file>
-
-<file path="react-app/package.json">
-{
-  "name": "react-app",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@tailwindcss/vite": "^4.2.1",
-    "firebase": "^12.11.0",
-    "lucide-react": "^0.577.0",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "react-router-dom": "^7.13.1",
-    "socket.io-client": "^4.8.3"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.39.4",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.0",
-    "autoprefixer": "^10.4.27",
-    "eslint": "^9.39.4",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-react-refresh": "^0.5.2",
-    "globals": "^17.4.0",
-    "postcss": "^8.5.8",
-    "tailwindcss": "^4.2.1",
-    "vite": "^8.0.0"
-  }
-}
 </file>
 
 <file path="react-app/public/favicon.svg">
@@ -423,6 +490,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import SoloMode from './pages/SoloMode';
 import Multiplayer from './pages/Multiplayer';
+import GhostVault from './pages/GhostVault';
 
 function App() {
   return (
@@ -432,6 +500,7 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/solo" element={<SoloMode />} />
           <Route path="/multiplayer" element={<Multiplayer />} />
+          <Route path="/vault" element={<GhostVault />} />
         </Routes>
       </div>
     </BrowserRouter>
@@ -439,6 +508,139 @@ function App() {
 }
 
 export default App;
+</file>
+
+<file path="react-app/src/components/AuthModal.jsx">
+import { useState } from 'react';
+import { auth, db } from '../firebase';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { X, CloudLightning, Loader2 } from 'lucide-react';
+
+export default function AuthModal({ onClose, onLoginSuccess }) {
+    const [isLogin, setIsLogin] = useState(true);
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setError(null);
+        try {
+            let userCredential;
+            if (isLogin) {
+                userCredential = await signInWithEmailAndPassword(auth, email, password);
+            } else {
+                userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            }
+            // Sync Logic
+            try {
+                const uid = userCredential.user.uid;
+                const userDocRef = doc(db, 'users', uid);
+                const userSnapshot = await getDoc(userDocRef);
+                
+                if (userSnapshot.exists()) {
+                    const data = userSnapshot.data();
+                    
+                    // 1. Recover Operator Identity
+                    if (data.operatorName) localStorage.setItem('playerName', data.operatorName);
+                    
+                    // 2. Initial Pull: If localStorage is empty, take what we have from cloud
+                    const localHistory = JSON.parse(localStorage.getItem('raceHistory') || '[]');
+                    if (localHistory.length === 0 && data.rank) {
+                        // We don't have full history in cloud anymore, but we can restore the Rank summary
+                        localStorage.setItem('rankData', JSON.stringify(data.rank));
+                        localStorage.setItem('prevHighestWPM', (data.rank.highestWPM || 0).toString());
+                    }
+                    
+                    // 3. Update Sync Timestamps
+                    localStorage.setItem('lastCloudSync', Date.now().toString());
+                    localStorage.setItem('lastLocalUpdate', (Date.now() - 1000).toString()); // Cloud is current
+                } else {
+                    // New Cloud User -> Push initial profile summary
+                    const operatorName = localStorage.getItem('playerName') || userCredential.user.email.split('@')[0];
+                    const localRank = JSON.parse(localStorage.getItem('rankData') || 'null');
+                    
+                    await setDoc(userDocRef, {
+                        operatorName,
+                        rank: localRank,
+                        lastSync: serverTimestamp(),
+                        email: userCredential.user.email
+                    });
+                    localStorage.setItem('lastCloudSync', Date.now().toString());
+                }
+
+                // Force individual state updates on Dashboard
+                window.dispatchEvent(new Event('neural-sync-complete'));
+                
+            } catch (syncErr) {
+                console.warn("Initial sync failed:", syncErr);
+            }
+            
+            // Wait a moment for any side effects before closing
+            await new Promise(r => setTimeout(r, 500));
+            onLoginSuccess();
+            onClose(); 
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-background-dark/95 backdrop-blur-md animate-in fade-in duration-300">
+            <div className="bg-slate-900 border-2 border-primary/30 rounded-2xl p-8 max-w-sm w-full shadow-[0_0_40px_rgba(0,245,212,0.2)] relative animate-in zoom-in-95 duration-300">
+                <button onClick={onClose} className="absolute top-4 right-4 p-2 text-primary/50 hover:text-primary transition-colors">
+                    <X className="w-5 h-5" />
+                </button>
+                <div className="flex justify-center mb-6">
+                    <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-center shadow-[0_0_20px_rgba(0,245,212,0.3)]">
+                        <CloudLightning className="w-8 h-8 text-primary" />
+                    </div>
+                </div>
+                <h2 className="text-2xl font-black text-white text-center uppercase tracking-tighter mb-2">Neural Sync</h2>
+                <p className="text-xs text-primary/70 text-center uppercase tracking-widest mb-8">Establish secure cloud link</p>
+                
+                {error && <div className="p-3 mb-6 bg-red-500/10 border border-red-500/30 text-red-400 text-xs rounded-lg text-center font-mono">{error}</div>}
+                
+                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                    <input 
+                        type="email" 
+                        placeholder="OPERATOR EMAIL" 
+                        required 
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full bg-black/40 border border-primary/20 focus:border-primary text-white text-sm font-mono px-4 py-3 rounded-lg outline-none transition-all placeholder:text-slate-600"
+                    />
+                    <input 
+                        type="password" 
+                        placeholder="ACCESS CODE" 
+                        required 
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full bg-black/40 border border-primary/20 focus:border-primary text-white text-sm px-4 py-3 rounded-lg outline-none transition-all placeholder:text-slate-600 tracking-widest"
+                    />
+                    <button 
+                        type="submit" 
+                        disabled={loading}
+                        className="w-full mt-4 py-4 bg-primary text-background-dark font-black uppercase tracking-[0.2em] rounded-lg hover:shadow-[0_0_20px_rgba(0,245,212,0.6)] transition-all flex items-center justify-center disabled:opacity-50"
+                    >
+                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (isLogin ? 'Initiate Link' : 'Register Node')}
+                    </button>
+                </form>
+                
+                <div className="mt-6 text-center">
+                    <button type="button" onClick={() => setIsLogin(!isLogin)} className="text-xs font-bold text-slate-500 hover:text-primary transition-colors tracking-widest uppercase">
+                        {isLogin ? 'Create new connection' : 'Use existing link'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
 </file>
 
 <file path="react-app/src/components/PlayerProgressBar.jsx">
@@ -506,6 +708,25 @@ export default function StatCard({ title, icon, value, valueSuffix, trend, trend
 }
 </file>
 
+<file path="react-app/src/firebase.js">
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+
+const firebaseConfig = {
+  projectId: "typemaster-prod-9a2b8c",
+  appId: "1:870212554435:web:cf56573731d8a034455c76",
+  storageBucket: "typemaster-prod-9a2b8c.firebasestorage.app",
+  apiKey: "AIzaSyAlU5edlt-VJdqjdvmoTSxK7uFMOScDGHw",
+  authDomain: "typemaster-prod-9a2b8c.firebaseapp.com",
+  messagingSenderId: "870212554435"
+};
+
+const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+</file>
+
 <file path="react-app/src/index.css">
 @import "tailwindcss";
 
@@ -569,7 +790,20 @@ export default function StatCard({ title, icon, value, valueSuffix, trend, trend
     }
 
     .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+        background: var(--color-primary);
         opacity: 0.8;
+    }
+
+    @keyframes glitch {
+        0% { transform: translate(0); text-shadow: 2px 0 red, -2px 0 blue; }
+        25% { transform: translate(-2px, 2px); text-shadow: -2px 0 red, 2px 0 blue; }
+        50% { transform: translate(2px, -2px); text-shadow: 2px 0 red, -2px 0 blue; }
+        75% { transform: translate(-2px, -2px); text-shadow: -2px 0 red, 2px 0 blue; }
+        100% { transform: translate(0); text-shadow: 2px 0 red, -2px 0 blue; }
+    }
+
+    .animate-glitch {
+        animation: glitch 0.2s linear infinite;
     }
 }
 
@@ -621,6 +855,44 @@ export default defineConfig({
 })
 </file>
 
+<file path="react-app/package.json">
+{
+  "name": "react-app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.2.1",
+    "firebase": "^12.11.0",
+    "lucide-react": "^0.577.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-router-dom": "^7.13.1",
+    "socket.io-client": "^4.8.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.0",
+    "autoprefixer": "^10.4.27",
+    "eslint": "^9.39.4",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.4.0",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^4.2.1",
+    "vite": "^8.0.0"
+  }
+}
+</file>
+
 <file path="server/package.json">
 {
   "name": "server",
@@ -646,37 +918,75 @@ export default defineConfig({
 <file path="react-app/src/components/Navbar.jsx">
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ChevronsRight, Bell, Settings, X, AlertTriangle, Save } from 'lucide-react';
+import { ChevronsRight, Bell, Settings, X, AlertTriangle, Save, Gauge, Crown, Cloud, CloudOff, RefreshCw } from 'lucide-react';
+import { doc, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { auth, db } from '../firebase';
 import AuthModal from './AuthModal';
-import { auth } from '../firebase';
-import { signOut } from 'firebase/auth';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 
-export default function Navbar() {
+export default function Navbar({ isFaded = false }) {
     const location = useLocation();
     const currentPath = location.pathname;
     
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [playerName, setPlayerName] = useState('');
     const [user, setUser] = useState(null);
     const [showAuthModal, setShowAuthModal] = useState(false);
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (u) => {
+            setUser(u);
+        });
+        return () => unsubscribe();
+    }, []);
+
+    // Load Stats for Profile View
+    const [stats, setStats] = useState(null);
 
     useEffect(() => {
         const stored = localStorage.getItem('playerName');
         if (stored) setPlayerName(stored);
-    }, [isModalOpen]);
+        
+        const rankData = JSON.parse(localStorage.getItem('rankData') || 'null');
+        setStats(rankData);
+    }, [isSettingsOpen, isProfileOpen, user]); // Include user to refresh when auth state changes
 
     useEffect(() => {
         const unsub = auth.onAuthStateChanged((u) => setUser(u));
         return () => unsub();
     }, []);
 
-    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-
-    const handleSaveName = (e) => {
+    const handleSaveName = async (e) => {
         e.preventDefault();
         if (playerName.trim()) {
             localStorage.setItem('playerName', playerName.trim());
-            setIsModalOpen(false);
+            localStorage.setItem('lastLocalUpdate', Date.now().toString());
+            
+            // Identity Sync to Firestore
+            if (user) {
+                try {
+                    const userRef = doc(db, 'users', user.uid);
+                    await updateDoc(userRef, {
+                        operatorName: playerName.trim(),
+                        lastUpdate: serverTimestamp()
+                    });
+                    
+                    // Update leaderboard if rank exists
+                    if (stats) {
+                        const lbRef = doc(db, 'leaderboard', user.uid);
+                        await setDoc(lbRef, { 
+                            name: playerName.trim() 
+                        }, { merge: true });
+                    }
+                    localStorage.setItem('lastCloudSync', Date.now().toString());
+                } catch (err) {
+                    console.error("Identity sync failed:", err);
+                }
+            }
+            
+            setIsSettingsOpen(false);
             window.location.reload();
         }
     };
@@ -690,9 +1000,68 @@ export default function Navbar() {
         window.location.reload();
     };
 
+    const handleLogout = async () => {
+        try {
+            await signOut(auth);
+            localStorage.clear();
+            sessionStorage.clear();
+            setIsProfileOpen(false);
+            window.location.reload();
+        } catch (err) {
+            console.error("Logout failed:", err);
+        }
+    };
+
+    const [isSyncing, setIsSyncing] = useState(false);
+    const handleManualSync = async () => {
+        if (!user || isSyncing) return;
+        setIsSyncing(true);
+        try {
+            const userRef = doc(db, 'users', user.uid);
+            const localRank = JSON.parse(localStorage.getItem('rankData') || 'null');
+            const operatorName = localStorage.getItem('playerName') || user.email.split('@')[0];
+            
+            const summaryData = {
+                operatorName,
+                rank: localRank,
+                lastSync: serverTimestamp(),
+                totalRaces: JSON.parse(localStorage.getItem('raceHistory') || '[]').filter(r => !r.isDrill).length
+            };
+
+            await setDoc(userRef, summaryData, { merge: true });
+            
+            if (localRank) {
+                const lbRef = doc(db, 'leaderboard', user.uid);
+                await setDoc(lbRef, {
+                    name: operatorName,
+                    wpm: localRank.highestWPM,
+                    acc: localRank.avgAcc,
+                    score: localRank.score,
+                    tier: localRank.tier,
+                    updatedAt: serverTimestamp()
+                });
+            }
+
+            localStorage.setItem('lastCloudSync', Date.now().toString());
+            // Small delay for UI feedback
+            await new Promise(r => setTimeout(r, 800));
+        } catch (err) {
+            console.error("Manual sync failed:", err);
+        } finally {
+            setIsSyncing(false);
+        }
+    };
+
+    const getSyncStatus = () => {
+        if (!user) return null;
+        const lastLocal = parseInt(localStorage.getItem('lastLocalUpdate') || '0');
+        const lastCloud = parseInt(localStorage.getItem('lastCloudSync') || '0');
+        return lastCloud >= lastLocal ? 'synced' : 'unsynced';
+    };
+
     return (
         <>
-        <header className="flex items-center justify-between border-b border-slate-200 dark:border-primary/10 px-6 py-4 lg:px-20 bg-background-light dark:bg-background-dark/50 backdrop-blur-md sticky top-0 z-40">
+        <header className={`flex items-center justify-between border-b border-slate-200 dark:border-primary/10 px-6 py-4 lg:px-20 bg-background-light dark:bg-background-dark/50 backdrop-blur-md sticky top-0 z-40 transition-opacity duration-500 ease-in-out ${isFaded ? 'opacity-10' : 'opacity-100'}`}>
             <div className="flex flex-1 items-center gap-4">
                 <Link to="/" className="flex items-center gap-4">
                     <div className="text-primary">
@@ -714,26 +1083,52 @@ export default function Navbar() {
                 <Link to="/multiplayer" className={`${currentPath === '/multiplayer' ? 'text-primary border-b-2 border-primary pb-1' : 'text-slate-500 hover:text-primary transition-colors'}`}>
                     Multiplayer
                 </Link>
+                <Link to="/vault" className={`${currentPath === '/vault' ? 'text-primary border-b-2 border-primary pb-1' : 'text-slate-500 hover:text-primary transition-colors'}`}>
+                    Vault
+                </Link>
             </nav>
 
             <div className="flex flex-1 justify-end items-center gap-4">
                 <button className="p-2 rounded-lg bg-slate-100 dark:bg-primary/5 hover:bg-primary/10 transition-colors">
                     <Bell className="w-6 h-6 text-slate-600 dark:text-primary" />
                 </button>
-                <button onClick={() => setIsModalOpen(true)} className="p-2 rounded-lg bg-slate-100 dark:bg-primary/5 hover:bg-primary/10 transition-colors">
+                <button onClick={() => setIsSettingsOpen(true)} className="p-2 rounded-lg bg-slate-100 dark:bg-primary/5 hover:bg-primary/10 transition-colors">
                     <Settings className="w-6 h-6 text-slate-600 dark:text-primary" />
                 </button>
-                <div onClick={() => setIsModalOpen(true)} className="h-10 w-10 rounded-full border-2 border-primary/30 p-0.5 overflow-hidden cursor-pointer hover:border-primary transition-colors">
-                    <img
-                        alt="User Avatar"
-                        className="h-full w-full rounded-full object-cover"
-                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuCyZ8GeGyhabNC6yspB1cJTkrXNLe87u0X4LYSEMZo_zYdp1HBc86chYAHMyMJFLCRUs_vaoTLHsfSSlkqlBlf49XrgC3qw83Rzt1WQqIVEOt7x1bp-rp2IxMz6cMBUfdMYeiHT90RS5icaXocgWAsfhuxNwo7cm04_0cpJNSy2q93Yk4pqsAkQ5EdzokS5Px7Uh4jY_N-YsR0OUGJyzoCgk7iAAUAKFQki70GArm-GDC-UaSo0bIWnffEEMl04i1eoLnqNomwdGFs"
-                    />
+                <div className="flex items-center gap-3">
+                    {user && (
+                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-white/5 group relative">
+                            {getSyncStatus() === 'synced' ? (
+                                <Cloud className="w-3.5 h-3.5 text-cyan-400" />
+                            ) : (
+                                <CloudOff className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
+                            )}
+                            <span className="text-[10px] font-black tracking-widest text-slate-500 dark:text-slate-400 font-mono">
+                                {playerName || user.email.split('@')[0]}
+                            </span>
+                            
+                            {/* Hover Status Detail */}
+                            <div className="absolute top-full mt-2 right-0 bg-slate-900 border border-white/10 p-2 rounded shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 min-w-[120px]">
+                                <p className="text-[8px] uppercase font-black text-slate-500 mb-1">Neural Connection</p>
+                                <p className={`text-[9px] font-bold ${getSyncStatus() === 'synced' ? 'text-cyan-400' : 'text-amber-500'}`}>
+                                    {getSyncStatus() === 'synced' ? 'STABLE LINK' : 'UNSYNCED DATA'}
+                                </p>
+                            </div>
+                        </div>
+                    )}
+                    <div onClick={() => setIsProfileOpen(true)} className="h-10 w-10 rounded-full border-2 border-primary/30 p-0.5 overflow-hidden cursor-pointer hover:border-primary transition-colors">
+                        <img
+                            alt="User Avatar"
+                            className="h-full w-full rounded-full object-cover"
+                            src={user?.photoURL || "https://lh3.googleusercontent.com/aida-public/AB6AXuCyZ8GeGyhabNC6yspB1cJTkrXNLe87u0X4LYSEMZo_zYdp1HBc86chYAHMyMJFLCRUs_vaoTLHsfSSlkqlBlf49XrgC3qw83Rzt1WQqIVEOt7x1bp-rp2IxMz6cMBUfdMYeiHT90RS5icaXocgWAsfhuxNwo7cm04_0cpJNSy2q93Yk4pqsAkQ5EdzokS5Px7Uh4jY_N-YsR0OUGJyzoCgk7iAAUAKFQki70GArm-GDC-UaSo0bIWnffEEMl04i1eoLnqNomwdGFs"}
+                        />
+                    </div>
                 </div>
             </div>
         </header>
 
-        {isModalOpen && (
+        {/* Settings Modal */}
+        {isSettingsOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background-dark/95 backdrop-blur-sm animate-in fade-in duration-300">
                 {isConfirmOpen && (
                     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-background-dark/80 backdrop-blur-md animate-in fade-in duration-200">
@@ -766,14 +1161,14 @@ export default function Navbar() {
                 )}
                 <div className="bg-slate-900 border border-primary/20 rounded-2xl p-8 max-w-md w-full shadow-[0_0_50px_rgba(0,245,212,0.1)] relative">
                     <button 
-                        onClick={() => setIsModalOpen(false)}
+                        onClick={() => setIsSettingsOpen(false)}
                         className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white bg-slate-800 rounded-lg transition-colors"
                     >
                         <X className="w-5 h-5" />
                     </button>
                     
                     <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-6 flex items-center gap-3">
-                        <Settings className="text-primary w-6 h-6" /> System Profile
+                        <Settings className="text-primary w-6 h-6" /> Local Preferences
                     </h2>
 
                     <form onSubmit={handleSaveName} className="mb-8 p-6 bg-white/5 rounded-xl border border-white/5">
@@ -797,38 +1192,136 @@ export default function Navbar() {
                         </div>
                     </form>
 
-                    <div className="mb-8 p-6 bg-white/5 rounded-xl border border-white/5">
-                        <h3 className="text-xs font-bold text-primary uppercase tracking-widest mb-4 flex items-center justify-between">
-                            Cloud Link Status
-                            {user ? (
-                                <span className="flex items-center gap-2 text-primary text-[10px]"><div className="w-2 h-2 rounded-full bg-primary animate-pulse" /> LINK ESTABLISHED</span>
-                            ) : (
-                                <span className="flex items-center gap-2 text-slate-500 text-[10px]"><div className="w-2 h-2 rounded-full bg-slate-500" /> OFFLINE</span>
-                            )}
-                        </h3>
-                        {user ? (
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-slate-300 font-mono truncate mr-4">{user.email}</span>
-                                <button onClick={() => signOut(auth)} className="px-4 py-2 bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 text-xs font-bold uppercase tracking-widest rounded-lg transition-colors">Terminate</button>
-                            </div>
-                        ) : (
-                            <button onClick={() => setShowAuthModal(true)} className="w-full py-3 bg-primary/10 border border-primary/30 text-primary hover:bg-primary/20 rounded-lg font-bold text-sm uppercase tracking-widest transition-all hover:shadow-[0_0_15px_rgba(0,245,212,0.3)]">Authenticate Node</button>
-                        )}
-                    </div>
-
                     <div className="p-6 bg-red-950/20 rounded-xl border border-red-900/30">
                         <h3 className="text-sm font-bold text-red-400 uppercase tracking-widest mb-2 flex items-center gap-2">
                             <AlertTriangle className="w-4 h-4" /> Danger Zone
                         </h3>
                         <p className="text-xs text-slate-500 mb-4">
-                            Irreversibly erase all stored heatmaps, practice history, and neural latency profiles from this device.
+                            Irreversibly erase all stored heatmaps and local stats from this device.
                         </p>
                         <button
                             onClick={handleWipeData}
                             className="w-full py-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-lg font-bold uppercase tracking-wider transition-colors text-sm"
                         >
-                            Erase All Neural Data
+                            Erase All Local Data
                         </button>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* Profile Modal */}
+        {isProfileOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background-dark/95 backdrop-blur-md animate-in fade-in duration-300">
+                <div className="bg-slate-900 border border-primary/20 rounded-2xl p-8 max-w-md w-full shadow-[0_0_50px_rgba(0,245,212,0.15)] relative overflow-hidden group">
+                    {/* Scanline Effect */}
+                    <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]" />
+                    
+                    <button 
+                        onClick={() => setIsProfileOpen(false)}
+                        className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white bg-slate-800/50 rounded-lg transition-colors z-10"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                    
+                    <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-8 flex items-center gap-3 relative z-10">
+                        <ChevronsRight className="text-primary w-6 h-6 animate-pulse" /> 
+                        <span className="relative">
+                            Operator Profile
+                            <span className="absolute -inset-x-2 -inset-y-1 bg-primary/10 blur-lg -z-10 rounded-full" />
+                        </span>
+                    </h2>
+
+                    <div className="relative z-10">
+                        <div className="mb-6 p-6 bg-white/[0.03] backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl">
+                            <h3 className="text-[10px] font-bold text-primary uppercase tracking-[0.3em] mb-4 flex items-center justify-between">
+                                Neural Link Status
+                                {user ? (
+                                    <span className="flex items-center gap-2 text-primary">
+                                        <div className="w-2 h-2 rounded-full bg-primary shadow-[0_0_10px_#00f5d4] animate-pulse" /> 
+                                        LINKED
+                                    </span>
+                                ) : (
+                                    <span className="flex items-center gap-2 text-slate-500">
+                                        <div className="w-2 h-2 rounded-full bg-slate-600" /> 
+                                        OFFLINE
+                                    </span>
+                                )}
+                            </h3>
+                            
+                            {user ? (
+                                <div className="space-y-6">
+                                    <div className="bg-black/40 p-4 rounded-xl border border-white/5 flex flex-col gap-1">
+                                        <div className="flex justify-between items-start">
+                                            <div className="flex flex-col">
+                                                <span className="text-[9px] text-slate-500 uppercase font-black tracking-widest">Linked Node</span>
+                                                <span className="text-sm text-slate-200 font-mono truncate max-w-[200px]">{user.email}</span>
+                                            </div>
+                                            <div className="text-right">
+                                                <span className="text-[9px] text-slate-500 uppercase font-black tracking-widest block">Last Sync</span>
+                                                <span className={`text-[10px] font-mono ${getSyncStatus() === 'synced' ? 'text-cyan-400' : 'text-amber-500'}`}>
+                                                    {getSyncStatus() === 'synced' ? 'CONNECTION STABLE' : 'UPDATE REQUIRED'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {stats && (
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="bg-white/[0.03] backdrop-blur-lg p-5 rounded-xl border border-white/10 flex flex-col gap-2 relative overflow-hidden group/card hover:border-primary/30 transition-all">
+                                                <div className="absolute -right-2 -top-2 opacity-10 group-hover/card:opacity-20 transition-opacity">
+                                                    <Gauge className="w-12 h-12 text-primary" />
+                                                </div>
+                                                <span className="text-[9px] text-slate-500 uppercase font-black tracking-widest">Peak Speed</span>
+                                                <div className="flex items-baseline gap-1">
+                                                    <span className="text-2xl font-black text-primary font-mono">{stats.highestWPM}</span>
+                                                    <span className="text-[10px] text-primary/50 font-bold uppercase">Wpm</span>
+                                                </div>
+                                            </div>
+                                            <div className="bg-white/[0.03] backdrop-blur-lg p-5 rounded-xl border border-white/10 flex flex-col gap-2 relative overflow-hidden group/card hover:border-primary/30 transition-all">
+                                                <div className="absolute -right-2 -top-2 opacity-10 group-hover/card:opacity-20 transition-opacity">
+                                                    <Crown className="w-12 h-12 text-primary" />
+                                                </div>
+                                                <span className="text-[9px] text-slate-500 uppercase font-black tracking-widest">Operator Tier</span>
+                                                <span className="text-xl font-black text-white font-mono uppercase tracking-tighter">{stats.tier}</span>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="flex gap-4">
+                                        <button 
+                                            onClick={handleManualSync} 
+                                            disabled={isSyncing || getSyncStatus() === 'synced'}
+                                            className="flex-1 py-3 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500 hover:text-white text-[11px] font-black uppercase tracking-[0.2em] rounded-xl transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                        >
+                                            {isSyncing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Cloud className="w-4 h-4" />}
+                                            {isSyncing ? 'Syncing...' : 'Sync Now'}
+                                        </button>
+                                        <button 
+                                            onClick={handleLogout} 
+                                            className="px-6 py-3 border border-red-500/30 text-red-500 hover:bg-red-500 hover:text-white text-[11px] font-black uppercase tracking-[0.3em] rounded-xl transition-all"
+                                        >
+                                            Sign Out
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="text-center py-6">
+                                    <div className="w-16 h-16 rounded-full bg-slate-800/50 flex items-center justify-center mb-6 mx-auto border border-white/5">
+                                        <AlertTriangle className="w-8 h-8 text-slate-600" />
+                                    </div>
+                                    <p className="text-xs text-slate-400 mb-8 leading-relaxed px-4 font-medium uppercase tracking-tight">
+                                        Neural history is currently restricted to local nodes. Establish a secure link to sync performance profiles across the grid.
+                                    </p>
+                                    <button 
+                                        onClick={() => { setIsProfileOpen(false); setShowAuthModal(true); }} 
+                                        className="w-full py-4 bg-primary text-background-dark font-black uppercase tracking-[0.2em] rounded-xl hover:shadow-[0_0_30px_rgba(0,245,212,0.5)] hover:scale-[1.02] transition-all active:scale-95"
+                                    >
+                                        Initiate Neural Sync
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -845,7 +1338,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { Link } from 'react-router-dom';
 import PlayerProgressBar from '../components/PlayerProgressBar';
-import { Network, Copy, Play, ArrowRight, UserPlus, Trophy, RotateCcw, Ghost, Code, FileText } from 'lucide-react';
+import { Network, Copy, Play, ArrowRight, UserPlus, Trophy, RotateCcw, Ghost, Code, FileText, Shield } from 'lucide-react';
+import { auth, db } from '../firebase';
+import { collection, addDoc } from 'firebase/firestore';
+import { loadData, saveData } from '../utils/storageUtils';
 
 const SOCKET_SERVER = 'http://localhost:3001';
 
@@ -869,6 +1365,9 @@ export default function Multiplayer() {
     const [difficulty, setDifficulty] = useState('medium');
     const [category, setCategory] = useState('prose');
     const [countdown, setCountdown] = useState(3);
+    const [isGhostCaptured, setIsGhostCaptured] = useState(false);
+    const [isGlitching, setIsGlitching] = useState(false);
+    const [errorMap, setErrorMap] = useState({});
     const [progress, setProgress] = useState(0);
     const [currentWpm, setCurrentWpm] = useState(0);
     const [championGhost, setChampionGhost] = useState(null);
@@ -939,6 +1438,8 @@ export default function Multiplayer() {
             setChampionGhost(championGhost || null);
             setGameState('countdown');
             setUserInput('');
+            setIsGhostCaptured(false);
+            setIsGlitching(false);
             setTimeLeft(30);
             setProgress(0);
             setCurrentWpm(0);
@@ -965,11 +1466,15 @@ export default function Multiplayer() {
 
         // raceOver
         socket.on('raceOver', (data) => {
-            console.log('--- FRONTEND RECEIVED RACE OVER ---');
+            console.log('--- FRONTEND RECEIVED RACE OVER ---', data);
             if (timerRef.current) clearInterval(timerRef.current);
             setTimeLeft(0);
             setGameState('finished');
             setWinnerData(data);
+            
+            // Trigger Glitch Effect for Data Retrieval feel
+            setIsGlitching(true);
+            setTimeout(() => setIsGlitching(false), 1500);
         });
 
         // roomReset
@@ -981,6 +1486,7 @@ export default function Multiplayer() {
             setTimeLeft(30);
             setProgress(0);
             setCurrentWpm(0);
+            setIsGhostCaptured(false);
         });
 
         return () => {
@@ -1142,7 +1648,6 @@ export default function Multiplayer() {
 
     // 4. Typing Mechanics
     // Keep track of errors for weakKeys
-    const [errorMap, setErrorMap] = useState({});
 
     const processKeystroke = (val) => {
         if (gameState !== 'racing') return;
@@ -1225,6 +1730,39 @@ export default function Multiplayer() {
             localStorage.setItem('weakKeys', JSON.stringify(merged));
         }
     }, [gameState]);
+
+    const handleSendToVault = async () => {
+        if (!winnerData || !winnerData.keystrokes || isGhostCaptured) return;
+
+        const ghostId = `ghost_${Date.now()}`;
+        const newGhost = {
+            id: ghostId,
+            operatorName: winnerData.winnerName,
+            wpm: winnerData.wpm,
+            accuracy: winnerData.accuracy,
+            keystrokes: winnerData.keystrokes,
+            text: text,
+            timestamp: new Date().toISOString()
+        };
+
+        try {
+            if (auth.currentUser) {
+                // Save to Firestore Global Nexus
+                await addDoc(collection(db, 'global_ghosts'), {
+                    ...newGhost,
+                    uid: auth.currentUser.uid,
+                    type: 'global'
+                });
+            } else {
+                // Save to Local Private Archive
+                const existing = loadData('ghostLibrary', []);
+                saveData('ghostLibrary', [...existing, newGhost]);
+            }
+            setIsGhostCaptured(true);
+        } catch (err) {
+            console.error("Failed to send to vault:", err);
+        }
+    };
 
     // UI Renderers
     const renderLobby = () => {
@@ -1489,6 +2027,31 @@ export default function Multiplayer() {
                         <p className="text-5xl font-black text-white font-mono tabular-nums">{winnerData?.accuracy || 0}<span className="text-2xl font-bold ml-1 opacity-50">%</span></p>
                     </div>
                 </div>
+
+                {winnerData?.keystrokes && (
+                    <div className="flex flex-col items-center gap-2">
+                        <span className="text-[10px] font-black text-primary/50 uppercase tracking-[0.3em] animate-pulse">
+                            Winner's Neural Signature Detected
+                        </span>
+                        <button 
+                            onClick={handleSendToVault}
+                            disabled={isGhostCaptured}
+                            className={`group relative flex items-center gap-3 px-10 py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-sm transition-all overflow-hidden ${
+                                isGhostCaptured 
+                                ? 'bg-primary/5 text-primary/40 border border-primary/20 cursor-default' 
+                                : `bg-primary/10 text-primary border-2 border-primary/30 hover:bg-primary hover:text-background-dark hover:shadow-[0_0_30px_rgba(0,245,212,0.4)] hover:scale-105 active:scale-95 ${isGlitching ? 'animate-glitch shadow-[0_0_40px_rgba(255,0,0,0.5)]' : ''}`
+                            }`}
+                        >
+                            <Shield className={`w-5 h-5 ${!isGhostCaptured && 'animate-pulse'}`} />
+                            {isGhostCaptured ? 'RECORDING ARCHIVED' : 'Archive Winner\'s Ghost'}
+                            
+                            {/* Glitch Overlay for Button */}
+                            {isGlitching && (
+                                <div className="absolute inset-0 bg-primary/20 animate-pulse pointer-events-none" />
+                            )}
+                        </button>
+                    </div>
+                )}
 
                 <div className="flex flex-col gap-4 w-full max-w-xs transition-all duration-300">
                     {isHost ? (
@@ -1795,7 +2358,8 @@ const CODE_SNIPPETS = [
                     winnerId: player.id,
                     winnerName: player.name,
                     wpm,
-                    accuracy
+                    accuracy,
+                    keystrokes
                 });
             }
         }
@@ -1865,8 +2429,9 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import StatCard from '../components/StatCard';
 import { Gauge, Target, Trophy, Zap, AlertTriangle, AtSign, Network, Globe, Keyboard, Shield, Crown, Star, Medal } from 'lucide-react';
-import { database } from '../firebase';
-import { ref, onValue } from 'firebase/database';
+import { auth, db } from '../firebase';
+import { doc, onSnapshot, collection, query, orderBy, limit } from 'firebase/firestore';
+import { loadData, saveData } from '../utils/storageUtils';
 
 const KEYBOARD_ROWS = [
     ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
@@ -1893,56 +2458,76 @@ export default function Dashboard() {
     };
 
     useEffect(() => {
-        // Load Race History
-        const history = JSON.parse(localStorage.getItem('raceHistory') || '[]');
-        const nonDrillHistory = history.filter((h) => !h.isDrill);
+        // 1. Initial Load from LocalStorage (for offline/logged-out experience)
+        const loadLocalData = () => {
+            const history = loadData('raceHistory', []);
+            const nonDrillHistory = history.filter((h) => !h.isDrill);
 
-        if (nonDrillHistory.length > 0) {
-            const maxWPM = Math.max(...nonDrillHistory.map(h => h.wpm));
-            const avgAcc = nonDrillHistory.reduce((acc, h) => acc + parseFloat(h.accuracy), 0) / nonDrillHistory.length;
-            setStats({
-                maxWPM,
-                avgAccuracy: avgAcc.toFixed(1),
-                totalTests: nonDrillHistory.length
+            if (nonDrillHistory.length > 0) {
+                const maxWPM = Math.max(...nonDrillHistory.map(h => h.wpm));
+                const avgAcc = nonDrillHistory.reduce((acc, h) => acc + parseFloat(h.accuracy), 0) / nonDrillHistory.length;
+                setStats({
+                    maxWPM,
+                    avgAccuracy: avgAcc.toFixed(1),
+                    totalTests: nonDrillHistory.length
+                });
+                const last10 = nonDrillHistory.slice(-10);
+                setRecentHistory(last10);
+                setRecentWPMs(last10.map(h => h.wpm));
+            }
+
+            const perfs = loadData('keyPerformances', {});
+            setPerformances(perfs);
+
+            const savedRankData = loadData('rankData', null);
+            if (savedRankData) setRankData(savedRankData);
+        };
+
+        loadLocalData();
+
+        // 2. Real-time Firestore Sync (if logged in)
+        let unsubscribeUser = () => {};
+        if (auth.currentUser) {
+            unsubscribeUser = onSnapshot(doc(db, 'users', auth.currentUser.uid), (docSnapshot) => {
+                if (docSnapshot.exists()) {
+                    const data = docSnapshot.data();
+                    
+                    // Sync Operator Identity
+                    if (data.operatorName) {
+                        saveData('playerName', data.operatorName);
+                    }
+                    
+                    // Sync Rank Summary
+                    if (data.rank) {
+                        saveData('rankData', data.rank);
+                        setRankData(data.rank);
+                        
+                        // Update basic stats from the summary if local is empty or less detailed
+                        const localHistory = JSON.parse(localStorage.getItem('raceHistory') || '[]');
+                        if (localHistory.length === 0) {
+                            setStats({
+                                maxWPM: data.rank.highestWPM || 0,
+                                avgAccuracy: data.rank.avgAcc || 0,
+                                totalTests: data.rank.totalRaces || 0
+                            });
+                        }
+                    }
+                }
             });
-            const last10 = nonDrillHistory.slice(-10);
-            setRecentHistory(last10);
-            setRecentWPMs(last10.map(h => h.wpm));
         }
 
-        // Load Key Performances
-        const perfs = JSON.parse(localStorage.getItem('keyPerformances') || '{}');
-        setPerformances(perfs);
-
-        // Load or Calculate Rank Data
-        const savedRankData = JSON.parse(localStorage.getItem('rankData') || 'null');
-        if (savedRankData) {
-            setRankData(savedRankData);
-        } else if (nonDrillHistory.length > 0) {
-            const drills = JSON.parse(localStorage.getItem('drillHistory') || '[]');
-            const hwpm = Math.max(...nonDrillHistory.map(h => Number(h.wpm)));
-            const aacc = nonDrillHistory.reduce((a, b) => a + Number(String(b.accuracy||'0').replace('%','')), 0) / nonDrillHistory.length;
-            const score = Math.round(hwpm + (aacc * 0.2) + (drills.length * 0.5));
-            let t = 'Novice', nt = 61;
-            if (score >= 131) { t = 'Overlord'; nt = null; }
-            else if (score >= 101) { t = 'Elite'; nt = 131; }
-            else if (score >= 81) { t = 'Pro'; nt = 101; }
-            else if (score >= 61) { t = 'Cadet'; nt = 81; }
-            const newRank = { score, tier: t, nextTierMax: nt, highestWPM: hwpm, avgAcc: aacc.toFixed(1), drillsCompleted: drills.length, totalRaces: nonDrillHistory.length };
-            setRankData(newRank);
-            localStorage.setItem('rankData', JSON.stringify(newRank));
-        }
-
-        // Leaderboard listener
-        const lbRef = ref(database, 'leaderboard/top10');
-        const unsubscribe = onValue(lbRef, (snapshot) => {
-            const data = snapshot.val() || {};
-            const lbArray = Object.values(data).sort((a, b) => b.wpm - a.wpm).slice(0, 10);
+        // 3. Global Leaderboard Query
+        const q = query(collection(db, 'leaderboard'), orderBy('wpm', 'desc'), limit(10));
+        const unsubscribeLeaderboard = onSnapshot(q, (snapshot) => {
+            const lbArray = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setLeaderboard(lbArray);
         });
 
-        return () => unsubscribe();
-    }, []);
+        return () => {
+            unsubscribeUser();
+            unsubscribeLeaderboard();
+        };
+    }, [auth.currentUser]);
 
     const getKeyColor = (latency) => {
         if (!latency) return 'bg-slate-800/40 text-slate-600 border-slate-700/50';
@@ -2115,6 +2700,27 @@ export default function Dashboard() {
             <Navbar />
 
             <main className="flex-1 px-6 py-8 lg:px-20 space-y-8">
+                {/* Guest Mode Banner */}
+                {!auth.currentUser && (
+                    <div className="bg-amber-500/10 border border-amber-500/20 p-6 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden animate-in fade-in slide-in-from-top-4 duration-500">
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_0%,_rgba(245,158,11,0.05)_100%)] pointer-events-none" />
+                        <div className="flex items-center gap-4 relative z-10">
+                            <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.2)]">
+                                <AlertTriangle className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h2 className="text-lg font-black text-white uppercase tracking-tighter">Guest Mode Active</h2>
+                                <p className="text-sm text-amber-500/80 font-medium">Neural Sync Required to Track Global Progress. Local sessions will be terminated on tab close.</p>
+                            </div>
+                        </div>
+                        <button 
+                            onClick={() => document.querySelector('img[alt="User Avatar"]').click()}
+                            className="relative z-10 px-8 py-3 bg-amber-500 text-background-dark font-black uppercase tracking-[0.2em] rounded-xl hover:shadow-[0_0_30px_rgba(245,158,11,0.4)] hover:scale-105 transition-all active:scale-95 text-xs"
+                        >
+                            Establish Sync
+                        </button>
+                    </div>
+                )}
                 {/* Rank Banner */}
                 {rankData && (
                     <div className="bg-slate-900 border border-primary/20 p-6 rounded-2xl flex flex-col md:flex-row items-center gap-6 relative overflow-hidden shadow-[0_0_15px_rgba(0,245,212,0.1)] hover:shadow-[0_0_25px_rgba(0,245,212,0.2)] transition-shadow duration-300">
@@ -2435,112 +3041,92 @@ export default function Dashboard() {
 
 <file path="react-app/src/pages/SoloMode.jsx">
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
-import { Zap, BarChart2, Settings, UserCircle, RotateCcw, Code, FileText, Skull, Ghost, Share2, Check } from 'lucide-react';
-import { io } from 'socket.io-client';
-import { auth, database } from '../firebase';
-import { ref, set } from 'firebase/database';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { 
+    Zap, 
+    RotateCcw, 
+    Code, 
+    FileText, 
+    Skull, 
+    Ghost, 
+    Activity, 
+    Cpu, 
+    Play, 
+    Settings,
+    ChevronRight,
+    Terminal,
+    Shield,
+    BarChart2,
+    UserCircle
+} from 'lucide-react';
+import Navbar from '../components/Navbar';
+import { auth, db } from '../firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { loadData, saveData } from '../utils/storageUtils';
 
-const SOCKET_SERVER = 'http://localhost:3001';
-const DEFAULT_TIME = 30;
-const ADAPTIVE_DRILL_STORAGE_KEY = 'adaptiveDrill';
+const PROSE_SAMPLES = [
+    "The dawn of artificial intelligence marks a pivotal transformation in human history, mirroring the industrial revolution in its scope and influence. As we integrate neural networks into our daily lives, the boundary between biological and synthetic intelligence begins to blur. This era demands a new understanding of consciousness and the ethical implications of creating thinking machines that may one day surpass their creators in both logic and intuition.",
+    "In the deep silence of the digital void, millions of packets traverse the global infrastructure at the speed of light. Each byte represents a fragmented thought, a transaction of value, or a whisper of a secret shared across continents. We are the architects of this invisible architecture, building bridges of silicon and fiber optic cables that sustain the weight of modern civilization's collective knowledge and memory.",
+    "The art of programming is often compared to poetry, where every character must serve a purpose and every line must flow with an internal logic. A well-crafted function is a masterpiece of efficiency, solving complex problems with the elegance of a mathematical proof. To master the keyboard is to speak the language of the future, commanding legions of transistors to perform tasks that were once considered the domain of magic."
+];
+
+const CODE_SAMPLES = [
+    "async function synchronizeNeuralState(endpoint, localBuffer) {\n    const response = await fetch(endpoint, {\n        method: 'POST',\n        body: JSON.stringify({ state: localBuffer }),\n        headers: { 'Content-Type': 'application/json' }\n    });\n\n    if (!response.ok) throw new Error('Neural Sync Interrupted');\n    return await response.json();\n}",
+    "export default function useFocusMode(isActive) {\n    const [opacity, setOpacity] = useState(1.0);\n\n    useEffect(() => {\n        if (isActive) {\n            const timer = setTimeout(() => setOpacity(0.1), 100);\n            return () => clearTimeout(timer);\n        }\n        setOpacity(1.0);\n    }, [isActive]);\n\n    return opacity;\n}",
+    "const quickSort = (arr) => {\n    if (arr.length <= 1) return arr;\n    const pivot = arr[arr.length - 1];\n    const left = arr.filter(x => x < pivot);\n    const right = arr.filter(x => x > pivot);\n    return [...quickSort(left), pivot, ...quickSort(right)];\n};"
+];
 
 export default function SoloMode() {
-    const [adaptiveDrillConfig] = useState(() => {
-        try {
-            return JSON.parse(localStorage.getItem(ADAPTIVE_DRILL_STORAGE_KEY) || 'null');
-        } catch {
-            return null;
-        }
-    });
-    const isAdaptiveDrill = !!adaptiveDrillConfig;
-    const adaptiveDrillDuration = isAdaptiveDrill && Number.isFinite(adaptiveDrillConfig?.duration)
-        ? adaptiveDrillConfig.duration
-        : DEFAULT_TIME;
-    const adaptiveDrillText = isAdaptiveDrill && typeof adaptiveDrillConfig?.text === 'string'
-        ? adaptiveDrillConfig.text
-        : 'Loading quote...';
-    const adaptiveDrillDifficulty = isAdaptiveDrill && typeof adaptiveDrillConfig?.difficulty === 'string'
-        ? adaptiveDrillConfig.difficulty
-        : 'medium';
-    const adaptiveDrillCategory = isAdaptiveDrill && typeof adaptiveDrillConfig?.category === 'string'
-        ? adaptiveDrillConfig.category
-        : 'prose';
-    const adaptiveDrillMode = isAdaptiveDrill && typeof adaptiveDrillConfig?.mode === 'string'
-        ? adaptiveDrillConfig.mode
-        : 'standard';
+    const location = useLocation();
+    const navigate = useNavigate();
 
-    const [socket, setSocket] = useState(null);
-    const [text, setText] = useState(() => adaptiveDrillText);
+    // Configuration State
+    const [showConfig, setShowConfig] = useState(true);
+    const [stream, setStream] = useState('prose'); // 'prose' or 'code'
+    const [duration, setDuration] = useState(30); // 30, 60, 120
+
+    // Racing State
+    const [text, setText] = useState('');
     const [userInput, setUserInput] = useState('');
     const [status, setStatus] = useState('idle'); // 'idle', 'typing', 'finished'
-    const [isFailed, setIsFailed] = useState(false);
-    const [timeLeft, setTimeLeft] = useState(() => adaptiveDrillDuration);
-    const [errorMap, setErrorMap] = useState({});
-    const [difficulty, setDifficulty] = useState(() => adaptiveDrillDifficulty);
-    const [category, setCategory] = useState(() => adaptiveDrillCategory); // 'prose', 'code'
-    const [mode, setMode] = useState(() => adaptiveDrillMode); // 'standard', 'zen', 'sudden-death'
+    const [timeLeft, setTimeLeft] = useState(30);
     const [finalWPM, setFinalWPM] = useState(0);
+    const [isFailed, setIsFailed] = useState(false);
+    const [errorMap, setErrorMap] = useState({});
     const [keystrokes, setKeystrokes] = useState([]);
+
+    // Ghost State
     const [ghostData, setGhostData] = useState([]);
     const [ghostIndex, setGhostIndex] = useState(0);
-    const [isCopied, setIsCopied] = useState(false);
-    const [progressToast, setProgressToast] = useState(null);
-    const [drillWorstKeys, setDrillWorstKeys] = useState(() => (adaptiveDrillConfig?.worstKeys || []).slice(0, 3));
-    const [drillPreKeyStats, setDrillPreKeyStats] = useState(() => adaptiveDrillConfig?.preKeyStats || {});
+    const [ghostName, setGhostName] = useState(null);
 
     const inputRef = useRef(null);
     const startTimeRef = useRef(null);
     const endTimeRef = useRef(null);
     const lastKeystrokeTimestampRef = useRef(null);
-    const toastTimeoutRef = useRef(null);
-    const hasShownDrillStartToastRef = useRef(false);
+    const timerRef = useRef(null);
 
-    // Initialize Socket
+    // Initial Ghost Check (from Vault)
     useEffect(() => {
-        const newSocket = io(SOCKET_SERVER);
-        setSocket(newSocket);
-        return () => newSocket.disconnect();
-    }, []);
-
-    // If we launched via adaptive drill, arm the run and avoid socket-based quote fetching.
-    useEffect(() => {
-        if (!isAdaptiveDrill || !adaptiveDrillConfig) return;
-
-        localStorage.removeItem(ADAPTIVE_DRILL_STORAGE_KEY);
-        setGhostData([]);
-        setGhostIndex(0);
-        setKeystrokes([]);
-        setErrorMap({});
-        setUserInput('');
-        setStatus('idle');
-        setIsFailed(false);
-
-        const keys = (adaptiveDrillConfig.worstKeys || []).slice(0, 3).join(' ');
-        setProgressToast({
-            title: 'Daily Drill Armed',
-            body: `Focus: ${keys || 'key'} • ${adaptiveDrillDuration}s • No ghosts`
-        });
-        hasShownDrillStartToastRef.current = true;
-
-        if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-        toastTimeoutRef.current = setTimeout(() => setProgressToast(null), 9000);
-    }, [isAdaptiveDrill, adaptiveDrillConfig, adaptiveDrillDuration]);
-
-    // Focus input on mount and keep it focused
-    useEffect(() => {
-        if (inputRef.current) {
-            inputRef.current.focus();
+        if (location.state?.isGhostChallenge) {
+            const gd = location.state.ghostData || [];
+            if (gd.length > 0) {
+                setGhostData(gd);
+                setText(location.state.text || "");
+                setGhostName(location.state.ghostName || "Neural Specter");
+                setShowConfig(false);
+                setTimeLeft(Math.ceil(gd[gd.length - 1].time / 1000) + 5);
+            }
         }
-    }, [status, mode]); // Re-focus on status or mode change
+    }, [location.state]);
 
-    // Timer logic
+    // Timer Logic
     useEffect(() => {
-        let timer;
         if (status === 'typing' && timeLeft > 0) {
-            timer = setInterval(() => {
-                setTimeLeft((prev) => {
+            timerRef.current = setInterval(() => {
+                setTimeLeft(prev => {
                     if (prev <= 1) {
+                        clearInterval(timerRef.current);
                         setStatus('finished');
                         endTimeRef.current = Date.now();
                         return 0;
@@ -2548,37 +3134,33 @@ export default function SoloMode() {
                     return prev - 1;
                 });
             }, 1000);
+        } else {
+            clearInterval(timerRef.current);
         }
-        return () => clearInterval(timer);
-    }, [status, timeLeft]);
+        return () => clearInterval(timerRef.current);
+    }, [status]);
 
-    // Ghost Cursor Logic
+    // Ghost Pacer Logic
     useEffect(() => {
         let animationFrame;
         if (status === 'typing' && ghostData.length > 0) {
-            const start = startTimeRef.current;
             const animate = () => {
-                const elapsed = Date.now() - start;
-                let index = 0;
-                for (let i = 0; i < ghostData.length; i++) {
-                    if (ghostData[i].time <= elapsed) {
-                        index = i + 1;
-                    } else {
-                        break;
-                    }
+                const elapsed = Date.now() - startTimeRef.current;
+                const nextIndex = ghostData.findIndex(k => k.time > elapsed);
+                if (nextIndex !== -1) {
+                    setGhostIndex(nextIndex);
+                } else {
+                    setGhostIndex(ghostData.length);
                 }
-                setGhostIndex(index);
                 animationFrame = requestAnimationFrame(animate);
             };
             animationFrame = requestAnimationFrame(animate);
-        } else {
-            setGhostIndex(0);
         }
         return () => cancelAnimationFrame(animationFrame);
     }, [status, ghostData]);
 
     const handleInputChange = (e) => {
-        if (status === 'finished') return;
+        if (status === 'finished' || isFailed) return;
 
         const val = e.target.value;
         const now = Date.now();
@@ -2586,116 +3168,63 @@ export default function SoloMode() {
         if (status === 'idle' && val.length > 0) {
             setStatus('typing');
             startTimeRef.current = now;
-            lastKeystrokeTimestampRef.current = now;
         }
 
         if (val.length <= text.length) {
             const prevLength = userInput.length;
-            const nowTime = Date.now();
             
-            // Track Keystrokes for Ghost Pacer
+            // Record Keystroke for Ghost
             if (val.length > prevLength && startTimeRef.current) {
                 const char = val[val.length - 1];
-                const timeOffset = nowTime - startTimeRef.current;
-                setKeystrokes(prev => [...prev, { char, time: timeOffset }]);
+                const time = now - startTimeRef.current;
+                setKeystrokes(prev => [...prev, { char, time }]);
             }
 
-            // Track Latency (Legacy system)
-            if (val.length > prevLength && lastKeystrokeTimestampRef.current) {
-                const latency = now - lastKeystrokeTimestampRef.current;
+            // Error Detection
+            if (val.length > prevLength) {
+                const typedChar = val[val.length - 1];
                 const expectedChar = text[val.length - 1];
-                const key = expectedChar?.toLowerCase();
-
-                // Ignore whitespace-only keys in the latency profile.
-                if (key && expectedChar !== ' ' && expectedChar !== '\n' && expectedChar !== '\t') {
-                    const performances = JSON.parse(localStorage.getItem('keyPerformances') || '{}');
-                    const current = performances[key] || { avg: 0, count: 0, errors: 0 };
-                    const newCount = (Number(current.count) || 0) + 1;
-                    const currentAvg = Number(current.avg) || 0;
-                    const newAvg = Math.round(((currentAvg * (Number(current.count) || 0)) + latency) / newCount);
-
-                    performances[key] = {
-                        ...current,
-                        avg: newAvg,
-                        count: newCount
-                    };
-                    localStorage.setItem('keyPerformances', JSON.stringify(performances));
+                if (typedChar !== expectedChar) {
+                    const key = expectedChar.toLowerCase();
+                    setErrorMap(prev => ({ ...prev, [key]: (prev[key] || 0) + 1 }));
                 }
-                lastKeystrokeTimestampRef.current = now;
             }
 
             setUserInput(val);
 
-            // Detect Error / Sudden Death
-            if (val.length > prevLength) {
-                const typedChar = val[val.length - 1];
-                const expectedChar = text[val.length - 1];
-                
-                if (typedChar !== expectedChar) {
-                    if (mode === 'sudden-death') {
-                        setStatus('finished');
-                        setIsFailed(true);
-                        endTimeRef.current = now;
-                        return;
-                    }
-                    if (expectedChar !== ' ' && expectedChar !== '\n') {
-                        const missedChar = expectedChar.toLowerCase();
-                        setErrorMap(prev => ({ ...prev, [missedChar]: (prev[missedChar] || 0) + 1 }));
-                    }
-                }
+            if (val.length === text.length) {
+                setStatus('finished');
+                endTimeRef.current = now;
             }
-        }
-
-        // Auto-finish if type all text
-        if (val.length === text.length && text.length > 0) {
-            setStatus('finished');
-            endTimeRef.current = now;
         }
     };
 
     const handleKeyDown = (e) => {
-        if (status === 'finished') {
-            if (e.key.toLowerCase() === 'r' || e.key === 'Tab') {
-                e.preventDefault();
-                resetTest();
-            }
-            return;
-        }
-
-        if (category === 'code') {
-            if (e.key === 'Tab') {
-                e.preventDefault();
-                // Find how many spaces/indentation are next in the text
-                const nextChunk = text.slice(userInput.length);
-                const indentMatch = nextChunk.match(/^ +/);
-                if (indentMatch) {
-                    setUserInput(prev => prev + indentMatch[0]);
-                } else {
-                    // Just add 4 spaces if no match but Tab was pressed (fallback)
-                    setUserInput(prev => prev + "    ");
-                }
-                if (status === 'idle') {
-                    setStatus('typing');
-                    startTimeRef.current = Date.now();
-                }
-            } else if (e.key === 'Enter') {
-                const expectedChar = text[userInput.length];
-                if (expectedChar === '\n') {
-                    e.preventDefault();
-                    setUserInput(prev => prev + '\n');
-                    if (status === 'idle') {
-                        setStatus('typing');
-                        startTimeRef.current = Date.now();
-                    }
-                }
-            }
-        }
-        
-        // General Restart shortcut during typing/idle
-        if ((e.key.toLowerCase() === 'r' && e.ctrlKey) || (e.key === 'Tab' && status === 'idle')) {
+        if (e.key === 'Tab') {
             e.preventDefault();
             resetTest();
         }
+    };
+
+    const resetTest = () => {
+        setUserInput('');
+        setStatus('idle');
+        setIsFailed(false);
+        setTimeLeft(duration);
+        setKeystrokes([]);
+        setErrorMap({});
+        setGhostIndex(0);
+        startTimeRef.current = null;
+        endTimeRef.current = null;
+        if (inputRef.current) inputRef.current.focus();
+    };
+
+    const handleStartRace = () => {
+        const samples = stream === 'prose' ? PROSE_SAMPLES : CODE_SAMPLES;
+        setText(samples[Math.floor(Math.random() * samples.length)]);
+        setTimeLeft(duration);
+        setShowConfig(false);
+        resetTest();
     };
 
     const calculateAccuracy = () => {
@@ -2704,544 +3233,245 @@ export default function SoloMode() {
         return ((correctChars / userInput.length) * 100).toFixed(1);
     };
 
-    const handleShareScore = async () => {
-        const accuracy = calculateAccuracy();
-        const modeEmoji = mode === 'sudden-death' ? 'HELL ☠️' : mode === 'zen' ? 'ZEN 👻' : 'STANDARD ⚡';
-        const str = `TypeMaster ⚡ | WPM: ${finalWPM} | Acc: ${accuracy}% | Mode: ${modeEmoji} | ${category === 'code' ? 'Code-Sprint' : 'Prose'}`;
-        
-        try {
-            await navigator.clipboard.writeText(str);
-            setIsCopied(true);
-            setTimeout(() => setIsCopied(false), 2000);
-        } catch (err) {
-            console.error('Failed to copy text: ', err);
-            prompt('Clipboard access denied. Copy your score manually:', str);
-        }
-    };
-
     const calculateWPM = () => {
         if (!startTimeRef.current) return 0;
         const end = endTimeRef.current || Date.now();
-        const elapsedSeconds = (end - startTimeRef.current) / 1000;
-        const elapsedMins = elapsedSeconds / 60;
-        
+        const elapsedMins = (end - startTimeRef.current) / 60000;
         if (elapsedMins <= 0) return 0;
-        
         const correctChars = userInput.split('').filter((char, i) => char === text[i]).length;
-        // WPM formula: (Characters / 5) / Minutes
         return Math.round((correctChars / 5) / elapsedMins);
     };
 
-    const resetTest = () => {
-        setUserInput('');
-        setStatus('idle');
-        setIsFailed(false);
-        setTimeLeft(isAdaptiveDrill ? adaptiveDrillDuration : DEFAULT_TIME);
-        setErrorMap({});
-        startTimeRef.current = null;
-        endTimeRef.current = null;
-        lastKeystrokeTimestampRef.current = null;
-        setKeystrokes([]);
-        if (isAdaptiveDrill) {
-            setGhostData([]);
-            setGhostIndex(0);
-        }
-        if (!isAdaptiveDrill) {
-            fetchNewQuote();
-        }
-        if (inputRef.current) {
-            inputRef.current.focus();
-        }
-    };
-
-    const fetchNewQuote = () => {
-        if (isAdaptiveDrill) return;
-        if (!socket) return;
-        socket.emit('getSoloQuote', { difficulty, category }, (res) => {
-            if (res.success) {
-                setText(res.text);
-                setUserInput('');
-                setStatus('idle');
-                setIsFailed(false);
-                setTimeLeft(DEFAULT_TIME);
-                setErrorMap({});
-                startTimeRef.current = null;
-                endTimeRef.current = null;
-                lastKeystrokeTimestampRef.current = null;
-                setKeystrokes([]);
-                if (inputRef.current) inputRef.current.focus();
-            }
-        });
-    };
-
-    // Save errorMap to localStorage when the test finishes
     useEffect(() => {
-        if (status === 'finished' && Object.keys(errorMap).length > 0) {
-            const existing = JSON.parse(localStorage.getItem('weakKeys') || '{}');
-            const merged = { ...existing };
-            for (const [key, count] of Object.entries(errorMap)) {
-                merged[key] = (merged[key] || 0) + count;
-            }
-            localStorage.setItem('weakKeys', JSON.stringify(merged));
-
-            // Persist error counts into keyPerformances so we can rank by ms/error rate.
-            const perfExisting = JSON.parse(localStorage.getItem('keyPerformances') || '{}');
-            const perfMerged = { ...perfExisting };
-            for (const [key, count] of Object.entries(errorMap)) {
-                const current = perfMerged[key] || { avg: 0, count: 0, errors: 0 };
-                perfMerged[key] = {
-                    ...current,
-                    errors: (Number(current.errors) || 0) + count
-                };
-            }
-            localStorage.setItem('keyPerformances', JSON.stringify(perfMerged));
-        }
-        
         if (status === 'finished') {
-            const currentWPM = calculateWPM();
-            setFinalWPM(currentWPM);
-
-            const currentAccuracyStr = calculateAccuracy();
-            const currentAccuracy = Number(currentAccuracyStr) || 0;
-
-            // PB Logic: Overwrite only if higher WPM (or first run). Skip during adaptive drill.
-            if (!isAdaptiveDrill) {
-                const savedGhost = localStorage.getItem('lastRunGhost');
-                let ghostWPM = 0;
-                if (savedGhost) {
-                    const parsed = JSON.parse(savedGhost);
-                    const lastTime = parsed[parsed.length - 1]?.time || 0;
-                    if (lastTime > 0) {
-                        ghostWPM = Math.round((parsed.length / 5) / (lastTime / 60000));
-                    }
-                }
-                
-                if (keystrokes.length > 0 && currentWPM > ghostWPM) {
-                    localStorage.setItem('lastRunGhost', JSON.stringify(keystrokes));
-                    setGhostData(keystrokes);
-                }
-            }
-
-            // RaceHistory is used by the main dashboard graph.
-            // Adaptive drills are flagged (`isDrill`) so the dashboard can filter them out.
-            const raceHistory = JSON.parse(localStorage.getItem('raceHistory') || '[]');
-            const drillHistory = isAdaptiveDrill
-                ? JSON.parse(localStorage.getItem('drillHistory') || '[]')
-                : [];
-
-            const prevAvgWPM = isAdaptiveDrill
-                ? (drillHistory.length > 0
-                    ? drillHistory.reduce((acc, h) => acc + Number(h.wpm || 0), 0) / drillHistory.length
-                    : currentWPM)
-                : (raceHistory.length > 0
-                    ? raceHistory.reduce((acc, h) => acc + Number(h.wpm || 0), 0) / raceHistory.length
-                    : currentWPM);
-
-            const prevAvgAcc = isAdaptiveDrill
-                ? (drillHistory.length > 0
-                    ? drillHistory.reduce((acc, h) => acc + Number(String(h.accuracy || '0').replace('%', '')), 0) / drillHistory.length
-                    : currentAccuracy)
-                : (raceHistory.length > 0
-                    ? raceHistory.reduce((acc, h) => acc + Number(String(h.accuracy || '0').replace('%', '')), 0) / raceHistory.length
-                    : currentAccuracy);
-
-            raceHistory.push({
-                wpm: currentWPM,
-                accuracy: currentAccuracyStr,
-                date: Date.now(),
-                mode,
-                category,
-                ...(isAdaptiveDrill ? { isDrill: true } : {})
-            });
-            localStorage.setItem('raceHistory', JSON.stringify(raceHistory.slice(-100))); // Keep last 100 runs
-
-            // Drill-only storage for toast baselines (kept isolated from the main dashboard graph).
-            if (isAdaptiveDrill) {
-                drillHistory.push({
-                    wpm: currentWPM,
-                    accuracy: currentAccuracyStr,
-                    date: Date.now(),
-                    worstKeys: drillWorstKeys
-                });
-                localStorage.setItem('drillHistory', JSON.stringify(drillHistory.slice(-100)));
-            }
-
-            // Calculate and Store Rank Data
-            const finalRaceHistory = JSON.parse(localStorage.getItem('raceHistory') || '[]');
-            const finalDrillHistory = JSON.parse(localStorage.getItem('drillHistory') || '[]');
-            const nonDrill = finalRaceHistory.filter(h => !h.isDrill);
+            const wpm = calculateWPM();
+            setFinalWPM(wpm);
             
-            if (nonDrill.length > 0) {
-                const highestWPM = Math.max(...nonDrill.map(h => Number(h.wpm)));
-                const avgAcc = nonDrill.reduce((acc, h) => acc + Number(String(h.accuracy || '0').replace('%', '')), 0) / nonDrill.length;
-                const drillsCompleted = finalDrillHistory.length;
-                
-                const rankScore = Math.round(highestWPM + (avgAcc * 0.2) + (drillsCompleted * 0.5));
-                
-                let tier = 'Novice';
-                let nextTierWPM = 61;
-                if (rankScore >= 131) { tier = 'Overlord'; nextTierWPM = null; }
-                else if (rankScore >= 101) { tier = 'Elite'; nextTierWPM = 131; }
-                else if (rankScore >= 81) { tier = 'Pro'; nextTierWPM = 101; }
-                else if (rankScore >= 61) { tier = 'Cadet'; nextTierWPM = 81; }
-                
-                localStorage.setItem('rankData', JSON.stringify({
-                    score: rankScore,
-                    tier,
-                    nextTierMax: nextTierWPM,
-                    highestWPM,
-                    avgAcc: avgAcc.toFixed(1),
-                    drillsCompleted,
-                    totalRaces: nonDrill.length
-                }));
-            }
-
-            if (auth.currentUser) {
-                const uid = auth.currentUser.uid;
-                const userRef = ref(database, `users/${uid}`);
-                const localRaces = JSON.parse(localStorage.getItem('raceHistory') || '[]').filter(r => !r.isDrill);
-                const localKeyPerf = JSON.parse(localStorage.getItem('keyPerformances') || '{}');
-                const localRank = JSON.parse(localStorage.getItem('rankData') || 'null');
-                
-                set(userRef, {
-                    races: localRaces,
-                    keyPerf: localKeyPerf,
-                    rank: localRank
-                }).catch(err => console.error("Firebase sync failed:", err));
-
-                if (!isAdaptiveDrill && localRank) {
-                    const lbRef = ref(database, `leaderboard/top10/${uid}`);
-                    const email = auth.currentUser.email || 'Operator';
-                    const operatorName = localStorage.getItem('playerName') || email.split('@')[0];
-                    set(lbRef, {
-                        name: operatorName,
-                        wpm: localRank.highestWPM,
-                        acc: localRank.avgAcc,
-                        score: localRank.score,
-                        tier: localRank.tier,
-                        updatedAt: Date.now()
-                    }).catch(err => console.error("Leaderboard update failed:", err));
-                }
-            }
-
-            // Completion toast for adaptive drills
-            if (isAdaptiveDrill) {
-                const keyPerformancesAfter = JSON.parse(localStorage.getItem('keyPerformances') || '{}');
-                const preKeys = drillWorstKeys || [];
-                const preStats = drillPreKeyStats || {};
-
-                const deltas = preKeys.map((k) => {
-                    const pre = preStats[k] || {};
-                    const postPerf = keyPerformancesAfter[k] || {};
-
-                    const preAvg = Number(pre.avg) || 0;
-                    const postAvg = Number(postPerf.avg) || 0;
-                    const preHits = Number(pre.hits) || 0;
-                    const preErrors = Number(pre.errors) || 0;
-                    const postHits = Number(postPerf.count) || 0;
-                    const postErrors = Number(postPerf.errors ?? 0) || 0;
-
-                    const preAttempts = preHits + preErrors;
-                    const postAttempts = postHits + postErrors;
-                    const preErrRate = preAttempts > 0 ? preErrors / preAttempts : 0;
-                    const postErrRate = postAttempts > 0 ? postErrors / postAttempts : 0;
-
-                    return {
-                        key: k,
-                        latencyDelta: postAvg - preAvg,
-                        errorRateDelta: postErrRate - preErrRate
-                    };
-                }).filter(Boolean);
-
-                const avgLatencyDelta = deltas.length > 0 ? Math.round(deltas.reduce((acc, d) => acc + d.latencyDelta, 0) / deltas.length) : 0;
-                const improvedLatencyCount = deltas.filter((d) => d.latencyDelta < 0).length;
-
-                const avgErrorRateDelta = deltas.length > 0 ? deltas.reduce((acc, d) => acc + d.errorRateDelta, 0) / deltas.length : 0;
-                const improvedErrorCount = deltas.filter((d) => d.errorRateDelta < 0).length;
-
-                const wpmDelta = Math.round(currentWPM - prevAvgWPM);
-                const accDelta = Number((currentAccuracy - prevAvgAcc).toFixed(1));
-
-                setProgressToast({
-                    title: 'Neon Neural Gain',
-                    body:
-                        `WPM ${wpmDelta >= 0 ? '+' : ''}${wpmDelta} vs avg ${Math.round(prevAvgWPM)} • ` +
-                        `Acc ${accDelta >= 0 ? '+' : ''}${accDelta.toFixed(1)}% • ` +
-                        `Latency ${avgLatencyDelta >= 0 ? '+' : ''}${avgLatencyDelta}ms (${improvedLatencyCount}/${deltas.length}) • ` +
-                        `Error ${(avgErrorRateDelta * 100) >= 0 ? '+' : ''}${(avgErrorRateDelta * 100).toFixed(1)}% (${improvedErrorCount}/${deltas.length})`
+            // PB Logic
+            const lastGhost = loadData('lastRunGhost');
+            if (!lastGhost || wpm > (lastGhost.wpm || 0)) {
+                saveData('lastRunGhost', {
+                    wpm,
+                    accuracy: calculateAccuracy(),
+                    keystrokes,
+                    text,
+                    date: Date.now(),
+                    stream
                 });
-
-                if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-                toastTimeoutRef.current = setTimeout(() => setProgressToast(null), 12000);
             }
+
+            // History Logic
+            const history = loadData('raceHistory') || [];
+            history.push({
+                wpm,
+                accuracy: calculateAccuracy(),
+                date: Date.now(),
+                stream
+            });
+            saveData('raceHistory', history.slice(-50));
         }
     }, [status]);
 
-    // Load Ghost Data on Mount
-    useEffect(() => {
-        if (isAdaptiveDrill) return;
-        const savedGhost = localStorage.getItem('lastRunGhost');
-        if (savedGhost) {
-            setGhostData(JSON.parse(savedGhost));
-        }
-    }, [isAdaptiveDrill]);
-
-    // Automatic Reboot on Mode/Category Change
-    useEffect(() => {
-        if (status !== 'idle' || userInput.length > 0) {
-            resetTest();
-        }
-    }, [mode, category, difficulty]);
-
-    // Fetch a new quote whenever difficulty/category changes or socket is ready
-    useEffect(() => {
-        fetchNewQuote();
-    }, [difficulty, category, socket]);
-
-    const isZenHiding = mode === 'zen' && status === 'typing';
+    const isFocusMode = status === 'typing';
 
     return (
-        <div className="layout-container flex flex-col min-h-screen bg-background-dark selecting:bg-primary/20">
-            <header className="flex items-center justify-between px-8 py-6 border-b border-primary/10 faded-ui">
-                <div className="flex items-center gap-2 text-primary drop-shadow-[0_0_8px_rgba(0,245,212,0.4)]">
-                    <Zap className="w-8 h-8 animate-pulse" />
-                    <h2 className="text-xl font-bold tracking-tight uppercase">TypeMaster <span className="text-[10px] bg-primary/20 px-1.5 py-0.5 rounded ml-1 border border-primary/30">PRO</span></h2>
-                </div>
-                <nav className="flex items-center gap-6">
-                    <Link to="/" className="flex items-center justify-center p-2 rounded-lg hover:bg-primary/10 text-slate-400 hover:text-primary transition-colors">
-                        <BarChart2 className="w-6 h-6" />
-                    </Link>
-                    <button className="flex items-center justify-center p-2 rounded-lg hover:bg-primary/10 text-slate-400 hover:text-primary transition-colors">
-                        <Settings className="w-6 h-6" />
-                    </button>
-                    <div className="w-px h-6 bg-slate-700 mx-2"></div>
-                    <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-primary/20 hover:border-primary/50 text-sm font-medium transition-all text-primary/80">
-                        <UserCircle className="w-5 h-5" />
-                        <span>CyberTypist</span>
-                    </button>
-                </nav>
-            </header>
+        <div className="min-h-screen bg-background-dark text-slate-300 font-sans selection:bg-primary/30 selection:text-primary flex flex-col overflow-hidden relative">
+            {/* Scanline Effect */}
+            <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%] z-50" />
+            
+            <Navbar isFaded={isFocusMode} />
 
-            <main className="flex-1 flex flex-col max-w-5xl mx-auto w-full px-8 py-8">
-                {/* Stats Header Area */}
-                <div className={`flex justify-between items-end mb-12 px-4 transition-all duration-700 ease-in-out ${isZenHiding ? 'opacity-0 scale-95 translate-y-4' : 'opacity-100'}`}>
-                    <div className="flex flex-col">
-                        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/40">
-                            {status === 'finished' ? 'Final Output' : 'Chronometer'}
-                        </span>
-                        <div className="text-6xl font-black text-primary drop-shadow-[0_0_15px_rgba(0,245,212,0.3)] font-mono">
-                            {status === 'finished' ? finalWPM : timeLeft} <span className="text-lg font-medium opacity-50">{status === 'finished' ? 'WPM' : 's'}</span>
-                        </div>
-                    </div>
-                    <div className="flex flex-col items-end">
-                        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Precision</span>
-                        <div className="text-4xl font-bold text-slate-300 font-mono tracking-tighter">
-                            {calculateAccuracy()}<span className="text-base opacity-50">%</span>
-                        </div>
-                    </div>
-                </div>
+            <main className="flex-1 flex flex-col relative z-10 transition-all duration-500">
+                {showConfig ? (
+                    <div className="flex-1 flex items-center justify-center p-6 animate-in fade-in zoom-in duration-500">
+                        <div className="max-w-2xl w-full bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-10 shadow-2xl relative overflow-hidden group">
+                           <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <Terminal className="w-32 h-32 text-primary" />
+                           </div>
+                           
+                           <h1 className="text-4xl font-black text-white uppercase tracking-tighter mb-2 flex items-center gap-4">
+                                <Cpu className="w-10 h-10 text-primary animate-pulse" />
+                                System Configuration
+                           </h1>
+                           <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px] mb-10 border-b border-white/5 pb-6">
+                                Initializing Neural Pathway Protocol // Select Parameters
+                           </p>
 
-                {progressToast && (
-                    <div className="fixed top-6 right-6 z-300 w-104 max-w-[calc(100vw-2rem)] bg-black/70 backdrop-blur-md border border-primary/30 rounded-2xl shadow-[0_0_35px_rgba(0,245,212,0.14)] p-4 animate-in fade-in duration-300">
-                        <div className="flex items-start justify-between gap-4">
-                            <div>
-                                <div className="text-[10px] font-black uppercase tracking-widest text-primary/70">
-                                    {progressToast.title}
+                           <div className="space-y-10">
+                                <div>
+                                    <label className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-4 block">Data Stream Source</label>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <button 
+                                            onClick={() => setStream('prose')}
+                                            className={`flex items-center gap-4 p-5 rounded-2xl border-2 transition-all ${stream === 'prose' ? 'bg-primary/20 border-primary shadow-[0_0_20px_rgba(0,245,212,0.2)] text-white' : 'bg-white/5 border-transparent text-slate-500 hover:border-white/20'}`}
+                                        >
+                                            <div className={`p-3 rounded-xl ${stream === 'prose' ? 'bg-primary text-black' : 'bg-white/5'}`}>
+                                                <FileText className="w-6 h-6" />
+                                            </div>
+                                            <div className="text-left">
+                                                <div className="font-black uppercase tracking-tight text-sm">Prose Matrix</div>
+                                                <div className="text-[10px] opacity-60 font-bold uppercase">Natural Language</div>
+                                            </div>
+                                        </button>
+                                        <button 
+                                            onClick={() => setStream('code')}
+                                            className={`flex items-center gap-4 p-5 rounded-2xl border-2 transition-all ${stream === 'code' ? 'bg-primary/20 border-primary shadow-[0_0_20px_rgba(0,245,212,0.2)] text-white' : 'bg-white/5 border-transparent text-slate-500 hover:border-white/20'}`}
+                                        >
+                                            <div className={`p-3 rounded-xl ${stream === 'code' ? 'bg-primary text-black' : 'bg-white/5'}`}>
+                                                <Code className="w-6 h-6" />
+                                            </div>
+                                            <div className="text-left">
+                                                <div className="font-black uppercase tracking-tight text-sm">Syntax Stream</div>
+                                                <div className="text-[10px] opacity-60 font-bold uppercase">React / JS Logic</div>
+                                            </div>
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className="mt-2 text-sm leading-relaxed font-semibold text-slate-100">
-                                    {progressToast.body}
+
+                                <div>
+                                    <label className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-4 block">Session Duration (Seconds)</label>
+                                    <div className="flex gap-4">
+                                        {[30, 60, 120].map((d) => (
+                                            <button 
+                                                key={d}
+                                                onClick={() => setDuration(d)}
+                                                className={`flex-1 py-4 rounded-xl border-2 font-black text-lg transition-all ${duration === d ? 'bg-primary text-black border-primary shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-white/5 border-transparent text-slate-500 hover:border-white/20'}`}
+                                            >
+                                                {d}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <button 
+                                    onClick={handleStartRace}
+                                    className="w-full py-6 bg-primary text-black rounded-2xl font-black uppercase tracking-[0.3em] flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_30px_rgba(0,245,212,0.4)]"
+                                >
+                                    <Play className="w-6 h-6 fill-current" />
+                                    Initialize Session
+                                </button>
+                           </div>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="flex-1 flex flex-col p-8 max-w-6xl mx-auto w-full relative">
+                        {/* Stats Banner */}
+                        <div className={`flex justify-between items-end mb-12 transition-all duration-700 ease-in-out ${isFocusMode ? 'opacity-10 scale-[0.98]' : 'opacity-100'}`}>
+                            <div className="flex flex-col">
+                                {ghostName && (
+                                    <div className="flex items-center gap-2 mb-2 text-yellow-500 animate-pulse font-mono">
+                                        <Ghost className="w-4 h-4" />
+                                        <span className="text-[10px] font-black uppercase tracking-[0.2em]">Neural Ghost Overlay: {ghostName}</span>
+                                    </div>
+                                )}
+                                <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-1">Temporal Node</span>
+                                <div className="text-7xl font-black text-white font-mono leading-none flex items-baseline gap-2">
+                                    {status === 'finished' ? finalWPM : timeLeft}
+                                    <span className="text-xl text-primary/40 uppercase font-sans tracking-widest">{status === 'finished' ? 'WPM' : 'Sec'}</span>
                                 </div>
                             </div>
-                            <button
-                                onClick={() => setProgressToast(null)}
-                                className="text-slate-300/70 hover:text-slate-200 transition-colors text-xs font-bold border border-white/10 rounded-lg px-3 py-1 bg-white/5"
-                            >
-                                Close
-                            </button>
+                            
+                            <div className="flex flex-col items-end">
+                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-1">Neural Precision</span>
+                                <div className="text-5xl font-bold text-slate-200 font-mono leading-none">
+                                    {calculateAccuracy()}<span className="text-xl opacity-30">%</span>
+                                </div>
+                            </div>
                         </div>
-                        <div className="mt-3 h-[2px] w-full bg-primary/20 rounded-full overflow-hidden">
-                            <div className="h-full w-full bg-primary/60 animate-[drillGlow_2s_ease-in-out_infinite] rounded-full" />
+
+                        {/* Centered Typing Interface */}
+                        <div className="flex-1 flex flex-col items-center justify-center mb-24 relative">
+                            <div 
+                                className={`w-full max-w-4xl p-12 bg-white/[0.02] border border-white/5 rounded-[40px] shadow-2xl relative transition-all duration-500 ${status === 'typing' ? 'scale-[1.05] bg-white/[0.05] border-primary/20 shadow-[0_0_50px_rgba(0,0,0,0.5)]' : ''}`}
+                                onClick={() => inputRef.current?.focus()}
+                            >
+                                <input
+                                    ref={inputRef}
+                                    type="text"
+                                    value={userInput}
+                                    onChange={handleInputChange}
+                                    onKeyDown={handleKeyDown}
+                                    className="absolute opacity-0 pointer-events-none"
+                                />
+
+                                <div className="text-2xl font-mono leading-relaxed select-none relative z-10 tracking-tight">
+                                    {text.split('').map((char, index) => {
+                                        let colorClass = "text-slate-600";
+                                        if (index < userInput.length) {
+                                            colorClass = userInput[index] === char ? "text-primary drop-shadow-[0_0_8px_rgba(0,245,212,0.4)]" : "text-red-500 bg-red-500/10 rounded-sm";
+                                        }
+                                        const isCursor = index === userInput.length && status !== 'finished';
+                                        const isGhost = ghostData.length > 0 && index === ghostIndex && status === 'typing';
+
+                                        return (
+                                            <span key={index} className="relative">
+                                                {isCursor && (
+                                                    <span className="absolute left-0 h-full w-[2px] bg-primary shadow-[0_0_15px_#00f5d4] animate-pulse" />
+                                                )}
+                                                {isGhost && (
+                                                    <span className="absolute left-0 h-full w-[2px] bg-yellow-500/40 shadow-[0_0_10px_rgba(234,179,8,0.3)] transition-all duration-100" />
+                                                )}
+                                                <span className={`${colorClass} transition-colors duration-150`}>{char}</span>
+                                            </span>
+                                        );
+                                    })}
+                                </div>
+
+                                {status === 'idle' && (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-background-dark/40 backdrop-blur-[2px] rounded-[40px] pointer-events-none">
+                                        <div className="flex flex-col items-center gap-4 animate-pulse">
+                                            <div className="flex items-center gap-8 text-primary/30">
+                                                <div className="h-px w-24 bg-gradient-to-r from-transparent to-primary/20" />
+                                                <Activity className="w-8 h-8" />
+                                                <div className="h-px w-24 bg-gradient-to-l from-transparent to-primary/20" />
+                                            </div>
+                                            <span className="text-[10px] font-black uppercase tracking-[0.5em] text-white/30">Initiate Input Sequence</span>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {status === 'finished' && (
+                                <div className="mt-12 flex gap-4 animate-in slide-in-from-bottom-6 duration-500">
+                                    <button 
+                                        onClick={resetTest}
+                                        className="flex items-center gap-3 px-10 py-5 bg-primary text-black rounded-2xl font-black uppercase tracking-widest text-xs hover:scale-105 transition-all shadow-[0_0_20px_rgba(0,245,212,0.3)]"
+                                    >
+                                        <RotateCcw className="w-5 h-5" />
+                                        Reboot Grid
+                                    </button>
+                                    <button 
+                                        onClick={() => setShowConfig(true)}
+                                        className="flex items-center gap-3 px-10 py-5 bg-white/5 border border-white/10 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-white/10 transition-all"
+                                    >
+                                        <Settings className="w-5 h-5" />
+                                        Adjust Params
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Footer Controls */}
+                        <div className={`mt-auto flex justify-between items-center transition-all duration-700 ${isFocusMode ? 'opacity-0 translate-y-4' : 'opacity-100'}`}>
+                            <div className="flex gap-12">
+                                <div className="flex flex-col">
+                                    <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1">Node Protocol</span>
+                                    <span className="text-xs font-bold text-slate-400 font-mono uppercase italic">{stream} stream</span>
+                                </div>
+                                <div className="flex flex-col text-right">
+                                    <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1">Link Key</span>
+                                    <span className="text-xs font-bold text-slate-400 font-mono uppercase italic">TAB to Reset</span>
+                                </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-4 bg-black/40 px-8 py-3 rounded-full border border-white/5 shadow-2xl">
+                                <Shield className="w-4 h-4 text-primary opacity-50" />
+                                <span className="text-[9px] font-black text-primary tracking-[0.3em] font-mono animate-pulse">SECURE ENCRYPTED SESSION // ACTIVE</span>
+                            </div>
                         </div>
                     </div>
                 )}
-
-                {/* Control Panel */}
-                <div className={`faded-ui grid grid-cols-1 md:grid-cols-3 gap-8 mb-16 bg-slate-900/40 p-6 rounded-2xl border border-white/5 relative z-20 ${isAdaptiveDrill ? 'pointer-events-none opacity-70' : ''}`}>
-                    {/* Mode Selector */}
-                    <div className="flex flex-col gap-3">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">System Mode</span>
-                        <div className="flex gap-1 bg-black/40 p-1 rounded-xl border border-white/5">
-                            <button onClick={() => setMode('standard')} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold uppercase transition-all ${mode === 'standard' ? 'bg-primary text-background-dark' : 'text-slate-400 hover:text-slate-200'}`}>
-                                <Zap className="w-3.5 h-3.5" />
-                                Std
-                            </button>
-                            <button onClick={() => setMode('zen')} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold uppercase transition-all ${mode === 'zen' ? 'bg-primary text-background-dark' : 'text-slate-400 hover:text-slate-200'}`}>
-                                <Ghost className="w-3.5 h-3.5" />
-                                Zen
-                            </button>
-                            <button onClick={() => setMode('sudden-death')} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold uppercase transition-all ${mode === 'sudden-death' ? 'bg-red-500 text-white shadow-[0_0_10px_rgba(239,68,68,0.4)]' : 'text-slate-400 hover:text-slate-200'}`}>
-                                <Skull className="w-3.5 h-3.5" />
-                                Hell
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Category Selector */}
-                    <div className="flex flex-col gap-3">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">Data Stream</span>
-                        <div className="flex gap-1 bg-black/40 p-1 rounded-xl border border-white/5">
-                            <button onClick={() => setCategory('prose')} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold uppercase transition-all ${category === 'prose' ? 'bg-primary/20 text-primary border border-primary/30' : 'text-slate-400 hover:text-slate-200'}`}>
-                                <FileText className="w-3.5 h-3.5" />
-                                Prose
-                            </button>
-                            <button onClick={() => setCategory('code')} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold uppercase transition-all ${category === 'code' ? 'bg-primary/20 text-primary border border-primary/30' : 'text-slate-400 hover:text-slate-200'}`}>
-                                <Code className="w-3.5 h-3.5" />
-                                Code
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Difficulty */}
-                    <div className="flex flex-col gap-3">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">Complexity Level</span>
-                        <div className="flex gap-1 bg-black/40 p-1 rounded-xl border border-white/5">
-                            {['easy', 'medium', 'hard'].map(d => (
-                                <button key={d} onClick={() => setDifficulty(d)} className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase transition-all ${difficulty === d ? 'text-primary' : 'text-slate-400 hover:text-slate-200'}`}>
-                                    {d}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
-                <div className="flex flex-col flex-1 items-center justify-center relative">
-
-                    <div
-                        className={`w-full text-2xl leading-relaxed font-mono tracking-tight text-left relative cursor-text bg-black/20 p-12 rounded-3xl border transition-all duration-500 ${mode === 'sudden-death' ? 'shadow-[0_0_30px_rgba(239,68,68,0.15)] border-red-500/20' : 'border-white/5 shadow-2xl'} backdrop-blur-sm`}
-                        onClick={() => inputRef.current && inputRef.current.focus()}
-                    >
-                        {/* Start Overlay */}
-                        {status === 'idle' && !isFailed && (
-                            <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-[2px] rounded-3xl animate-pulse">
-                                <div className="text-primary/60 text-sm font-black uppercase tracking-[0.4em] flex items-center gap-4">
-                                    <div className="w-12 h-px bg-primary/20"></div>
-                                    Press any key to initialize...
-                                    <div className="w-12 h-px bg-primary/20"></div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Failed Overlay */}
-                        {isFailed && (
-                            <div className="absolute inset-0 z-50 flex items-center justify-center bg-red-950/40 backdrop-blur-md rounded-3xl border-2 border-red-500/50 animate-in fade-in zoom-in duration-300">
-                                <div className="text-center p-8 bg-black/60 rounded-2xl border border-red-500/20 shadow-2xl">
-                                    <Skull className="w-20 h-20 text-red-500 mx-auto mb-6 animate-bounce" />
-                                    <h3 className="text-5xl font-black text-red-500 uppercase tracking-tighter drop-shadow-[0_0_15px_#ef4444] mb-2">System Failure</h3>
-                                    <p className="text-red-400 font-bold tracking-[0.2em] uppercase text-xs mb-10 opacity-70">Sudden Death Clause Triggered</p>
-                                    
-                                    <button 
-                                        onClick={resetTest}
-                                        className="group flex items-center gap-3 mx-auto px-8 py-4 bg-red-600 hover:bg-red-500 text-white rounded-xl font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(239,68,68,0.4)]"
-                                    >
-                                        <RotateCcw className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
-                                        Reboot (Tab)
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Hidden Input */}
-                        <input
-                            ref={inputRef}
-                            type="text"
-                            value={userInput}
-                            onChange={handleInputChange}
-                            onKeyDown={handleKeyDown}
-                            disabled={isFailed}
-                            className="absolute opacity-0 -z-10 focus:outline-none"
-                            autoFocus
-                            autoComplete="off"
-                            autoCorrect="off"
-                            autoCapitalize="off"
-                            spellCheck="false"
-                        />
-                        {/* Text Renderer */}
-                        <div className="select-none whitespace-pre-wrap relative">
-                            {text.split('').map((char, index) => {
-                                let colorClass = "text-slate-600"; // dim gray initially
-
-                                if (index < userInput.length) {
-                                    const isCorrect = userInput[index] === char;
-                                    colorClass = isCorrect ? "text-primary drop-shadow-[0_0_5px_rgba(0,245,212,0.4)]" : "text-white bg-red-500/60 rounded-[2px]";
-                                }
-
-                                const isCursor = index === userInput.length && status !== 'finished';
-                                const isGhost = ghostData.length > 0 && index === ghostIndex && status === 'typing';
-
-                                return (
-                                    <span key={index} className="relative">
-                                        {isCursor && (
-                                            <span className="absolute left-0 top-0 h-full w-[3px] bg-primary animate-pulse shadow-[0_0_12px_#00f5d4] z-10 transition-all duration-75 ease-out" />
-                                        )}
-                                        {isGhost && (
-                                            <span className="absolute left-0 top-0 h-full w-[2px] bg-primary/20 shadow-[0_0_8px_rgba(0,245,212,0.2)] z-0 transition-all duration-300 ease-linear" />
-                                        )}
-                                        <span className={`${colorClass} transition-colors duration-150`}>
-                                            {char}
-                                        </span>
-                                    </span>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    <div className="mt-16 faded-ui flex items-center gap-4">
-                        <button
-                            onClick={resetTest}
-                            className="flex items-center gap-2 text-slate-500 hover:text-primary transition-all px-6 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 active:scale-95"
-                        >
-                            <RotateCcw className="w-5 h-5" />
-                            <span className="text-xs font-bold uppercase tracking-widest">Reboot System (Tab)</span>
-                        </button>
-                        <Link 
-                            to="/" 
-                            className="flex items-center gap-2 text-slate-500 hover:text-primary transition-all px-6 py-2.5 rounded-xl border border-white/5 hover:bg-white/5 active:scale-95"
-                        >
-                            <span className="text-xs font-bold uppercase tracking-widest">Abort to Core</span>
-                        </Link>
-                        {status === 'finished' && (
-                            <button
-                                onClick={handleShareScore}
-                                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl border transition-all active:scale-95 text-xs font-bold uppercase tracking-widest ${
-                                    isCopied 
-                                        ? 'bg-green-500/20 text-green-400 border-green-500/50 shadow-[0_0_15px_rgba(34,197,94,0.2)]' 
-                                        : 'bg-primary/10 text-primary border-primary/30 hover:bg-primary/20 hover:border-primary/50 shadow-[0_0_10px_rgba(0,245,212,0.1)]'
-                                }`}
-                            >
-                                {isCopied ? <Check className="w-5 h-5" /> : <Share2 className="w-5 h-5" />}
-                                <span>{isCopied ? 'Score Copied!' : 'Share Score'}</span>
-                            </button>
-                        )}
-                    </div>
-                </div>
             </main>
-
-            <footer className="p-8 flex justify-between items-center faded-ui">
-                <div className="flex gap-6 text-[10px] font-bold text-slate-600 uppercase tracking-[0.25em]">
-                    <a className="hover:text-primary transition-colors" href="#">Security_Protocol</a>
-                    <a className="hover:text-primary transition-colors" href="#">Neural_Link</a>
-                    <a className="hover:text-primary transition-colors" href="#">Source_Code</a>
-                </div>
-                <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-3 px-4 py-1.5 bg-black/40 rounded-full border border-white/5 shadow-inner">
-                        <div className="flex gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-ping"></span>
-                            <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
-                        </div>
-                        <span className="text-[9px] font-black text-primary tracking-tighter italic">LINK ESTABLISHED // 1,248 NODES ACTIVE</span>
-                    </div>
-                </div>
-            </footer>
         </div>
     );
 }

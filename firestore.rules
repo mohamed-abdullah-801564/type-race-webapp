@@ -1,0 +1,23 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users can only read/write their own document in the /users/ collection
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+    
+    // Anyone can read the /leaderboard/ collection, but users can only write to the document matching their own UID
+    match /leaderboard/{uid} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+    
+    // Anyone can read the /global_ghosts/ collection
+    // Authenticated users can create ghosts, but no one is allowed to update or delete them
+    match /global_ghosts/{ghostId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if false;
+    }
+  }
+}

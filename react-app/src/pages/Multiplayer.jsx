@@ -2,11 +2,17 @@ import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { Link } from 'react-router-dom';
 import PlayerProgressBar from '../components/PlayerProgressBar';
-import { Network, Copy, Play, ArrowRight, UserPlus, Trophy, RotateCcw, Ghost, Code, FileText } from 'lucide-react';
+import { Trophy, Users, Timer, Target, Zap, RotateCcw, ArrowRight, Network, Copy, Play, UserPlus, FileText, Code, Shield, ChevronLeft, Ghost, Download } from 'lucide-react';
+import { auth, db } from '../firebase';
+import { addDoc, collection, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { loadData, saveData } from '../utils/storageUtils';
+import { syncToLeaderboard, pushStatsToCloud } from '../utils/firebaseUtils';
+import { useNavigate } from 'react-router-dom';
 
 const SOCKET_SERVER = 'http://localhost:3001';
 
 export default function Multiplayer() {
+    const navigate = useNavigate();
     const [socket, setSocket] = useState(null);
     const [roomId, setRoomId] = useState('');
     const [joinInput, setJoinInput] = useState('');
@@ -26,10 +32,14 @@ export default function Multiplayer() {
     const [difficulty, setDifficulty] = useState('medium');
     const [category, setCategory] = useState('prose');
     const [countdown, setCountdown] = useState(3);
+    const [isGhostCaptured, setIsGhostCaptured] = useState(false);
+    const [isGlitching, setIsGlitching] = useState(false);
+    const [errorMap, setErrorMap] = useState({});
     const [progress, setProgress] = useState(0);
     const [currentWpm, setCurrentWpm] = useState(0);
     const [championGhost, setChampionGhost] = useState(null);
     const [ghostIndex, setGhostIndex] = useState(0);
+    const [graceEndTime, setGraceEndTime] = useState(null);
 
     const inputRef = useRef(null);
     const timerRef = useRef(null);
@@ -96,6 +106,8 @@ export default function Multiplayer() {
             setChampionGhost(championGhost || null);
             setGameState('countdown');
             setUserInput('');
+            setIsGhostCaptured(false);
+            setIsGlitching(false);
             setTimeLeft(30);
             setProgress(0);
             setCurrentWpm(0);
@@ -115,18 +127,46 @@ export default function Multiplayer() {
                     setCountdown(remaining);
                 } else {
                     clearInterval(countInterval);
+                    setCountdown(0);
                     setGameState('racing');
+                    // Focus input exactly when countdown hits 0
+                    if (inputRef.current) {
+                        inputRef.current.focus();
+                    }
                 }
             }, 100);
         });
 
         // raceOver
         socket.on('raceOver', (data) => {
-            console.log('--- FRONTEND RECEIVED RACE OVER ---');
+            console.log('--- FRONTEND RECEIVED RACE OVER ---', data);
             if (timerRef.current) clearInterval(timerRef.current);
             setTimeLeft(0);
-            setGameState('finished');
-            setWinnerData(data);
+             // Handle Race Over immediately to avoid gray screen
+            if (data && data.results) {
+                setWinnerData(data);
+                setGameState('finished');
+            }
+            setGraceEndTime(null);
+            
+            // Trigger Glitch Effect for Data Retrieval feel
+            setIsGlitching(true);
+            setTimeout(() => setIsGlitching(false), 1500);
+
+             // Update leaderboard if we won/finished
+            const ourResult = data.results?.find(p => p.id === socket?.id);
+            if (ourResult) {
+                syncToLeaderboard(ourResult.wpm, ourResult.accuracy);
+            }
+
+            // Update last local update for sync icon
+            localStorage.setItem('lastLocalUpdate', Date.now().toString());
+        });
+
+        // gracePeriodStarted
+        socket.on('gracePeriodStarted', ({ endTime }) => {
+            setGraceEndTime(endTime);
+            setGameState('grace_period');
         });
 
         // roomReset
@@ -138,6 +178,8 @@ export default function Multiplayer() {
             setTimeLeft(30);
             setProgress(0);
             setCurrentWpm(0);
+            setIsGhostCaptured(false);
+            setGraceEndTime(null);
         });
 
         return () => {
@@ -237,6 +279,13 @@ export default function Multiplayer() {
                 }
 
                 setGameState('finished');
+
+                // Cloud Data Flow Fix
+                if (auth.currentUser) {
+                    pushStatsToCloud(finalWpm, finalAcc, 'multiplayer');
+                } else {
+                    syncToLeaderboard(finalWpm, finalAcc);
+                }
             }
         }, 100);
 
@@ -297,12 +346,19 @@ export default function Multiplayer() {
         }
     };
 
+    const handleExitLobby = () => {
+        if (socket) {
+            if (roomId) socket.emit('leaveRoom', { roomId });
+            socket.disconnect();
+        }
+        navigate('/');
+    };
+
     // 4. Typing Mechanics
     // Keep track of errors for weakKeys
-    const [errorMap, setErrorMap] = useState({});
 
     const processKeystroke = (val) => {
-        if (gameState !== 'racing') return;
+        if (gameState !== 'racing' && gameState !== 'grace_period') return;
 
         if (val.length <= text.length) {
             if (val.length > userInput.length) {
@@ -327,7 +383,7 @@ export default function Multiplayer() {
 
             const progressPercentage = Math.round((val.length / text.length) * 100);
             const correctChars = val.split('').filter((char, i) => char === text[i]).length;
-            const calculatedWpm = Math.max(0, Math.round((correctChars / 5) / elapsedMins));
+            const calculatedWpm = Math.max(0, Math.round((correctChars / 5) / (elapsedMs / 60000)));
 
             setProgress(progressPercentage);
             setCurrentWpm(calculatedWpm);
@@ -383,11 +439,47 @@ export default function Multiplayer() {
         }
     }, [gameState]);
 
+
+    const handleArchiveGhost = async (playerData) => {
+        // Ensure winnerData has the race text before archiving
+        const raceText = winnerData?.text || text;
+        if (!raceText || !playerData.keystrokes) return;
+
+        const ghostId = `ghost_${Date.now()}`;
+        const newGhost = {
+            id: ghostId,
+            operatorName: playerData.name,
+            wpm: playerData.wpm,
+            accuracy: playerData.accuracy || 100,
+            keystrokes: playerData.keystrokes,
+            text: raceText,
+            timestamp: new Date().toISOString()
+        };
+
+        try {
+            const existing = loadData('ghostLibrary', []);
+            saveData('ghostLibrary', [...existing, newGhost]);
+            
+            // UI Feedback
+            alert(`Ghost of ${playerData.name} archived to local vault!`);
+        } catch (err) {
+            console.error("Failed to archive ghost:", err);
+            alert("Archive protocol failed. Check storage allocation.");
+        }
+    };
+
     // UI Renderers
     const renderLobby = () => {
         if (!roomId) {
             return (
-                <div className="flex flex-col items-center justify-center h-full max-w-md mx-auto space-y-8 faded-ui flex-1">
+                <div className="flex flex-col items-center justify-center h-full max-w-md mx-auto space-y-8 faded-ui flex-1 relative">
+                    <button 
+                        onClick={() => { socket.disconnect(); navigate('/'); }}
+                        className="absolute -top-12 left-0 flex items-center gap-2 text-slate-500 hover:text-primary transition-colors font-bold uppercase tracking-widest text-xs group"
+                    >
+                        <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                        Back to Dashboard
+                    </button>
                     <div className="text-center w-full">
                         <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Multiplayer Arena</h2>
                         <p className="text-slate-500 dark:text-slate-400 mb-8">Race against your friends in real-time</p>
@@ -438,6 +530,15 @@ export default function Multiplayer() {
                         <span>Copy Invite</span>
                     </button>
                 </header>
+
+                <div className="flex justify-end mb-4 px-4">
+                    <button 
+                        onClick={handleExitLobby}
+                        className="px-6 py-2 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-red-500 hover:text-white transition-all shadow-lg"
+                    >
+                        Exit Lobby
+                    </button>
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10 px-4">
                     {players.map((p, i) => (
@@ -556,6 +657,12 @@ export default function Multiplayer() {
                         </div>
                     )}
 
+                    {gameState === 'grace_period' && graceEndTime && (
+                        <div className="absolute top-0 right-0 z-[60] bg-red-600 text-white px-6 py-3 rounded-bl-2xl font-black uppercase tracking-[0.2em] shadow-lg animate-in slide-in-from-top-4 duration-300">
+                             10s GRACE PERIOD: {Math.max(0, Math.ceil((graceEndTime - Date.now()) / 1000))}s
+                        </div>
+                    )}
+
                     <div
                         className="w-full text-2xl lg:text-3xl leading-relaxed font-mono tracking-tight text-left relative cursor-text min-h-[300px]"
                         onClick={() => inputRef.current && inputRef.current.focus()}
@@ -616,6 +723,17 @@ export default function Multiplayer() {
     };
 
     const renderFinished = () => {
+        // SCENARIO FIX: If the race ends but winnerData hasn't propagated across the socket yet
+        if (!winnerData) {
+            return (
+                <div className="flex-1 flex flex-col items-center justify-center p-20 animate-pulse">
+                    <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mb-6" />
+                    <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Syncing Final Results...</h2>
+                    <p className="text-slate-500 mt-2">Waiting for neural data from other operators</p>
+                </div>
+            );
+        }
+
         const isWinner = winnerData?.winnerId === socket?.id;
 
         return (
@@ -636,14 +754,48 @@ export default function Multiplayer() {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-8 w-full max-w-lg">
-                    <div className="bg-white/5 border border-white/10 rounded-3xl p-8 text-center backdrop-blur-sm group hover:border-primary/30 transition-all duration-300">
-                        <p className="text-slate-400 text-xs font-bold uppercase tracking-[0.2em] mb-3 group-hover:text-primary/70">WPM Speed</p>
-                        <p className="text-5xl font-black text-primary font-mono tabular-nums">{winnerData?.wpm || 0}</p>
+                <div className="w-full max-w-2xl bg-white/5 border border-white/10 rounded-3xl overflow-hidden backdrop-blur-sm">
+                    <div className="bg-white/10 px-6 py-4 border-b border-white/10 flex justify-between items-center">
+                        <span className="text-xs font-black uppercase tracking-[0.2em] text-primary">Neural Race Results</span>
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{winnerData?.results?.length || 0} Operators Detected</span>
                     </div>
-                    <div className="bg-white/5 border border-white/10 rounded-3xl p-8 text-center backdrop-blur-sm group hover:border-primary/30 transition-all duration-300">
-                        <p className="text-slate-400 text-xs font-bold uppercase tracking-[0.2em] mb-3 group-hover:text-primary/70">Accuracy</p>
-                        <p className="text-5xl font-black text-white font-mono tabular-nums">{winnerData?.accuracy || 0}<span className="text-2xl font-bold ml-1 opacity-50">%</span></p>
+                    <div className="divide-y divide-white/5">
+                        {winnerData?.results?.map((p, idx) => {
+                            const isUs = p.id === socket?.id;
+                            const isWinner = p.id === winnerData.winnerId;
+                            return (
+                                <div key={p.id} className={`flex items-center justify-between px-6 py-4 hover:bg-white/5 transition-colors ${isWinner ? 'bg-primary/5' : ''}`}>
+                                    <div className="flex items-center gap-4">
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs ${isWinner ? 'bg-primary text-background-dark' : 'bg-white/10 text-slate-400'}`}>
+                                            {idx + 1}
+                                        </div>
+                                        <div>
+                                            <div className={`font-bold flex items-center gap-2 ${isUs ? 'text-primary' : 'text-white'}`}>
+                                                {p.name} {isUs && <span className="text-[10px] opacity-60">(YOU)</span>}
+                                            </div>
+                                            <div className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">
+                                                {p.wpm} WPM | {p.accuracy}% ACC
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {!isUs && p.keystrokes?.length > 0 && (
+                                        <button 
+                                            onClick={() => handleArchiveGhost(p)}
+                                            className="p-2 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:text-primary hover:border-primary/40 hover:bg-primary/10 transition-all group"
+                                            title="Archive Ghost"
+                                        >
+                                            <Download className="w-4 h-4 group-hover:scale-110" />
+                                        </button>
+                                    )}
+                                    {isWinner && isUs && (
+                                        <div className="flex items-center gap-2 text-primary">
+                                            <Trophy className="w-4 h-4" />
+                                            <span className="text-[10px] font-black uppercase tracking-widest">Champion</span>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
 

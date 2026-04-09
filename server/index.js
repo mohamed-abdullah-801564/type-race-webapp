@@ -15,9 +15,6 @@ const io = new Server(server, {
     }
 });
 
-// In-memory state to track rooms and players
-const rooms = {};
-
 const generateRoomCode = () => {
     return Math.random().toString(36).substring(2, 6).toUpperCase();
 };
@@ -36,6 +33,17 @@ const QUOTES = [
     { text: 'Run: git commit -m "fix: resolve #42 — null-pointer exception" && git push.', difficulty: 'hard', category: 'prose' },
     { text: 'She said, "It\'s 2 AM — why are you still coding?!" He replied: "One more bug."', difficulty: 'hard', category: 'prose' },
 ];
+
+const CODE_SNIPPETS = [
+    { text: 'function debounce(fn, delay) {\n    let timer;\n    return (...args) => {\n        clearTimeout(timer);\n        timer = setTimeout(() => fn(...args), delay);\n    };\n}', difficulty: 'medium', category: 'code', language: 'javascript' },
+    { text: 'def get_fibonacci(n):\n    a, b = 0, 1\n    for _ in range(n):\n        yield a\n        a, b = b, a + b', difficulty: 'medium', category: 'code', language: 'python' },
+    { text: 'SELECT users.name, COUNT(orders.id) AS total_orders\nFROM users\nLEFT JOIN orders ON users.id = orders.user_id\nGROUP BY users.id\nHAVING total_orders > 5;', difficulty: 'hard', category: 'code', language: 'sql' },
+    { text: 'const root = ReactDOM.createRoot(document.getElementById("root"));\nroot.render(<App />);', difficulty: 'easy', category: 'code', language: 'javascript' },
+    { text: 'class Circle:\n    def __init__(self, radius):\n        self.radius = radius\n    def area(self):\n        return 3.14 * self.radius ** 2', difficulty: 'medium', category: 'code', language: 'python' }
+];
+
+// In-memory state to track rooms and players
+const rooms = {};
 
 let globalChampionGhost = { wpm: 0, name: '', keystrokes: [] };
 
@@ -149,13 +157,29 @@ io.on('connection', (socket) => {
         }
     });
 
-const CODE_SNIPPETS = [
-    { text: 'function debounce(fn, delay) {\n    let timer;\n    return (...args) => {\n        clearTimeout(timer);\n        timer = setTimeout(() => fn(...args), delay);\n    };\n}', difficulty: 'medium', category: 'code', language: 'javascript' },
-    { text: 'def get_fibonacci(n):\n    a, b = 0, 1\n    for _ in range(n):\n        yield a\n        a, b = b, a + b', difficulty: 'medium', category: 'code', language: 'python' },
-    { text: 'SELECT users.name, COUNT(orders.id) AS total_orders\nFROM users\nLEFT JOIN orders ON users.id = orders.user_id\nGROUP BY users.id\nHAVING total_orders > 5;', difficulty: 'hard', category: 'code', language: 'sql' },
-    { text: 'const root = ReactDOM.createRoot(document.getElementById("root"));\nroot.render(<App />);', difficulty: 'easy', category: 'code', language: 'javascript' },
-    { text: 'class Circle:\n    def __init__(self, radius):\n        self.radius = radius\n    def area(self):\n        return 3.14 * self.radius ** 2', difficulty: 'medium', category: 'code', language: 'python' }
-];
+// Helper to end a race
+const endRace = (roomId) => {
+    const room = rooms[roomId];
+    if (!room || room.status === 'finished') return;
+
+    room.status = 'finished';
+    if (room.timer) clearTimeout(room.timer);
+
+    // Sort players by WPM descending for results
+    const results = [...room.players].sort((a, b) => (b.wpm || 0) - (a.wpm || 0));
+    const winner = results[0];
+
+    console.log(`[${roomId}] Race Over! Winner: ${winner.name}`);
+    io.to(roomId).emit('raceOver', {
+        winnerId: winner.id,
+        winnerName: winner.name,
+        wpm: winner.wpm,
+        accuracy: winner.accuracy,
+        keystrokes: winner.keystrokes,
+        text: room.text, // Include the text so players can archive any ghost
+        results: results
+    });
+};
 
 // ... existing code ...
 
@@ -181,16 +205,8 @@ const CODE_SNIPPETS = [
 
     // Handle player finishing the race
     socket.on('playerFinished', (data) => {
-        console.log('--- SERVER RECEIVED PLAYER FINISHED ---');
-        console.log('Data from frontend:', data);
-        const room = rooms[data.roomId];
-        console.log('Did server find room?:', room ? 'Yes' : 'No');
-        if (room) {
-            const player = room.players.find(p => p.id === socket.id);
-            console.log('Did server find player?:', player);
-        }
-
         const { roomId, wpm, accuracy, keystrokes } = data;
+        const room = rooms[roomId];
         if (!room) return;
 
         const player = room.players.find(p => p.id === socket.id);
@@ -199,6 +215,7 @@ const CODE_SNIPPETS = [
             player.wpm = wpm;
             player.accuracy = accuracy;
             player.finished = true;
+            player.keystrokes = keystrokes;
 
             if (wpm > globalChampionGhost.wpm) {
                 globalChampionGhost = {
@@ -209,15 +226,25 @@ const CODE_SNIPPETS = [
                 console.log(`[Global Champion] New record: ${wpm} WPM by ${player.name}`);
             }
 
-            if (room.status !== 'finished') {
-                room.status = 'finished';
-                console.log(`[${roomId}] Race Over! Winner: ${player.name}`);
-                io.to(roomId).emit('raceOver', {
-                    winnerId: player.id,
-                    winnerName: player.name,
-                    wpm,
-                    accuracy
-                });
+            // If this is the first player to finish, start the grace period
+            if (room.status === 'playing') {
+                room.status = 'grace_period';
+                const graceDuration = 10000; // 10 seconds
+                const endTime = Date.now() + graceDuration;
+
+                console.log(`[${roomId}] Grace Period Started! Ends in 10s.`);
+                io.to(roomId).emit('gracePeriodStarted', { endTime });
+
+                room.timer = setTimeout(() => {
+                    endRace(roomId);
+                }, graceDuration);
+            }
+
+            // Check if everyone has finished
+            const allFinished = room.players.every(p => p.finished);
+            if (allFinished) {
+                console.log(`[${roomId}] All players finished. Ending race early.`);
+                endRace(roomId);
             }
         }
     });

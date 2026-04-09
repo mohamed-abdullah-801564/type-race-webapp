@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import StatCard from '../components/StatCard';
 import { Gauge, Target, Trophy, Zap, AlertTriangle, AtSign, Network, Globe, Keyboard, Shield, Crown, Star, Medal } from 'lucide-react';
-import { database } from '../firebase';
-import { ref, onValue } from 'firebase/database';
+import { auth, db } from '../firebase';
+import { doc, onSnapshot, collection, query, orderBy, limit, getDoc } from 'firebase/firestore';
+import { loadData, saveData } from '../utils/storageUtils';
+import { generateSmartDrill } from '../utils/typingUtils';
 
 const KEYBOARD_ROWS = [
     ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
@@ -21,6 +23,7 @@ export default function Dashboard() {
     const [hoveredDataPoint, setHoveredDataPoint] = useState(null);
     const [rankData, setRankData] = useState(null);
     const [leaderboard, setLeaderboard] = useState([]);
+    const [leaderboardError, setLeaderboardError] = useState(null);
 
     const TIER_STYLES = {
         Novice: { Icon: Star },
@@ -31,55 +34,132 @@ export default function Dashboard() {
     };
 
     useEffect(() => {
-        // Load Race History
-        const history = JSON.parse(localStorage.getItem('raceHistory') || '[]');
-        const nonDrillHistory = history.filter((h) => !h.isDrill);
+        // 1. Initial Load from LocalStorage (for offline/logged-out experience)
+        const loadLocalData = () => {
+            // Reset to 0 before loading to prevent leakage during account switching
+            setStats({ maxWPM: 0, avgAccuracy: 0, totalTests: 0 });
+            setRecentHistory([]);
+            setRecentWPMs([]);
+            setRankData(null);
+            setPerformances({});
 
-        if (nonDrillHistory.length > 0) {
-            const maxWPM = Math.max(...nonDrillHistory.map(h => h.wpm));
-            const avgAcc = nonDrillHistory.reduce((acc, h) => acc + parseFloat(h.accuracy), 0) / nonDrillHistory.length;
-            setStats({
-                maxWPM,
-                avgAccuracy: avgAcc.toFixed(1),
-                totalTests: nonDrillHistory.length
-            });
-            const last10 = nonDrillHistory.slice(-10);
-            setRecentHistory(last10);
-            setRecentWPMs(last10.map(h => h.wpm));
-        }
+            const history = loadData('raceHistory', []);
+            const nonDrillHistory = history.filter((h) => !h.isDrill);
 
-        // Load Key Performances
-        const perfs = JSON.parse(localStorage.getItem('keyPerformances') || '{}');
-        setPerformances(perfs);
+            if (nonDrillHistory.length > 0) {
+                const maxWPM = Math.max(...nonDrillHistory.map(h => h.wpm));
+                const avgAcc = nonDrillHistory.reduce((acc, h) => acc + parseFloat(h.accuracy), 0) / nonDrillHistory.length;
+                setStats({
+                    maxWPM,
+                    avgAccuracy: avgAcc.toFixed(1),
+                    totalTests: nonDrillHistory.length
+                });
+                const last10 = nonDrillHistory.slice(-10);
+                setRecentHistory(last10);
+                setRecentWPMs(last10.map(h => h.wpm));
+            }
 
-        // Load or Calculate Rank Data
-        const savedRankData = JSON.parse(localStorage.getItem('rankData') || 'null');
-        if (savedRankData) {
-            setRankData(savedRankData);
-        } else if (nonDrillHistory.length > 0) {
-            const drills = JSON.parse(localStorage.getItem('drillHistory') || '[]');
-            const hwpm = Math.max(...nonDrillHistory.map(h => Number(h.wpm)));
-            const aacc = nonDrillHistory.reduce((a, b) => a + Number(String(b.accuracy||'0').replace('%','')), 0) / nonDrillHistory.length;
-            const score = Math.round(hwpm + (aacc * 0.2) + (drills.length * 0.5));
-            let t = 'Novice', nt = 61;
-            if (score >= 131) { t = 'Overlord'; nt = null; }
-            else if (score >= 101) { t = 'Elite'; nt = 131; }
-            else if (score >= 81) { t = 'Pro'; nt = 101; }
-            else if (score >= 61) { t = 'Cadet'; nt = 81; }
-            const newRank = { score, tier: t, nextTierMax: nt, highestWPM: hwpm, avgAcc: aacc.toFixed(1), drillsCompleted: drills.length, totalRaces: nonDrillHistory.length };
-            setRankData(newRank);
-            localStorage.setItem('rankData', JSON.stringify(newRank));
-        }
+            const perfs = loadData('keyPerformances', {});
+            setPerformances(perfs);
 
-        // Leaderboard listener
-        const lbRef = ref(database, 'leaderboard/top10');
-        const unsubscribe = onValue(lbRef, (snapshot) => {
-            const data = snapshot.val() || {};
-            const lbArray = Object.values(data).sort((a, b) => b.wpm - a.wpm).slice(0, 10);
-            setLeaderboard(lbArray);
+            const savedRankData = loadData('rankData', null);
+            if (savedRankData) setRankData(savedRankData);
+        };
+
+        loadLocalData();
+
+        // Listen for internal hydration events (e.g., from AuthModal)
+        const handleHydration = () => {
+            loadLocalData();
+        };
+        window.addEventListener('data-hydrated', handleHydration);
+
+        // 2. Comprehensive Sync from Cloud (Definitive Source of Truth)
+        const hydrateCloud = async (uid) => {
+            try {
+                const userSnap = await getDoc(doc(db, 'users', uid));
+                if (userSnap.exists()) {
+                    const data = userSnap.data();
+                    if (data.rank) setRankData(data.rank);
+                }
+            } catch (err) {
+                console.warn("Manual hydration failed:", err);
+            }
+        };
+
+        let unsubscribeUser = () => {};
+        const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+            if (user) {
+                // User logged in: Reset local before hydrate to prevent leak
+                setStats({ maxWPM: 0, avgAccuracy: 0, totalTests: 0 });
+                setRecentHistory([]);
+                setRecentWPMs([]);
+                setRankData(null);
+                
+                hydrateCloud(user.uid);
+
+                unsubscribeUser = onSnapshot(doc(db, 'users', user.uid), (docSnapshot) => {
+                    if (docSnapshot.exists()) {
+                        const data = docSnapshot.data();
+                        if (data.operatorName) saveData('playerName', data.operatorName);
+                        if (data.rank) {
+                            saveData('rankData', data.rank);
+                            setRankData(data.rank);
+                        }
+                    }
+                });
+            } else {
+                // User logged out: Wipe all user-specific states
+                setStats({ maxWPM: 0, avgAccuracy: 0, totalTests: 0 });
+                setRecentHistory([]);
+                setRecentWPMs([]);
+                setRankData(null);
+                loadLocalData(); // Re-load guest data
+                unsubscribeUser();
+            }
         });
 
-        return () => unsubscribe();
+        // 3. Global Leaderboard Query
+        const q = query(
+            collection(db, 'leaderboard'), 
+            orderBy('wpm', 'desc'), 
+            orderBy('acc', 'desc'), 
+            limit(10)
+        );
+        const unsubscribeLeaderboard = onSnapshot(q, async (snapshot) => {
+            setLeaderboardError(null);
+            const lbArray = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            
+            // Pinned Row Logic: If current user is not in Top 10, fetch their personal stat
+            if (auth.currentUser && !lbArray.find(u => u.id === auth.currentUser.uid)) {
+                try {
+                    const userLBSnap = await getDoc(doc(db, 'leaderboard', auth.currentUser.uid));
+                    if (userLBSnap.exists()) {
+                        setLeaderboard([...lbArray, { id: userLBSnap.id, ...userLBSnap.data(), isPinned: true }]);
+                    } else {
+                        setLeaderboard(lbArray);
+                    }
+                } catch (err) {
+                    setLeaderboard(lbArray);
+                }
+            } else {
+                setLeaderboard(lbArray);
+            }
+        }, (error) => {
+            console.error("Leaderboard Error:", error);
+            if (error.code === 'failed-precondition') {
+                setLeaderboardError('Leaderboard Initializing...');
+            } else {
+                setLeaderboardError('Neural Sync Interrupted');
+            }
+        });
+
+        return () => {
+            unsubscribeAuth();
+            unsubscribeUser();
+            unsubscribeLeaderboard();
+            window.removeEventListener('data-hydrated', handleHydration);
+        };
     }, []);
 
     const getKeyColor = (latency) => {
@@ -115,7 +195,8 @@ export default function Dashboard() {
             ...Object.keys(weakKeys || {})
         ])).filter(k => typeof k === 'string' && k.length === 1);
 
-        if (keys.length === 0) return ['{', '}', ';'];
+        // FALLBACK: If no weak keys found (new user), focus on common coding symbols
+        if (keys.length === 0) return ['{', '}', '[', ']', ';', '(', ')', '<', '>', '/'];
 
         const scored = keys.map((k) => {
             const perf = perfs?.[k] || {};
@@ -139,63 +220,7 @@ export default function Dashboard() {
     };
 
     const generateDailyDrillText = (weakKeys) => {
-        const normalized = (weakKeys || [])
-            .filter(k => typeof k === 'string' && k.length >= 1)
-            .map(k => k[0]);
-
-        const alphaWeak = normalized.filter(k => /^[a-z0-9]$/i.test(k));
-        const punctWeak = normalized.filter(k => !/^[a-z0-9]$/i.test(k));
-
-        const quoteChar = punctWeak.find(k => k === "'" || k === '"' || k === '`') || "'";
-        const idMainChar = alphaWeak[0] || 'e';
-        const idMain = `hello${idMainChar}`;
-        const msg = `hi${alphaWeak[1] ? alphaWeak[1] : ''}`;
-        const semi = punctWeak.includes(';') ? ';' : ';';
-        const braceOpen = punctWeak.includes('{') ? '{' : '{';
-        const braceClose = punctWeak.includes('}') ? '}' : '}';
-
-        const tokens = [
-            'function', idMain, '(', ')', braceOpen,
-            'console', '.', 'log', '(', quoteChar, msg, quoteChar, ')', semi,
-            'return', idMain, semi,
-            braceClose,
-            'const', `x${alphaWeak[2] || '1'}`, '=', '(', '1', '+', '2', ')', semi,
-            'if', '(', idMain, '>', '0', ')', '{',
-            'console', '.', 'log', '(', quoteChar, msg, quoteChar, ')', semi,
-            '}'
-        ];
-
-        // Add a couple of extra appearances of other weak punctuation keys.
-        const specialPunct = punctWeak
-            .filter(k => !['{', '}', ';', '(', ')', "'", '"', '`'].includes(k))
-            .slice(0, 4);
-
-        for (const p of specialPunct) {
-            if (tokens.length + 3 > 60) break;
-            tokens.push('/*', p, '*/');
-        }
-
-        // Pad with more log calls to reach the minimum word count.
-        while (tokens.length < 30) {
-            if (tokens.length + 9 > 60) break;
-            tokens.push('console', '.', 'log', '(', quoteChar, msg, quoteChar, ')', semi);
-        }
-
-        // Enforce 30-60 word constraint.
-        const finalTokens = tokens.slice(0, 60);
-        const allowed = new Set(COMMON_CODE_CHARS);
-        for (const k of normalized) allowed.add(k);
-
-        const drillText = finalTokens.join(' ');
-        for (const ch of drillText) {
-            if (!allowed.has(ch)) {
-                // If we ever hit a rare unexpected character, replace it with a safe space.
-                // This keeps the drill within "weak keys + common code chars" scope.
-                return drillText.replaceAll(ch, ' ');
-            }
-        }
-
-        return drillText;
+        return generateSmartDrill(weakKeys, 30); // Default to 30s for the quick start
     };
 
     const handleStartDailyDrill = () => {
@@ -232,13 +257,25 @@ export default function Dashboard() {
         navigate('/solo');
     };
 
-    // Graph Calculation
-    const maxRecentWPM = Math.max(...recentWPMs, 100);
-    const points = recentWPMs.map((wpm, i) => ({
-        x: recentWPMs.length > 1 ? (i / (recentWPMs.length - 1)) * 1000 : 500,
+    // Graph Logic Fix
+    const demoData = [
+        { wpm: 45, accuracy: 98, timestamp: Date.now() },
+        { wpm: 52, accuracy: 97, timestamp: Date.now() },
+        { wpm: 48, accuracy: 99, timestamp: Date.now() },
+        { wpm: 61, accuracy: 96, timestamp: Date.now() },
+        { wpm: 55, accuracy: 98, timestamp: Date.now() },
+        { wpm: 67, accuracy: 97, timestamp: Date.now() }
+    ];
+
+    const displayHistory = recentHistory.length > 0 ? [...recentHistory].reverse() : (auth.currentUser ? [] : demoData);
+    const graphWPMs = displayHistory.map(h => h.wpm);
+
+    const maxRecentWPM = Math.max(...graphWPMs, 100);
+    const points = graphWPMs.map((wpm, i) => ({
+        x: graphWPMs.length > 1 ? (i / (graphWPMs.length - 1)) * 1000 : 500,
         y: 250 - (wpm / maxRecentWPM) * 200 - 25,
         wpm: wpm,
-        acc: recentHistory[i] ? parseFloat(recentHistory[i].accuracy).toFixed(1) : 0
+        acc: displayHistory[i] ? parseFloat(displayHistory[i].accuracy).toFixed(1) : 0
     }));
 
     const pathD = points.length >= 2 
@@ -253,6 +290,27 @@ export default function Dashboard() {
             <Navbar />
 
             <main className="flex-1 px-6 py-8 lg:px-20 space-y-8">
+                {/* Guest Mode Banner */}
+                {!auth.currentUser && (
+                    <div className="bg-amber-500/10 border border-amber-500/20 p-6 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden animate-in fade-in slide-in-from-top-4 duration-500">
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_0%,_rgba(245,158,11,0.05)_100%)] pointer-events-none" />
+                        <div className="flex items-center gap-4 relative z-10">
+                            <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.2)]">
+                                <AlertTriangle className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h2 className="text-lg font-black text-white uppercase tracking-tighter">Guest Mode Active</h2>
+                                <p className="text-sm text-amber-500/80 font-medium">Neural Sync Required to Track Global Progress. Local sessions will be terminated on tab close.</p>
+                            </div>
+                        </div>
+                        <button 
+                            onClick={() => document.querySelector('img[alt="User Avatar"]').click()}
+                            className="relative z-10 px-8 py-3 bg-amber-500 text-background-dark font-black uppercase tracking-[0.2em] rounded-xl hover:shadow-[0_0_30px_rgba(245,158,11,0.4)] hover:scale-105 transition-all active:scale-95 text-xs"
+                        >
+                            Establish Sync
+                        </button>
+                    </div>
+                )}
                 {/* Rank Banner */}
                 {rankData && (
                     <div className="bg-slate-900 border border-primary/20 p-6 rounded-2xl flex flex-col md:flex-row items-center gap-6 relative overflow-hidden shadow-[0_0_15px_rgba(0,245,212,0.1)] hover:shadow-[0_0_25px_rgba(0,245,212,0.2)] transition-shadow duration-300">
@@ -276,7 +334,7 @@ export default function Dashboard() {
                                 <span className="w-1 h-1 rounded-full bg-slate-600"></span>
                                 <span className="text-primary/80">+{Math.round(rankData.avgAcc * 0.2)} Acc Bonus</span>
                                 <span className="w-1 h-1 rounded-full bg-slate-600"></span>
-                                <span className="text-primary/60">+{Math.round(rankData.drillsCompleted * 0.5)} Drill Multiplier</span>
+                                <span className="text-primary/60">+{Math.round((rankData.drillsCompleted || 0) * 0.5)} Drill Multiplier</span>
                             </div>
                         </div>
 
@@ -306,22 +364,22 @@ export default function Dashboard() {
                     <StatCard
                         title="Highest WPM"
                         icon={<Gauge size={24} />}
-                        value={stats.maxWPM || "0"}
+                        value={rankData?.highestWPM || stats.maxWPM || "0"}
                         trend="+4.2%"
                         subtitle="Your all-time peak performance"
                     />
                     <StatCard
                         title="Avg Accuracy"
                         icon={<Target size={24} />}
-                        value={stats.avgAccuracy || "0"}
+                        value={rankData?.avgAcc || stats.avgAccuracy || "0"}
                         valueSuffix="%"
                         trend="+0.2%"
-                        subtitle={`Average over ${stats.totalTests} tests`}
+                        subtitle={`Average over ${rankData?.totalRaces || stats.totalTests} tests`}
                     />
                     <StatCard
                         title="Total Sessions"
                         icon={<Trophy size={24} />}
-                        value={stats.totalTests || "0"}
+                        value={rankData?.totalRaces || stats.totalTests || "0"}
                         trendLabel="Live"
                         subtitle="Solo runs completed"
                     />
@@ -343,7 +401,7 @@ export default function Dashboard() {
                         </div>
                         <div className="w-full pt-12 px-6 pb-6 overflow-visible">
                             <div className="h-[250px] w-full relative overflow-visible">
-                                {recentWPMs.length < 2 ? (
+                                {points.length < 2 ? (
                                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/40 rounded-xl border border-dashed border-white/10">
                                         <Zap className="w-8 h-8 text-primary/40 mb-2 animate-pulse" />
                                         <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Play more games to see your trend</p>
@@ -419,12 +477,17 @@ export default function Dashboard() {
                             </div>
                             <button
                                 onClick={handleStartDailyDrill}
-                                className="px-6 py-3 rounded-xl bg-primary/15 border border-primary/30 hover:bg-primary/25 hover:border-primary/50 shadow-[0_0_25px_rgba(0,245,212,0.18)] transition-all active:scale-95"
+                                className="px-6 py-3 rounded-xl bg-primary/15 border border-primary/30 hover:bg-primary/25 hover:border-primary/50 shadow-[0_0_25px_rgba(0,245,212,0.18)] transition-all active:scale-95 flex flex-col items-center"
                             >
                                 <span className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary">
                                     <Zap className="w-4 h-4" />
                                     Daily Drill
                                 </span>
+                                {getWorstKeys(performances, safeParseJSON(localStorage.getItem('weakKeys'), {})).length > 0 && (
+                                    <span className="text-[8px] text-slate-500 mt-1 uppercase tracking-tighter">
+                                        Focus: {getWorstKeys(performances, safeParseJSON(localStorage.getItem('weakKeys'), {})).join(' ')}
+                                    </span>
+                                )}
                             </button>
                             
                             <div className="flex gap-4 items-center bg-black/20 p-3 rounded-xl border border-white/5">
@@ -521,14 +584,27 @@ export default function Dashboard() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-primary/5">
-                                {leaderboard.length > 0 ? leaderboard.map((item, index) => {
-                                    const isUser = item.name === (localStorage.getItem('playerName') || 'Operator');
+                                {leaderboardError ? (
+                                    <tr>
+                                        <td colSpan="5" className="px-6 py-8 text-center text-amber-500 font-mono animate-pulse uppercase tracking-widest text-xs">
+                                            {leaderboardError}
+                                        </td>
+                                    </tr>
+                                ) : leaderboard.length > 0 ? leaderboard.map((item, index) => {
+                                    const isUser = item.id === auth.currentUser?.uid;
+                                    const isPinned = item.isPinned;
+                                    
                                     return (
-                                        <tr key={index} className={`hover:bg-slate-50/50 dark:hover:bg-primary/5 transition-colors ${isUser ? 'bg-primary/10 border-l-4 border-primary shadow-[inset_0_0_20px_rgba(0,245,212,0.05)]' : ''}`}>
-                                            <td className={`px-6 py-4 font-bold ${index === 0 || isUser ? 'text-primary' : 'text-slate-400'}`}>0{index + 1}</td>
+                                        <tr key={item.id} className={`hover:bg-slate-50/50 dark:hover:bg-primary/5 transition-colors 
+                                            ${isUser ? 'bg-primary/10 border-l-4 border-primary shadow-[inset_0_0_20px_rgba(0,245,212,0.05)]' : ''}
+                                            ${isPinned ? 'border-t-4 border-primary/40 bg-slate-900 shadow-[0_-10px_20px_rgba(0,0,0,0.5)]' : ''}
+                                        `}>
+                                            <td className={`px-6 py-4 font-bold ${index < 3 || isUser ? 'text-primary' : 'text-slate-400'}`}>
+                                                {isPinned ? <span className="text-[10px] uppercase">Your Rank</span> : index < 9 ? `0${index + 1}` : index + 1}
+                                            </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="h-8 w-8 rounded-full border border-primary/20 bg-primary/10 flex items-center justify-center font-bold text-primary">{item.name[0]?.toUpperCase() || '?'}</div>
+                                                    <div className="h-8 w-8 rounded-full border border-primary/20 bg-primary/10 flex items-center justify-center font-bold text-primary">{item.name ? item.name[0]?.toUpperCase() : '?'}</div>
                                                     <span className={`font-semibold ${isUser ? 'text-primary' : 'text-slate-900 dark:text-slate-100'}`}>{item.name} {item.tier && <span className="text-[10px] text-primary/50 ml-2">[{item.tier}]</span>}</span>
                                                 </div>
                                             </td>

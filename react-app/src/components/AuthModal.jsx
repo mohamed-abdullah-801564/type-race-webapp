@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { auth, database } from '../firebase';
+import { auth, db } from '../firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { ref, get, set } from 'firebase/database';
+import { doc, getDoc, setDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { X, CloudLightning, Loader2 } from 'lucide-react';
 
 export default function AuthModal({ onClose, onLoginSuccess }) {
@@ -22,34 +22,68 @@ export default function AuthModal({ onClose, onLoginSuccess }) {
             } else {
                 userCredential = await createUserWithEmailAndPassword(auth, email, password);
             }
-            // Sync Logic with Timeout fallback
+            // Sync Logic
             try {
-                const userRef = ref(database, `users/${uid}`);
-                const snapshot = await get(userRef);
+                const uid = userCredential.user.uid;
+                const userDocRef = doc(db, 'users', uid);
+                const userSnapshot = await getDoc(userDocRef);
                 
-                if (snapshot.exists() && isLogin) {
-                    // Pull from cloud to local
-                    const data = snapshot.val();
-                    if (data.races) localStorage.setItem('raceHistory', JSON.stringify(data.races));
-                    if (data.keyPerf) localStorage.setItem('keyPerformances', JSON.stringify(data.keyPerf));
-                    if (data.rank) localStorage.setItem('rankData', JSON.stringify(data.rank));
+                if (userSnapshot.exists()) {
+                    const data = userSnapshot.data();
+                    
+                    // CLEAR OLD LOCAL DATA BEFORE HYDRATION
+                    // This prevents data leakage when switching users
+                    localStorage.clear();
+                    sessionStorage.clear();
+
+                    // 1. Recover Operator Identity
+                    if (data.operatorName) localStorage.setItem('playerName', data.operatorName);
+                    
+                    // 2. Overwrite Race History
+                    // We no longer sync raceHistory to cloud. History stays local.
+
+                    if (data.rank) {
+                        localStorage.setItem('rankData', JSON.stringify(data.rank));
+                        localStorage.setItem('prevHighestWPM', (data.rank.highestWPM || 0).toString());
+                    }
+
+                    // 4. Instant Name Sync Fix
+                    if (!data.operatorName) {
+                        const emailPrefix = user.email.split('@')[0];
+                        await updateDoc(userDocRef, { operatorName: emailPrefix });
+                        localStorage.setItem('playerName', emailPrefix);
+                    }
+                    
+                    // 3. Update Sync Timestamps
+                    localStorage.setItem('lastCloudSync', Date.now().toString());
+                    localStorage.setItem('lastLocalUpdate', (Date.now() - 1000).toString()); // Cloud is current
                 } else {
-                    // Push local to cloud
-                    const localRaces = JSON.parse(localStorage.getItem('raceHistory') || '[]').filter(r => !r.isDrill);
-                    const localKeyPerf = JSON.parse(localStorage.getItem('keyPerformances') || '{}');
+                    // New Cloud User -> Push initial profile summary (if guest data exists)
+                    const operatorName = localStorage.getItem('playerName') || userCredential.user.email.split('@')[0];
                     const localRank = JSON.parse(localStorage.getItem('rankData') || 'null');
-                    await set(userRef, {
-                        races: localRaces,
-                        keyPerf: localKeyPerf,
-                        rank: localRank
+                    const localHistory = JSON.parse(localStorage.getItem('raceHistory') || '[]');
+                    
+                    await setDoc(userDocRef, {
+                        operatorName,
+                        rank: localRank,
+                        lastSync: serverTimestamp(),
+                        email: userCredential.user.email
                     });
+                    localStorage.setItem('lastCloudSync', Date.now().toString());
                 }
+
+                // Force individual state updates on Dashboard
+                window.dispatchEvent(new Event('data-hydrated'));
+                window.dispatchEvent(new Event('neural-sync-complete'));
+                
             } catch (syncErr) {
-                console.warn("Initial sync failed, proceeding to session:", syncErr);
+                console.warn("Initial sync failed:", syncErr);
             }
             
+            // Wait a moment for any side effects before closing
+            await new Promise(r => setTimeout(r, 500));
             onLoginSuccess();
-            window.location.reload(); 
+            onClose(); 
         } catch (err) {
             setError(err.message);
         } finally {

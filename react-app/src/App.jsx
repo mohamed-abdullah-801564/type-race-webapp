@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import SoloMode from './pages/SoloMode';
 import Multiplayer from './pages/Multiplayer';
+import GhostVault from './pages/GhostVault';
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/solo" element={<SoloMode />} />
           <Route path="/multiplayer" element={<Multiplayer />} />
+          <Route path="/vault" element={<GhostVault />} />
         </Routes>
       </div>
     </BrowserRouter>
