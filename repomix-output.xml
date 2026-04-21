@@ -41,6 +41,7 @@ The content is organized as follows:
 
 <directory_structure>
 .gitignore
+firestore.rules
 react-app/.firebaserc
 react-app/.gitignore
 react-app/database.rules.json
@@ -64,7 +65,9 @@ react-app/src/pages/Dashboard.jsx
 react-app/src/pages/GhostVault.jsx
 react-app/src/pages/Multiplayer.jsx
 react-app/src/pages/SoloMode.jsx
+react-app/src/utils/firebaseUtils.js
 react-app/src/utils/storageUtils.js
+react-app/src/utils/typingUtils.js
 react-app/vite.config.js
 server/index.js
 server/package.json
@@ -72,6 +75,285 @@ server/package.json
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path=".gitignore">
+react-app/node_modules/
+server/node_modules/
+.env
+</file>
+
+<file path="firestore.rules">
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users can only read/write their own document in the /users/ collection
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+    
+    // Anyone can read the /leaderboard/ collection, but users can only write to the document matching their own UID
+    match /leaderboard/{uid} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+    
+    // Anyone can read the /global_ghosts/ collection
+    // Authenticated users can create ghosts, but no one is allowed to update or delete them
+    match /global_ghosts/{ghostId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if false;
+    }
+  }
+}
+</file>
+
+<file path="react-app/.firebaserc">
+{
+  "projects": {
+    "default": "typemaster-prod-9a2b8c"
+  },
+  "targets": {},
+  "etags": {}
+}
+</file>
+
+<file path="react-app/.gitignore">
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+</file>
+
+<file path="react-app/database.rules.json">
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "leaderboard": {
+      "top10": {
+        ".read": true,
+        "$uid": {
+          ".write": "auth != null && auth.uid === $uid"
+        }
+      }
+    }
+  }
+}
+</file>
+
+<file path="react-app/eslint.config.js">
+import js from '@eslint/js'
+import globals from 'globals'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
+import { defineConfig, globalIgnores } from 'eslint/config'
+
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{js,jsx}'],
+    extends: [
+      js.configs.recommended,
+      reactHooks.configs.flat.recommended,
+      reactRefresh.configs.vite,
+    ],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: globals.browser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        ecmaFeatures: { jsx: true },
+        sourceType: 'module',
+      },
+    },
+    rules: {
+      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+    },
+  },
+])
+</file>
+
+<file path="react-app/firebase.json">
+{
+  "database": {
+    "rules": "database.rules.json"
+  },
+  "auth": {
+    "providers": {
+      "emailPassword": true
+    }
+  }
+}
+</file>
+
+<file path="react-app/index.html">
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>react-app</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
+</file>
+
+<file path="react-app/public/favicon.svg">
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="46" fill="none" viewBox="0 0 48 46"><path fill="#863bff" d="M25.946 44.938c-.664.845-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.287c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.497 0-3.578-1.842-3.578H1.237c-.92 0-1.456-1.04-.92-1.788L10.013.474c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.579 1.842 3.579h11.377c.943 0 1.473 1.088.89 1.83L25.947 44.94z" style="fill:#863bff;fill:color(display-p3 .5252 .23 1);fill-opacity:1"/><mask id="a" width="48" height="46" x="0" y="0" maskUnits="userSpaceOnUse" style="mask-type:alpha"><path fill="#000" d="M25.842 44.938c-.664.844-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.183c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.498 0-3.579-1.842-3.579H1.133c-.92 0-1.456-1.04-.92-1.787L9.91.473c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.578 1.842 3.578h11.377c.943 0 1.473 1.088.89 1.832L25.843 44.94z" style="fill:#000;fill-opacity:1"/></mask><g mask="url(#a)"><g filter="url(#b)"><ellipse cx="5.508" cy="14.704" fill="#ede6ff" rx="5.508" ry="14.704" style="fill:#ede6ff;fill:color(display-p3 .9275 .9033 1);fill-opacity:1" transform="matrix(.00324 1 1 -.00324 -4.47 31.516)"/></g><g filter="url(#c)"><ellipse cx="10.399" cy="29.851" fill="#ede6ff" rx="10.399" ry="29.851" style="fill:#ede6ff;fill:color(display-p3 .9275 .9033 1);fill-opacity:1" transform="matrix(.00324 1 1 -.00324 -39.328 7.883)"/></g><g filter="url(#d)"><ellipse cx="5.508" cy="30.487" fill="#7e14ff" rx="5.508" ry="30.487" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(89.814 -25.913 -14.639)scale(1 -1)"/></g><g filter="url(#e)"><ellipse cx="5.508" cy="30.599" fill="#7e14ff" rx="5.508" ry="30.599" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(89.814 -32.644 -3.334)scale(1 -1)"/></g><g filter="url(#f)"><ellipse cx="5.508" cy="30.599" fill="#7e14ff" rx="5.508" ry="30.599" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="matrix(.00324 1 1 -.00324 -34.34 30.47)"/></g><g filter="url(#g)"><ellipse cx="14.072" cy="22.078" fill="#ede6ff" rx="14.072" ry="22.078" style="fill:#ede6ff;fill:color(display-p3 .9275 .9033 1);fill-opacity:1" transform="rotate(93.35 24.506 48.493)scale(-1 1)"/></g><g filter="url(#h)"><ellipse cx="3.47" cy="21.501" fill="#7e14ff" rx="3.47" ry="21.501" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(89.009 28.708 47.59)scale(-1 1)"/></g><g filter="url(#i)"><ellipse cx="3.47" cy="21.501" fill="#7e14ff" rx="3.47" ry="21.501" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(89.009 28.708 47.59)scale(-1 1)"/></g><g filter="url(#j)"><ellipse cx=".387" cy="8.972" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(39.51 .387 8.972)"/></g><g filter="url(#k)"><ellipse cx="47.523" cy="-6.092" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(37.892 47.523 -6.092)"/></g><g filter="url(#l)"><ellipse cx="41.412" cy="6.333" fill="#47bfff" rx="5.971" ry="9.665" style="fill:#47bfff;fill:color(display-p3 .2799 .748 1);fill-opacity:1" transform="rotate(37.892 41.412 6.333)"/></g><g filter="url(#m)"><ellipse cx="-1.879" cy="38.332" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(37.892 -1.88 38.332)"/></g><g filter="url(#n)"><ellipse cx="-1.879" cy="38.332" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(37.892 -1.88 38.332)"/></g><g filter="url(#o)"><ellipse cx="35.651" cy="29.907" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(37.892 35.651 29.907)"/></g><g filter="url(#p)"><ellipse cx="38.418" cy="32.4" fill="#47bfff" rx="5.971" ry="15.297" style="fill:#47bfff;fill:color(display-p3 .2799 .748 1);fill-opacity:1" transform="rotate(37.892 38.418 32.4)"/></g></g><defs><filter id="b" width="60.045" height="41.654" x="-19.77" y="16.149" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="7.659"/></filter><filter id="c" width="90.34" height="51.437" x="-54.613" y="-7.533" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="7.659"/></filter><filter id="d" width="79.355" height="29.4" x="-49.64" y="2.03" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="e" width="79.579" height="29.4" x="-45.045" y="20.029" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="f" width="79.579" height="29.4" x="-43.513" y="21.178" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="g" width="74.749" height="58.852" x="15.756" y="-17.901" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="7.659"/></filter><filter id="h" width="61.377" height="25.362" x="23.548" y="2.284" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="i" width="61.377" height="25.362" x="23.548" y="2.284" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="j" width="56.045" height="63.649" x="-27.636" y="-22.853" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="k" width="54.814" height="64.646" x="20.116" y="-38.415" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="l" width="33.541" height="35.313" x="24.641" y="-11.323" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="m" width="54.814" height="64.646" x="-29.286" y="6.009" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="n" width="54.814" height="64.646" x="-29.286" y="6.009" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="o" width="54.814" height="64.646" x="8.244" y="-2.416" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="p" width="39.409" height="43.623" x="18.713" y="10.588" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter></defs></svg>
+</file>
+
+<file path="react-app/public/icons.svg">
+<svg xmlns="http://www.w3.org/2000/svg">
+  <symbol id="bluesky-icon" viewBox="0 0 16 17">
+    <g clip-path="url(#bluesky-clip)"><path fill="#08060d" d="M7.75 7.735c-.693-1.348-2.58-3.86-4.334-5.097-1.68-1.187-2.32-.981-2.74-.79C.188 2.065.1 2.812.1 3.251s.241 3.602.398 4.13c.52 1.744 2.367 2.333 4.07 2.145-2.495.37-4.71 1.278-1.805 4.512 3.196 3.309 4.38-.71 4.987-2.746.608 2.036 1.307 5.91 4.93 2.746 2.72-2.746.747-4.143-1.747-4.512 1.702.189 3.55-.4 4.07-2.145.156-.528.397-3.691.397-4.13s-.088-1.186-.575-1.406c-.42-.19-1.06-.395-2.741.79-1.755 1.24-3.64 3.752-4.334 5.099"/></g>
+    <defs><clipPath id="bluesky-clip"><path fill="#fff" d="M.1.85h15.3v15.3H.1z"/></clipPath></defs>
+  </symbol>
+  <symbol id="discord-icon" viewBox="0 0 20 19">
+    <path fill="#08060d" d="M16.224 3.768a14.5 14.5 0 0 0-3.67-1.153c-.158.286-.343.67-.47.976a13.5 13.5 0 0 0-4.067 0c-.128-.306-.317-.69-.476-.976A14.4 14.4 0 0 0 3.868 3.77C1.546 7.28.916 10.703 1.231 14.077a14.7 14.7 0 0 0 4.5 2.306q.545-.748.965-1.587a9.5 9.5 0 0 1-1.518-.74q.191-.14.372-.293c2.927 1.369 6.107 1.369 8.999 0q.183.152.372.294-.723.437-1.52.74.418.838.963 1.588a14.6 14.6 0 0 0 4.504-2.308c.37-3.911-.63-7.302-2.644-10.309m-9.13 8.234c-.878 0-1.599-.82-1.599-1.82 0-.998.705-1.82 1.6-1.82.894 0 1.614.82 1.599 1.82.001 1-.705 1.82-1.6 1.82m5.91 0c-.878 0-1.599-.82-1.599-1.82 0-.998.705-1.82 1.6-1.82.893 0 1.614.82 1.599 1.82 0 1-.706 1.82-1.6 1.82"/>
+  </symbol>
+  <symbol id="documentation-icon" viewBox="0 0 21 20">
+    <path fill="none" stroke="#aa3bff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35" d="m15.5 13.333 1.533 1.322c.645.555.967.833.967 1.178s-.322.623-.967 1.179L15.5 18.333m-3.333-5-1.534 1.322c-.644.555-.966.833-.966 1.178s.322.623.966 1.179l1.534 1.321"/>
+    <path fill="none" stroke="#aa3bff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35" d="M17.167 10.836v-4.32c0-1.41 0-2.117-.224-2.68-.359-.906-1.118-1.621-2.08-1.96-.599-.21-1.349-.21-2.848-.21-2.623 0-3.935 0-4.983.369-1.684.591-3.013 1.842-3.641 3.428C3 6.449 3 7.684 3 10.154v2.122c0 2.558 0 3.838.706 4.726q.306.383.713.671c.76.536 1.79.64 3.581.66"/>
+    <path fill="none" stroke="#aa3bff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35" d="M3 10a2.78 2.78 0 0 1 2.778-2.778c.555 0 1.209.097 1.748-.047.48-.129.854-.503.982-.982.145-.54.048-1.194.048-1.749a2.78 2.78 0 0 1 2.777-2.777"/>
+  </symbol>
+  <symbol id="github-icon" viewBox="0 0 19 19">
+    <path fill="#08060d" fill-rule="evenodd" d="M9.356 1.85C5.05 1.85 1.57 5.356 1.57 9.694a7.84 7.84 0 0 0 5.324 7.44c.387.079.528-.168.528-.376 0-.182-.013-.805-.013-1.454-2.165.467-2.616-.935-2.616-.935-.349-.91-.864-1.143-.864-1.143-.71-.48.051-.48.051-.48.787.051 1.2.805 1.2.805.695 1.194 1.817.857 2.268.649.064-.507.27-.857.49-1.052-1.728-.182-3.545-.857-3.545-3.87 0-.857.31-1.558.8-2.104-.078-.195-.349-1 .077-2.078 0 0 .657-.208 2.14.805a7.5 7.5 0 0 1 1.946-.26c.657 0 1.328.092 1.946.26 1.483-1.013 2.14-.805 2.14-.805.426 1.078.155 1.883.078 2.078.502.546.799 1.247.799 2.104 0 3.013-1.818 3.675-3.558 3.87.284.247.528.714.528 1.454 0 1.052-.012 1.896-.012 2.156 0 .208.142.455.528.377a7.84 7.84 0 0 0 5.324-7.441c.013-4.338-3.48-7.844-7.773-7.844" clip-rule="evenodd"/>
+  </symbol>
+  <symbol id="social-icon" viewBox="0 0 20 20">
+    <path fill="none" stroke="#aa3bff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35" d="M12.5 6.667a4.167 4.167 0 1 0-8.334 0 4.167 4.167 0 0 0 8.334 0"/>
+    <path fill="none" stroke="#aa3bff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35" d="M2.5 16.667a5.833 5.833 0 0 1 8.75-5.053m3.837.474.513 1.035c.07.144.257.282.414.309l.93.155c.596.1.736.536.307.965l-.723.73a.64.64 0 0 0-.152.531l.207.903c.164.715-.213.991-.84.618l-.872-.52a.63.63 0 0 0-.577 0l-.872.52c-.624.373-1.003.094-.84-.618l.207-.903a.64.64 0 0 0-.152-.532l-.723-.729c-.426-.43-.289-.864.306-.964l.93-.156a.64.64 0 0 0 .412-.31l.513-1.034c.28-.562.735-.562 1.012 0"/>
+  </symbol>
+  <symbol id="x-icon" viewBox="0 0 19 19">
+    <path fill="#08060d" fill-rule="evenodd" d="M1.893 1.98c.052.072 1.245 1.769 2.653 3.77l2.892 4.114c.183.261.333.48.333.486s-.068.089-.152.183l-.522.593-.765.867-3.597 4.087c-.375.426-.734.834-.798.905a1 1 0 0 0-.118.148c0 .01.236.017.664.017h.663l.729-.83c.4-.457.796-.906.879-.999a692 692 0 0 0 1.794-2.038c.034-.037.301-.34.594-.675l.551-.624.345-.392a7 7 0 0 1 .34-.374c.006 0 .93 1.306 2.052 2.903l2.084 2.965.045.063h2.275c1.87 0 2.273-.003 2.266-.021-.008-.02-1.098-1.572-3.894-5.547-2.013-2.862-2.28-3.246-2.273-3.266.008-.019.282-.332 2.085-2.38l2-2.274 1.567-1.782c.022-.028-.016-.03-.65-.03h-.674l-.3.342a871 871 0 0 1-1.782 2.025c-.067.075-.405.458-.75.852a100 100 0 0 1-.803.91c-.148.172-.299.344-.99 1.127-.304.343-.32.358-.345.327-.015-.019-.904-1.282-1.976-2.808L6.365 1.85H1.8zm1.782.91 8.078 11.294c.772 1.08 1.413 1.973 1.425 1.984.016.017.241.02 1.05.017l1.03-.004-2.694-3.766L7.796 5.75 5.722 2.852l-1.039-.004-1.039-.004z" clip-rule="evenodd"/>
+  </symbol>
+</svg>
+</file>
+
+<file path="react-app/README.md">
+# React + Vite
+
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+
+Currently, two official plugins are available:
+
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+
+## React Compiler
+
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+
+## Expanding the ESLint configuration
+
+If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+</file>
+
+<file path="react-app/src/components/PlayerProgressBar.jsx">
+import { Zap } from 'lucide-react';
+
+export default function PlayerProgressBar({ player, isCurrentUser }) {
+    const { name, avatar, progress } = player;
+
+    return (
+        <div className={`flex flex-col gap-3 group ${isCurrentUser ? '' : 'opacity-80 hover:opacity-100 transition-opacity'}`}>
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border overflow-hidden ${isCurrentUser ? 'bg-primary/20 border-primary/40' : 'bg-slate-800 border-slate-700'}`}>
+                        <img alt={name} className="w-full h-full object-cover" src={avatar} />
+                    </div>
+                    <div>
+                        <p className="text-slate-100 text-base font-bold leading-none mb-1">
+                            {name} {isCurrentUser && <span className="text-xs font-normal text-primary/70 ml-2">(You)</span>}
+                        </p>
+                        <p className={`${isCurrentUser ? 'text-primary' : 'text-slate-400'} text-xs font-mono`}>
+                            {progress}% Complete
+                        </p>
+                    </div>
+                </div>
+                {isCurrentUser && <Zap className="text-primary w-6 h-6" />}
+            </div>
+            <div className="h-3 w-full bg-slate-800/50 rounded-full overflow-hidden border border-slate-700/50">
+                <div
+                    className={`h-full rounded-full ${isCurrentUser ? 'bg-primary shadow-[0_0_12px_rgba(0,245,212,0.6)]' : 'bg-primary/40'}`}
+                    style={{ width: `${progress}%` }}
+                ></div>
+            </div>
+        </div>
+    );
+}
+</file>
+
+<file path="react-app/src/components/StatCard.jsx">
+export default function StatCard({ title, icon, value, valueSuffix, trend, trendLabel, subtitle }) {
+    return (
+        <div className="bg-white dark:bg-primary/5 p-6 rounded-xl border border-slate-200 dark:border-primary/10 relative overflow-hidden group">
+            <div className="absolute top-4 right-4 text-primary opacity-70">
+                {icon}
+            </div>
+            <p className="text-sm font-medium text-slate-500 dark:text-primary/70 uppercase tracking-wider">{title}</p>
+            <div className="flex items-baseline gap-2 mt-2">
+                <h3 className="text-4xl font-bold text-slate-900 dark:text-white">
+                    {value}
+                    {valueSuffix && <span className="text-2xl font-normal opacity-50">{valueSuffix}</span>}
+                </h3>
+                {trend && (
+                    <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">
+                        {trend}
+                    </span>
+                )}
+                {trendLabel && (
+                    <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">
+                        {trendLabel}
+                    </span>
+                )}
+            </div>
+            <p className="text-xs text-slate-400 mt-4">{subtitle}</p>
+        </div>
+    );
+}
+</file>
+
+<file path="react-app/src/main.jsx">
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
+import App from './App.jsx'
+
+createRoot(document.getElementById('root')).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+)
+</file>
 
 <file path="react-app/src/pages/GhostVault.jsx">
 import { useState, useEffect } from 'react';
@@ -271,6 +553,173 @@ export default function GhostVault() {
 }
 </file>
 
+<file path="react-app/src/utils/firebaseUtils.js">
+import { auth, db } from '../firebase';
+import { doc, getDoc, updateDoc, setDoc, serverTimestamp, arrayUnion, increment } from 'firebase/firestore';
+
+/**
+ * Robustly synchronizes personal best to the leaderboard.
+ * Only updates if the new score is better than the existing one.
+ * @param {number} wpm - Words per minute
+ * @param {number|string} acc - Accuracy percentage
+ */
+export const syncToLeaderboard = async (wpm, acc) => {
+    if (!auth.currentUser) return;
+    
+    try {
+        const uid = auth.currentUser.uid;
+        const userLBRef = doc(db, 'leaderboard', uid);
+        const userLBSnap = await getDoc(userLBRef);
+        
+        let shouldUpdate = true;
+        const numericAcc = parseFloat(acc);
+
+        if (userLBSnap.exists()) {
+            const existing = userLBSnap.data();
+            const existingWPM = existing.wpm || 0;
+            const existingAcc = existing.acc || 0;
+
+            // Better WPM OR Same WPM with Better Accuracy
+            if (wpm < existingWPM) {
+                shouldUpdate = false;
+            } else if (wpm === existingWPM && numericAcc <= existingAcc) {
+                shouldUpdate = false;
+            }
+        }
+
+        if (shouldUpdate) {
+            const operatorName = localStorage.getItem('playerName') || auth.currentUser.displayName || auth.currentUser.email.split('@')[0];
+            
+            await setDoc(userLBRef, {
+                name: operatorName,
+                wpm: wpm,
+                acc: numericAcc,
+                updatedAt: serverTimestamp()
+            }, { merge: true });
+            
+            console.log("Leaderboard updated with new PB:", { wpm, acc: numericAcc });
+            return true;
+        }
+    } catch (err) {
+        console.error("Failed to sync to leaderboard:", err);
+    }
+    return false;
+};
+
+/**
+ * Calculates current rank based on WPM.
+ * @param {number} wpm 
+ */
+export const calculateRank = (wpm) => {
+    if (wpm >= 111) return { tier: 'Overlord', score: 5000 + (wpm * 10), nextTierMax: null };
+    if (wpm >= 81) return { tier: 'Elite', score: 3000 + (wpm * 8), nextTierMax: 5000 };
+    if (wpm >= 51) return { tier: 'Pro', score: 1500 + (wpm * 6), nextTierMax: 3000 };
+    if (wpm >= 31) return { tier: 'Cadet', score: 500 + (wpm * 4), nextTierMax: 1500 };
+    return { tier: 'Novice', score: wpm * 2, nextTierMax: 500 };
+};
+
+/**
+ * Pushes ONLY CRUCIAL stats to Firestore to minimize writes (Free Tier Optimization).
+ * Updates highestWPM and Leaderboard ONLY if the new WPM is strictly better.
+ * Always increments totalRaces.
+ * Does NOT sync raceHistory or weakKeys (local-only).
+ */
+export const syncCrucialData = async (finalWpm, finalAcc) => {
+    if (!auth.currentUser) return;
+
+    try {
+        const uid = auth.currentUser.uid;
+        const userDocRef = doc(db, 'users', uid);
+        const userSnap = await getDoc(userDocRef);
+        const userData = userSnap.data() || {};
+        const existingRank = userData.rank || { highestWPM: 0, avgAcc: 0, totalRaces: 0 };
+        const recentHistory = userData.recentHistory || [];
+        
+        let isNewPB = false;
+        
+        if (finalWpm > existingRank.highestWPM) {
+            isNewPB = true;
+        } else if (finalWpm === existingRank.highestWPM && parseFloat(finalAcc) > parseFloat(existingRank.avgAcc || 0)) {
+            isNewPB = true;
+        }
+
+        const operatorName = localStorage.getItem('playerName') || auth.currentUser.displayName || auth.currentUser.email.split('@')[0];
+
+        const newRace = { wpm: finalWpm, accuracy: parseFloat(finalAcc), timestamp: Date.now() };
+        const updatedHistory = [...recentHistory, newRace].slice(-15);
+
+        // 2. Prepare atomic update
+        const updatePayload = {
+            totalRaces: increment(1),
+            "rank.totalRaces": increment(1),
+            lastActive: serverTimestamp(),
+            operatorName: operatorName,
+            recentHistory: updatedHistory
+        };
+
+        if (isNewPB) {
+            const rankInfo = calculateRank(finalWpm);
+            updatePayload['rank.highestWPM'] = finalWpm;
+            updatePayload['rank.avgAcc'] = finalAcc;
+            updatePayload['rank.tier'] = rankInfo.tier;
+            updatePayload['rank.score'] = rankInfo.score;
+            updatePayload['rank.nextTierMax'] = rankInfo.nextTierMax;
+            
+            // Sync to leaderboard only on PB
+            await syncToLeaderboard(finalWpm, finalAcc);
+        }
+
+        await updateDoc(userDocRef, updatePayload);
+        
+        console.log(isNewPB ? "New PB Synced to Cloud!" : "Race incremented in Cloud.");
+        return true;
+    } catch (err) {
+        console.error("Crucial sync failed:", err);
+        return false;
+    }
+};
+
+/**
+ * @deprecated Use syncCrucialData instead
+ */
+export const pushStatsToCloud = syncCrucialData;
+
+/**
+ * Keeps track of up to 10 most missed keys across all sessions
+ * stored remotely in trainings/{uid}.
+ */
+export const updateWeakKeys = async (errorMap) => {
+    if (!auth.currentUser || !errorMap || Object.keys(errorMap).length === 0) return;
+    try {
+        const uid = auth.currentUser.uid;
+        const trainingsRef = doc(db, 'trainings', uid);
+        const trainingsSnap = await getDoc(trainingsRef);
+        
+        const existingKeys = trainingsSnap.exists() ? (trainingsSnap.data().keys || {}) : {};
+        
+        for (const [key, count] of Object.entries(errorMap)) {
+            if (!existingKeys[key]) existingKeys[key] = 0;
+            existingKeys[key] += count;
+        }
+
+        const sortedKeys = Object.entries(existingKeys)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 10);
+            
+        const top10Keys = Object.fromEntries(sortedKeys);
+
+        await setDoc(trainingsRef, {
+            keys: top10Keys,
+            lastUpdated: serverTimestamp()
+        }, { merge: true });
+
+        console.log("Synced weak keys to trainings collection.");
+    } catch (err) {
+        console.error("Failed to sync weak keys:", err);
+    }
+};
+</file>
+
 <file path="react-app/src/utils/storageUtils.js">
 import { auth } from '../firebase';
 
@@ -309,179 +758,150 @@ export const getStorageType = () => {
 };
 </file>
 
-<file path=".gitignore">
-react-app/node_modules/
-server/node_modules/
-.env
-</file>
+<file path="react-app/src/utils/typingUtils.js">
+/**
+ * Typing Utilities for TypeMaster
+ */
 
-<file path="react-app/.firebaserc">
-{
-  "projects": {
-    "default": "typemaster-prod-9a2b8c"
-  },
-  "targets": {},
-  "etags": {}
-}
-</file>
+// Mapping of common characters to practice words for adaptive drill generation
+const CHAR_TO_WORDS = {
+    'a': ['algorithm', 'async', 'await', 'access'],
+    'b': ['buffer', 'binary', 'boolean', 'backend'],
+    'c': ['cloud', 'compiler', 'constant', 'callback'],
+    'd': ['data', 'debugger', 'deployment', 'database'],
+    'e': ['effect', 'examine', 'execute', 'encryption'],
+    'f': ['function', 'frontend', 'filesystem', 'fetch'],
+    'g': ['global', 'gradient', 'gateway', 'grid'],
+    'h': ['history', 'header', 'heatmap', 'handle'],
+    'i': ['interface', 'identity', 'instance', 'integer'],
+    'j': ['javascript', 'json', 'join', 'jump'],
+    'k': ['keystroke', 'kernel', 'keyboard', 'kinetic'],
+    'l': ['logic', 'leaderboard', 'latency', 'local'],
+    'm': ['matrix', 'mutation', 'mapping', 'module'],
+    'n': ['neural', 'network', 'node', 'numeric'],
+    'o': ['operator', 'object', 'offline', 'optimization'],
+    'p': ['protocol', 'parallel', 'pointer', 'pattern'],
+    'q': ['query', 'queue', 'quality', 'quantize'],
+    'r': ['react', 'resource', 'runtime', 'recursive'],
+    's': ['sync', 'synthetic', 'storage', 'server'],
+    't': ['temporal', 'transition', 'timestamp', 'token'],
+    'u': ['utility', 'update', 'user', 'unique'],
+    'v': ['vault', 'virtual', 'variable', 'version'],
+    'w': ['websocket', 'window', 'worker', 'wrapper'],
+    'x': ['xml', 'xor', 'execute', 'proxy'],
+    'y': ['yield', 'yaml', 'yesterday', 'yellow'],
+    'z': ['zoom', 'zinc', 'zone', 'zero'],
+    ';': ['status;', 'data;', 'config;', 'link;'],
+    '{': ['{data}', '{state}', '{node}', '{sync}'],
+    '(': ['(id)', '(u)', '(event)', '(race)'],
+    '.': ['this.data', 'user.uid', 'db.ref', 'auth.user']
+};
 
-<file path="react-app/.gitignore">
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+/**
+ * Generates a practice text based on an error map or weak keys array.
+ * @param {Array|Object} weakKeys - List or Map of characters to practice
+ * @param {number} durationInSeconds - Duration of the race to fill
+ * @returns {string} 
+ */
+export const generateSmartDrill = (weakKeys = [], durationInSeconds = 30) => {
+    // Convert to array if it's an error map or single string
+    let keys = [];
+    if (typeof weakKeys === 'string') {
+        keys = [weakKeys];
+    } else {
+        keys = Array.isArray(weakKeys) ? weakKeys : Object.keys(weakKeys);
+    }
+    keys = keys.filter(k => typeof k === 'string' && k.length === 1);
 
-node_modules
-dist
-dist-ssr
-*.local
+    const SYMBOLS = ['{', '}', ';', '[', ']', '(', ')', '<', '>', '/', '=', '+'];
+    
+    // 1. Determine the core character pool
+    let pool = [];
+    if (keys.length === 0) {
+        pool = SYMBOLS;
+    } else {
+        // If we have weak keys, mix them with common characters to form words
+        pool = keys;
+    }
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-</file>
+    // 2. Constants for text length
+    const TARGET_WPM = 80;
+    const wordsNeeded = Math.ceil((TARGET_WPM / 60) * durationInSeconds) + 5; // Add buffer
 
-<file path="react-app/database.rules.json">
-{
-  "rules": {
-    "users": {
-      "$uid": {
-        ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null && auth.uid === $uid"
-      }
-    },
-    "leaderboard": {
-      "top10": {
-        ".read": true,
-        "$uid": {
-          ".write": "auth != null && auth.uid === $uid"
+    const drillWords = [];
+    
+    // 3. Generate words
+    for (let i = 0; i < wordsNeeded; i++) {
+        const char = pool[Math.floor(Math.random() * pool.length)];
+        const words = CHAR_TO_WORDS[char.toLowerCase()];
+        
+        if (words && words.length > 0) {
+            drillWords.push(words[Math.floor(Math.random() * words.length)]);
+        } else {
+            // Fallback for symbols or keys without dictionary: generate pseudo-word
+            const common = ['e', 't', 'o', 'i', 'n'];
+            const pseudo = char + common[Math.floor(Math.random() * common.length)] + char;
+            drillWords.push(pseudo);
         }
-      }
     }
-  }
-}
+
+    // 4. Shuffle and join
+    return drillWords.sort(() => 0.5 - Math.random()).join(' ');
+};
+
+/**
+ * @deprecated Use generateSmartDrill instead
+ */
+export const generateDrillText = (errorMap) => generateSmartDrill(errorMap, 30);
 </file>
 
-<file path="react-app/eslint.config.js">
-import js from '@eslint/js'
-import globals from 'globals'
-import reactHooks from 'eslint-plugin-react-hooks'
-import reactRefresh from 'eslint-plugin-react-refresh'
-import { defineConfig, globalIgnores } from 'eslint/config'
+<file path="react-app/vite.config.js">
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{js,jsx}'],
-    extends: [
-      js.configs.recommended,
-      reactHooks.configs.flat.recommended,
-      reactRefresh.configs.vite,
-    ],
-    languageOptions: {
-      ecmaVersion: 2020,
-      globals: globals.browser,
-      parserOptions: {
-        ecmaVersion: 'latest',
-        ecmaFeatures: { jsx: true },
-        sourceType: 'module',
-      },
-    },
-    rules: {
-      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
-    },
-  },
-])
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+})
 </file>
 
-<file path="react-app/firebase.json">
+<file path="react-app/package.json">
 {
-  "database": {
-    "rules": "database.rules.json"
+  "name": "react-app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
   },
-  "auth": {
-    "providers": {
-      "emailPassword": true
-    }
+  "dependencies": {
+    "@tailwindcss/vite": "^4.2.1",
+    "firebase": "^12.11.0",
+    "lucide-react": "^0.577.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-router-dom": "^7.13.1",
+    "socket.io-client": "^4.8.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.0",
+    "autoprefixer": "^10.4.27",
+    "eslint": "^9.39.4",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.4.0",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^4.2.1",
+    "vite": "^8.0.0"
   }
 }
-</file>
-
-<file path="react-app/index.html">
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>react-app</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
-</html>
-</file>
-
-<file path="react-app/public/favicon.svg">
-<svg xmlns="http://www.w3.org/2000/svg" width="48" height="46" fill="none" viewBox="0 0 48 46"><path fill="#863bff" d="M25.946 44.938c-.664.845-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.287c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.497 0-3.578-1.842-3.578H1.237c-.92 0-1.456-1.04-.92-1.788L10.013.474c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.579 1.842 3.579h11.377c.943 0 1.473 1.088.89 1.83L25.947 44.94z" style="fill:#863bff;fill:color(display-p3 .5252 .23 1);fill-opacity:1"/><mask id="a" width="48" height="46" x="0" y="0" maskUnits="userSpaceOnUse" style="mask-type:alpha"><path fill="#000" d="M25.842 44.938c-.664.844-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.183c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.498 0-3.579-1.842-3.579H1.133c-.92 0-1.456-1.04-.92-1.787L9.91.473c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.578 1.842 3.578h11.377c.943 0 1.473 1.088.89 1.832L25.843 44.94z" style="fill:#000;fill-opacity:1"/></mask><g mask="url(#a)"><g filter="url(#b)"><ellipse cx="5.508" cy="14.704" fill="#ede6ff" rx="5.508" ry="14.704" style="fill:#ede6ff;fill:color(display-p3 .9275 .9033 1);fill-opacity:1" transform="matrix(.00324 1 1 -.00324 -4.47 31.516)"/></g><g filter="url(#c)"><ellipse cx="10.399" cy="29.851" fill="#ede6ff" rx="10.399" ry="29.851" style="fill:#ede6ff;fill:color(display-p3 .9275 .9033 1);fill-opacity:1" transform="matrix(.00324 1 1 -.00324 -39.328 7.883)"/></g><g filter="url(#d)"><ellipse cx="5.508" cy="30.487" fill="#7e14ff" rx="5.508" ry="30.487" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(89.814 -25.913 -14.639)scale(1 -1)"/></g><g filter="url(#e)"><ellipse cx="5.508" cy="30.599" fill="#7e14ff" rx="5.508" ry="30.599" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(89.814 -32.644 -3.334)scale(1 -1)"/></g><g filter="url(#f)"><ellipse cx="5.508" cy="30.599" fill="#7e14ff" rx="5.508" ry="30.599" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="matrix(.00324 1 1 -.00324 -34.34 30.47)"/></g><g filter="url(#g)"><ellipse cx="14.072" cy="22.078" fill="#ede6ff" rx="14.072" ry="22.078" style="fill:#ede6ff;fill:color(display-p3 .9275 .9033 1);fill-opacity:1" transform="rotate(93.35 24.506 48.493)scale(-1 1)"/></g><g filter="url(#h)"><ellipse cx="3.47" cy="21.501" fill="#7e14ff" rx="3.47" ry="21.501" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(89.009 28.708 47.59)scale(-1 1)"/></g><g filter="url(#i)"><ellipse cx="3.47" cy="21.501" fill="#7e14ff" rx="3.47" ry="21.501" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(89.009 28.708 47.59)scale(-1 1)"/></g><g filter="url(#j)"><ellipse cx=".387" cy="8.972" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(39.51 .387 8.972)"/></g><g filter="url(#k)"><ellipse cx="47.523" cy="-6.092" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(37.892 47.523 -6.092)"/></g><g filter="url(#l)"><ellipse cx="41.412" cy="6.333" fill="#47bfff" rx="5.971" ry="9.665" style="fill:#47bfff;fill:color(display-p3 .2799 .748 1);fill-opacity:1" transform="rotate(37.892 41.412 6.333)"/></g><g filter="url(#m)"><ellipse cx="-1.879" cy="38.332" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(37.892 -1.88 38.332)"/></g><g filter="url(#n)"><ellipse cx="-1.879" cy="38.332" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(37.892 -1.88 38.332)"/></g><g filter="url(#o)"><ellipse cx="35.651" cy="29.907" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(37.892 35.651 29.907)"/></g><g filter="url(#p)"><ellipse cx="38.418" cy="32.4" fill="#47bfff" rx="5.971" ry="15.297" style="fill:#47bfff;fill:color(display-p3 .2799 .748 1);fill-opacity:1" transform="rotate(37.892 38.418 32.4)"/></g></g><defs><filter id="b" width="60.045" height="41.654" x="-19.77" y="16.149" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="7.659"/></filter><filter id="c" width="90.34" height="51.437" x="-54.613" y="-7.533" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="7.659"/></filter><filter id="d" width="79.355" height="29.4" x="-49.64" y="2.03" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="e" width="79.579" height="29.4" x="-45.045" y="20.029" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="f" width="79.579" height="29.4" x="-43.513" y="21.178" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="g" width="74.749" height="58.852" x="15.756" y="-17.901" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="7.659"/></filter><filter id="h" width="61.377" height="25.362" x="23.548" y="2.284" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="i" width="61.377" height="25.362" x="23.548" y="2.284" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="j" width="56.045" height="63.649" x="-27.636" y="-22.853" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="k" width="54.814" height="64.646" x="20.116" y="-38.415" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="l" width="33.541" height="35.313" x="24.641" y="-11.323" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="m" width="54.814" height="64.646" x="-29.286" y="6.009" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="n" width="54.814" height="64.646" x="-29.286" y="6.009" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="o" width="54.814" height="64.646" x="8.244" y="-2.416" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="p" width="39.409" height="43.623" x="18.713" y="10.588" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter></defs></svg>
-</file>
-
-<file path="react-app/public/icons.svg">
-<svg xmlns="http://www.w3.org/2000/svg">
-  <symbol id="bluesky-icon" viewBox="0 0 16 17">
-    <g clip-path="url(#bluesky-clip)"><path fill="#08060d" d="M7.75 7.735c-.693-1.348-2.58-3.86-4.334-5.097-1.68-1.187-2.32-.981-2.74-.79C.188 2.065.1 2.812.1 3.251s.241 3.602.398 4.13c.52 1.744 2.367 2.333 4.07 2.145-2.495.37-4.71 1.278-1.805 4.512 3.196 3.309 4.38-.71 4.987-2.746.608 2.036 1.307 5.91 4.93 2.746 2.72-2.746.747-4.143-1.747-4.512 1.702.189 3.55-.4 4.07-2.145.156-.528.397-3.691.397-4.13s-.088-1.186-.575-1.406c-.42-.19-1.06-.395-2.741.79-1.755 1.24-3.64 3.752-4.334 5.099"/></g>
-    <defs><clipPath id="bluesky-clip"><path fill="#fff" d="M.1.85h15.3v15.3H.1z"/></clipPath></defs>
-  </symbol>
-  <symbol id="discord-icon" viewBox="0 0 20 19">
-    <path fill="#08060d" d="M16.224 3.768a14.5 14.5 0 0 0-3.67-1.153c-.158.286-.343.67-.47.976a13.5 13.5 0 0 0-4.067 0c-.128-.306-.317-.69-.476-.976A14.4 14.4 0 0 0 3.868 3.77C1.546 7.28.916 10.703 1.231 14.077a14.7 14.7 0 0 0 4.5 2.306q.545-.748.965-1.587a9.5 9.5 0 0 1-1.518-.74q.191-.14.372-.293c2.927 1.369 6.107 1.369 8.999 0q.183.152.372.294-.723.437-1.52.74.418.838.963 1.588a14.6 14.6 0 0 0 4.504-2.308c.37-3.911-.63-7.302-2.644-10.309m-9.13 8.234c-.878 0-1.599-.82-1.599-1.82 0-.998.705-1.82 1.6-1.82.894 0 1.614.82 1.599 1.82.001 1-.705 1.82-1.6 1.82m5.91 0c-.878 0-1.599-.82-1.599-1.82 0-.998.705-1.82 1.6-1.82.893 0 1.614.82 1.599 1.82 0 1-.706 1.82-1.6 1.82"/>
-  </symbol>
-  <symbol id="documentation-icon" viewBox="0 0 21 20">
-    <path fill="none" stroke="#aa3bff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35" d="m15.5 13.333 1.533 1.322c.645.555.967.833.967 1.178s-.322.623-.967 1.179L15.5 18.333m-3.333-5-1.534 1.322c-.644.555-.966.833-.966 1.178s.322.623.966 1.179l1.534 1.321"/>
-    <path fill="none" stroke="#aa3bff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35" d="M17.167 10.836v-4.32c0-1.41 0-2.117-.224-2.68-.359-.906-1.118-1.621-2.08-1.96-.599-.21-1.349-.21-2.848-.21-2.623 0-3.935 0-4.983.369-1.684.591-3.013 1.842-3.641 3.428C3 6.449 3 7.684 3 10.154v2.122c0 2.558 0 3.838.706 4.726q.306.383.713.671c.76.536 1.79.64 3.581.66"/>
-    <path fill="none" stroke="#aa3bff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35" d="M3 10a2.78 2.78 0 0 1 2.778-2.778c.555 0 1.209.097 1.748-.047.48-.129.854-.503.982-.982.145-.54.048-1.194.048-1.749a2.78 2.78 0 0 1 2.777-2.777"/>
-  </symbol>
-  <symbol id="github-icon" viewBox="0 0 19 19">
-    <path fill="#08060d" fill-rule="evenodd" d="M9.356 1.85C5.05 1.85 1.57 5.356 1.57 9.694a7.84 7.84 0 0 0 5.324 7.44c.387.079.528-.168.528-.376 0-.182-.013-.805-.013-1.454-2.165.467-2.616-.935-2.616-.935-.349-.91-.864-1.143-.864-1.143-.71-.48.051-.48.051-.48.787.051 1.2.805 1.2.805.695 1.194 1.817.857 2.268.649.064-.507.27-.857.49-1.052-1.728-.182-3.545-.857-3.545-3.87 0-.857.31-1.558.8-2.104-.078-.195-.349-1 .077-2.078 0 0 .657-.208 2.14.805a7.5 7.5 0 0 1 1.946-.26c.657 0 1.328.092 1.946.26 1.483-1.013 2.14-.805 2.14-.805.426 1.078.155 1.883.078 2.078.502.546.799 1.247.799 2.104 0 3.013-1.818 3.675-3.558 3.87.284.247.528.714.528 1.454 0 1.052-.012 1.896-.012 2.156 0 .208.142.455.528.377a7.84 7.84 0 0 0 5.324-7.441c.013-4.338-3.48-7.844-7.773-7.844" clip-rule="evenodd"/>
-  </symbol>
-  <symbol id="social-icon" viewBox="0 0 20 20">
-    <path fill="none" stroke="#aa3bff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35" d="M12.5 6.667a4.167 4.167 0 1 0-8.334 0 4.167 4.167 0 0 0 8.334 0"/>
-    <path fill="none" stroke="#aa3bff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35" d="M2.5 16.667a5.833 5.833 0 0 1 8.75-5.053m3.837.474.513 1.035c.07.144.257.282.414.309l.93.155c.596.1.736.536.307.965l-.723.73a.64.64 0 0 0-.152.531l.207.903c.164.715-.213.991-.84.618l-.872-.52a.63.63 0 0 0-.577 0l-.872.52c-.624.373-1.003.094-.84-.618l.207-.903a.64.64 0 0 0-.152-.532l-.723-.729c-.426-.43-.289-.864.306-.964l.93-.156a.64.64 0 0 0 .412-.31l.513-1.034c.28-.562.735-.562 1.012 0"/>
-  </symbol>
-  <symbol id="x-icon" viewBox="0 0 19 19">
-    <path fill="#08060d" fill-rule="evenodd" d="M1.893 1.98c.052.072 1.245 1.769 2.653 3.77l2.892 4.114c.183.261.333.48.333.486s-.068.089-.152.183l-.522.593-.765.867-3.597 4.087c-.375.426-.734.834-.798.905a1 1 0 0 0-.118.148c0 .01.236.017.664.017h.663l.729-.83c.4-.457.796-.906.879-.999a692 692 0 0 0 1.794-2.038c.034-.037.301-.34.594-.675l.551-.624.345-.392a7 7 0 0 1 .34-.374c.006 0 .93 1.306 2.052 2.903l2.084 2.965.045.063h2.275c1.87 0 2.273-.003 2.266-.021-.008-.02-1.098-1.572-3.894-5.547-2.013-2.862-2.28-3.246-2.273-3.266.008-.019.282-.332 2.085-2.38l2-2.274 1.567-1.782c.022-.028-.016-.03-.65-.03h-.674l-.3.342a871 871 0 0 1-1.782 2.025c-.067.075-.405.458-.75.852a100 100 0 0 1-.803.91c-.148.172-.299.344-.99 1.127-.304.343-.32.358-.345.327-.015-.019-.904-1.282-1.976-2.808L6.365 1.85H1.8zm1.782.91 8.078 11.294c.772 1.08 1.413 1.973 1.425 1.984.016.017.241.02 1.05.017l1.03-.004-2.694-3.766L7.796 5.75 5.722 2.852l-1.039-.004-1.039-.004z" clip-rule="evenodd"/>
-  </symbol>
-</svg>
-</file>
-
-<file path="react-app/README.md">
-# React + Vite
-
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
 </file>
 
 <file path="react-app/src/App.jsx">
@@ -514,7 +934,7 @@ export default App;
 import { useState } from 'react';
 import { auth, db } from '../firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { X, CloudLightning, Loader2 } from 'lucide-react';
 
 export default function AuthModal({ onClose, onLoginSuccess }) {
@@ -544,24 +964,39 @@ export default function AuthModal({ onClose, onLoginSuccess }) {
                 if (userSnapshot.exists()) {
                     const data = userSnapshot.data();
                     
+                    // CLEAR OLD LOCAL DATA BEFORE HYDRATION
+                    // This prevents data leakage when switching users
+                    localStorage.clear();
+                    sessionStorage.clear();
+
                     // 1. Recover Operator Identity
                     if (data.operatorName) localStorage.setItem('playerName', data.operatorName);
                     
-                    // 2. Initial Pull: If localStorage is empty, take what we have from cloud
-                    const localHistory = JSON.parse(localStorage.getItem('raceHistory') || '[]');
-                    if (localHistory.length === 0 && data.rank) {
-                        // We don't have full history in cloud anymore, but we can restore the Rank summary
+                    // 2. Overwrite Race History
+                    if (data.recentHistory) {
+                        localStorage.setItem('raceHistory', JSON.stringify(data.recentHistory));
+                    }
+
+                    if (data.rank) {
                         localStorage.setItem('rankData', JSON.stringify(data.rank));
                         localStorage.setItem('prevHighestWPM', (data.rank.highestWPM || 0).toString());
+                    }
+
+                    // 4. Instant Name Sync Fix
+                    if (!data.operatorName) {
+                        const emailPrefix = user.email.split('@')[0];
+                        await updateDoc(userDocRef, { operatorName: emailPrefix });
+                        localStorage.setItem('playerName', emailPrefix);
                     }
                     
                     // 3. Update Sync Timestamps
                     localStorage.setItem('lastCloudSync', Date.now().toString());
                     localStorage.setItem('lastLocalUpdate', (Date.now() - 1000).toString()); // Cloud is current
                 } else {
-                    // New Cloud User -> Push initial profile summary
+                    // New Cloud User -> Push initial profile summary (if guest data exists)
                     const operatorName = localStorage.getItem('playerName') || userCredential.user.email.split('@')[0];
                     const localRank = JSON.parse(localStorage.getItem('rankData') || 'null');
+                    const localHistory = JSON.parse(localStorage.getItem('raceHistory') || '[]');
                     
                     await setDoc(userDocRef, {
                         operatorName,
@@ -573,6 +1008,7 @@ export default function AuthModal({ onClose, onLoginSuccess }) {
                 }
 
                 // Force individual state updates on Dashboard
+                window.dispatchEvent(new Event('data-hydrated'));
                 window.dispatchEvent(new Event('neural-sync-complete'));
                 
             } catch (syncErr) {
@@ -638,71 +1074,6 @@ export default function AuthModal({ onClose, onLoginSuccess }) {
                     </button>
                 </div>
             </div>
-        </div>
-    );
-}
-</file>
-
-<file path="react-app/src/components/PlayerProgressBar.jsx">
-import { Zap } from 'lucide-react';
-
-export default function PlayerProgressBar({ player, isCurrentUser }) {
-    const { name, avatar, progress } = player;
-
-    return (
-        <div className={`flex flex-col gap-3 group ${isCurrentUser ? '' : 'opacity-80 hover:opacity-100 transition-opacity'}`}>
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border overflow-hidden ${isCurrentUser ? 'bg-primary/20 border-primary/40' : 'bg-slate-800 border-slate-700'}`}>
-                        <img alt={name} className="w-full h-full object-cover" src={avatar} />
-                    </div>
-                    <div>
-                        <p className="text-slate-100 text-base font-bold leading-none mb-1">
-                            {name} {isCurrentUser && <span className="text-xs font-normal text-primary/70 ml-2">(You)</span>}
-                        </p>
-                        <p className={`${isCurrentUser ? 'text-primary' : 'text-slate-400'} text-xs font-mono`}>
-                            {progress}% Complete
-                        </p>
-                    </div>
-                </div>
-                {isCurrentUser && <Zap className="text-primary w-6 h-6" />}
-            </div>
-            <div className="h-3 w-full bg-slate-800/50 rounded-full overflow-hidden border border-slate-700/50">
-                <div
-                    className={`h-full rounded-full ${isCurrentUser ? 'bg-primary shadow-[0_0_12px_rgba(0,245,212,0.6)]' : 'bg-primary/40'}`}
-                    style={{ width: `${progress}%` }}
-                ></div>
-            </div>
-        </div>
-    );
-}
-</file>
-
-<file path="react-app/src/components/StatCard.jsx">
-export default function StatCard({ title, icon, value, valueSuffix, trend, trendLabel, subtitle }) {
-    return (
-        <div className="bg-white dark:bg-primary/5 p-6 rounded-xl border border-slate-200 dark:border-primary/10 relative overflow-hidden group">
-            <div className="absolute top-4 right-4 text-primary opacity-70">
-                {icon}
-            </div>
-            <p className="text-sm font-medium text-slate-500 dark:text-primary/70 uppercase tracking-wider">{title}</p>
-            <div className="flex items-baseline gap-2 mt-2">
-                <h3 className="text-4xl font-bold text-slate-900 dark:text-white">
-                    {value}
-                    {valueSuffix && <span className="text-2xl font-normal opacity-50">{valueSuffix}</span>}
-                </h3>
-                {trend && (
-                    <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">
-                        {trend}
-                    </span>
-                )}
-                {trendLabel && (
-                    <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">
-                        {trendLabel}
-                    </span>
-                )}
-            </div>
-            <p className="text-xs text-slate-400 mt-4">{subtitle}</p>
         </div>
     );
 }
@@ -831,68 +1202,6 @@ html::-webkit-scrollbar {
 }
 </file>
 
-<file path="react-app/src/main.jsx">
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.jsx'
-
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
-</file>
-
-<file path="react-app/vite.config.js">
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
-
-// https://vite.dev/config/
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
-})
-</file>
-
-<file path="react-app/package.json">
-{
-  "name": "react-app",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@tailwindcss/vite": "^4.2.1",
-    "firebase": "^12.11.0",
-    "lucide-react": "^0.577.0",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "react-router-dom": "^7.13.1",
-    "socket.io-client": "^4.8.3"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.39.4",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.0",
-    "autoprefixer": "^10.4.27",
-    "eslint": "^9.39.4",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-react-refresh": "^0.5.2",
-    "globals": "^17.4.0",
-    "postcss": "^8.5.8",
-    "tailwindcss": "^4.2.1",
-    "vite": "^8.0.0"
-  }
-}
-</file>
-
 <file path="server/package.json">
 {
   "name": "server",
@@ -1005,6 +1314,7 @@ export default function Navbar({ isFaded = false }) {
             await signOut(auth);
             localStorage.clear();
             sessionStorage.clear();
+            window.dispatchEvent(new Event('data-hydrated'));
             setIsProfileOpen(false);
             window.location.reload();
         } catch (err) {
@@ -1338,14 +1648,17 @@ import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { Link } from 'react-router-dom';
 import PlayerProgressBar from '../components/PlayerProgressBar';
-import { Network, Copy, Play, ArrowRight, UserPlus, Trophy, RotateCcw, Ghost, Code, FileText, Shield } from 'lucide-react';
+import { Trophy, Users, Timer, Target, Zap, RotateCcw, ArrowRight, Network, Copy, Play, UserPlus, FileText, Code, Shield, ChevronLeft, Ghost, Download } from 'lucide-react';
 import { auth, db } from '../firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { addDoc, collection, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { loadData, saveData } from '../utils/storageUtils';
+import { syncToLeaderboard, pushStatsToCloud } from '../utils/firebaseUtils';
+import { useNavigate } from 'react-router-dom';
 
 const SOCKET_SERVER = 'http://localhost:3001';
 
 export default function Multiplayer() {
+    const navigate = useNavigate();
     const [socket, setSocket] = useState(null);
     const [roomId, setRoomId] = useState('');
     const [joinInput, setJoinInput] = useState('');
@@ -1372,6 +1685,7 @@ export default function Multiplayer() {
     const [currentWpm, setCurrentWpm] = useState(0);
     const [championGhost, setChampionGhost] = useState(null);
     const [ghostIndex, setGhostIndex] = useState(0);
+    const [graceEndTime, setGraceEndTime] = useState(null);
 
     const inputRef = useRef(null);
     const timerRef = useRef(null);
@@ -1459,7 +1773,12 @@ export default function Multiplayer() {
                     setCountdown(remaining);
                 } else {
                     clearInterval(countInterval);
+                    setCountdown(0);
                     setGameState('racing');
+                    // Focus input exactly when countdown hits 0
+                    if (inputRef.current) {
+                        inputRef.current.focus();
+                    }
                 }
             }, 100);
         });
@@ -1469,12 +1788,31 @@ export default function Multiplayer() {
             console.log('--- FRONTEND RECEIVED RACE OVER ---', data);
             if (timerRef.current) clearInterval(timerRef.current);
             setTimeLeft(0);
-            setGameState('finished');
-            setWinnerData(data);
+             // Handle Race Over immediately to avoid gray screen
+            if (data && data.results) {
+                setWinnerData(data);
+                setGameState('finished');
+            }
+            setGraceEndTime(null);
             
             // Trigger Glitch Effect for Data Retrieval feel
             setIsGlitching(true);
             setTimeout(() => setIsGlitching(false), 1500);
+
+             // Update leaderboard if we won/finished
+            const ourResult = data.results?.find(p => p.id === socket?.id);
+            if (ourResult) {
+                syncToLeaderboard(ourResult.wpm, ourResult.accuracy);
+            }
+
+            // Update last local update for sync icon
+            localStorage.setItem('lastLocalUpdate', Date.now().toString());
+        });
+
+        // gracePeriodStarted
+        socket.on('gracePeriodStarted', ({ endTime }) => {
+            setGraceEndTime(endTime);
+            setGameState('grace_period');
         });
 
         // roomReset
@@ -1487,6 +1825,7 @@ export default function Multiplayer() {
             setProgress(0);
             setCurrentWpm(0);
             setIsGhostCaptured(false);
+            setGraceEndTime(null);
         });
 
         return () => {
@@ -1586,6 +1925,13 @@ export default function Multiplayer() {
                 }
 
                 setGameState('finished');
+
+                // Cloud Data Flow Fix
+                if (auth.currentUser) {
+                    pushStatsToCloud(finalWpm, finalAcc, 'multiplayer');
+                } else {
+                    syncToLeaderboard(finalWpm, finalAcc);
+                }
             }
         }, 100);
 
@@ -1646,11 +1992,19 @@ export default function Multiplayer() {
         }
     };
 
+    const handleExitLobby = () => {
+        if (socket) {
+            if (roomId) socket.emit('leaveRoom', { roomId });
+            socket.disconnect();
+        }
+        navigate('/');
+    };
+
     // 4. Typing Mechanics
     // Keep track of errors for weakKeys
 
     const processKeystroke = (val) => {
-        if (gameState !== 'racing') return;
+        if (gameState !== 'racing' && gameState !== 'grace_period') return;
 
         if (val.length <= text.length) {
             if (val.length > userInput.length) {
@@ -1675,7 +2029,7 @@ export default function Multiplayer() {
 
             const progressPercentage = Math.round((val.length / text.length) * 100);
             const correctChars = val.split('').filter((char, i) => char === text[i]).length;
-            const calculatedWpm = Math.max(0, Math.round((correctChars / 5) / elapsedMins));
+            const calculatedWpm = Math.max(0, Math.round((correctChars / 5) / (elapsedMs / 60000)));
 
             setProgress(progressPercentage);
             setCurrentWpm(calculatedWpm);
@@ -1731,36 +2085,32 @@ export default function Multiplayer() {
         }
     }, [gameState]);
 
-    const handleSendToVault = async () => {
-        if (!winnerData || !winnerData.keystrokes || isGhostCaptured) return;
+
+    const handleArchiveGhost = async (playerData) => {
+        // Ensure winnerData has the race text before archiving
+        const raceText = winnerData?.text || text;
+        if (!raceText || !playerData.keystrokes) return;
 
         const ghostId = `ghost_${Date.now()}`;
         const newGhost = {
             id: ghostId,
-            operatorName: winnerData.winnerName,
-            wpm: winnerData.wpm,
-            accuracy: winnerData.accuracy,
-            keystrokes: winnerData.keystrokes,
-            text: text,
+            operatorName: playerData.name,
+            wpm: playerData.wpm,
+            accuracy: playerData.accuracy || 100,
+            keystrokes: playerData.keystrokes,
+            text: raceText,
             timestamp: new Date().toISOString()
         };
 
         try {
-            if (auth.currentUser) {
-                // Save to Firestore Global Nexus
-                await addDoc(collection(db, 'global_ghosts'), {
-                    ...newGhost,
-                    uid: auth.currentUser.uid,
-                    type: 'global'
-                });
-            } else {
-                // Save to Local Private Archive
-                const existing = loadData('ghostLibrary', []);
-                saveData('ghostLibrary', [...existing, newGhost]);
-            }
-            setIsGhostCaptured(true);
+            const existing = loadData('ghostLibrary', []);
+            saveData('ghostLibrary', [...existing, newGhost]);
+            
+            // UI Feedback
+            alert(`Ghost of ${playerData.name} archived to local vault!`);
         } catch (err) {
-            console.error("Failed to send to vault:", err);
+            console.error("Failed to archive ghost:", err);
+            alert("Archive protocol failed. Check storage allocation.");
         }
     };
 
@@ -1768,7 +2118,14 @@ export default function Multiplayer() {
     const renderLobby = () => {
         if (!roomId) {
             return (
-                <div className="flex flex-col items-center justify-center h-full max-w-md mx-auto space-y-8 faded-ui flex-1">
+                <div className="flex flex-col items-center justify-center h-full max-w-md mx-auto space-y-8 faded-ui flex-1 relative">
+                    <button 
+                        onClick={() => { socket.disconnect(); navigate('/'); }}
+                        className="absolute -top-12 left-0 flex items-center gap-2 text-slate-500 hover:text-primary transition-colors font-bold uppercase tracking-widest text-xs group"
+                    >
+                        <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                        Back to Dashboard
+                    </button>
                     <div className="text-center w-full">
                         <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Multiplayer Arena</h2>
                         <p className="text-slate-500 dark:text-slate-400 mb-8">Race against your friends in real-time</p>
@@ -1819,6 +2176,15 @@ export default function Multiplayer() {
                         <span>Copy Invite</span>
                     </button>
                 </header>
+
+                <div className="flex justify-end mb-4 px-4">
+                    <button 
+                        onClick={handleExitLobby}
+                        className="px-6 py-2 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-red-500 hover:text-white transition-all shadow-lg"
+                    >
+                        Exit Lobby
+                    </button>
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10 px-4">
                     {players.map((p, i) => (
@@ -1937,6 +2303,12 @@ export default function Multiplayer() {
                         </div>
                     )}
 
+                    {gameState === 'grace_period' && graceEndTime && (
+                        <div className="absolute top-0 right-0 z-[60] bg-red-600 text-white px-6 py-3 rounded-bl-2xl font-black uppercase tracking-[0.2em] shadow-lg animate-in slide-in-from-top-4 duration-300">
+                             10s GRACE PERIOD: {Math.max(0, Math.ceil((graceEndTime - Date.now()) / 1000))}s
+                        </div>
+                    )}
+
                     <div
                         className="w-full text-2xl lg:text-3xl leading-relaxed font-mono tracking-tight text-left relative cursor-text min-h-[300px]"
                         onClick={() => inputRef.current && inputRef.current.focus()}
@@ -1997,6 +2369,17 @@ export default function Multiplayer() {
     };
 
     const renderFinished = () => {
+        // SCENARIO FIX: If the race ends but winnerData hasn't propagated across the socket yet
+        if (!winnerData) {
+            return (
+                <div className="flex-1 flex flex-col items-center justify-center p-20 animate-pulse">
+                    <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mb-6" />
+                    <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Syncing Final Results...</h2>
+                    <p className="text-slate-500 mt-2">Waiting for neural data from other operators</p>
+                </div>
+            );
+        }
+
         const isWinner = winnerData?.winnerId === socket?.id;
 
         return (
@@ -2017,41 +2400,50 @@ export default function Multiplayer() {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-8 w-full max-w-lg">
-                    <div className="bg-white/5 border border-white/10 rounded-3xl p-8 text-center backdrop-blur-sm group hover:border-primary/30 transition-all duration-300">
-                        <p className="text-slate-400 text-xs font-bold uppercase tracking-[0.2em] mb-3 group-hover:text-primary/70">WPM Speed</p>
-                        <p className="text-5xl font-black text-primary font-mono tabular-nums">{winnerData?.wpm || 0}</p>
+                <div className="w-full max-w-2xl bg-white/5 border border-white/10 rounded-3xl overflow-hidden backdrop-blur-sm">
+                    <div className="bg-white/10 px-6 py-4 border-b border-white/10 flex justify-between items-center">
+                        <span className="text-xs font-black uppercase tracking-[0.2em] text-primary">Neural Race Results</span>
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{winnerData?.results?.length || 0} Operators Detected</span>
                     </div>
-                    <div className="bg-white/5 border border-white/10 rounded-3xl p-8 text-center backdrop-blur-sm group hover:border-primary/30 transition-all duration-300">
-                        <p className="text-slate-400 text-xs font-bold uppercase tracking-[0.2em] mb-3 group-hover:text-primary/70">Accuracy</p>
-                        <p className="text-5xl font-black text-white font-mono tabular-nums">{winnerData?.accuracy || 0}<span className="text-2xl font-bold ml-1 opacity-50">%</span></p>
+                    <div className="divide-y divide-white/5">
+                        {winnerData?.results?.map((p, idx) => {
+                            const isUs = p.id === socket?.id;
+                            const isWinner = p.id === winnerData.winnerId;
+                            return (
+                                <div key={p.id} className={`flex items-center justify-between px-6 py-4 hover:bg-white/5 transition-colors ${isWinner ? 'bg-primary/5' : ''}`}>
+                                    <div className="flex items-center gap-4">
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs ${isWinner ? 'bg-primary text-background-dark' : 'bg-white/10 text-slate-400'}`}>
+                                            {idx + 1}
+                                        </div>
+                                        <div>
+                                            <div className={`font-bold flex items-center gap-2 ${isUs ? 'text-primary' : 'text-white'}`}>
+                                                {p.name} {isUs && <span className="text-[10px] opacity-60">(YOU)</span>}
+                                            </div>
+                                            <div className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">
+                                                {p.wpm} WPM | {p.accuracy}% ACC
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {!isUs && p.keystrokes?.length > 0 && (
+                                        <button 
+                                            onClick={() => handleArchiveGhost(p)}
+                                            className="p-2 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:text-primary hover:border-primary/40 hover:bg-primary/10 transition-all group"
+                                            title="Archive Ghost"
+                                        >
+                                            <Download className="w-4 h-4 group-hover:scale-110" />
+                                        </button>
+                                    )}
+                                    {isWinner && isUs && (
+                                        <div className="flex items-center gap-2 text-primary">
+                                            <Trophy className="w-4 h-4" />
+                                            <span className="text-[10px] font-black uppercase tracking-widest">Champion</span>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
-
-                {winnerData?.keystrokes && (
-                    <div className="flex flex-col items-center gap-2">
-                        <span className="text-[10px] font-black text-primary/50 uppercase tracking-[0.3em] animate-pulse">
-                            Winner's Neural Signature Detected
-                        </span>
-                        <button 
-                            onClick={handleSendToVault}
-                            disabled={isGhostCaptured}
-                            className={`group relative flex items-center gap-3 px-10 py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-sm transition-all overflow-hidden ${
-                                isGhostCaptured 
-                                ? 'bg-primary/5 text-primary/40 border border-primary/20 cursor-default' 
-                                : `bg-primary/10 text-primary border-2 border-primary/30 hover:bg-primary hover:text-background-dark hover:shadow-[0_0_30px_rgba(0,245,212,0.4)] hover:scale-105 active:scale-95 ${isGlitching ? 'animate-glitch shadow-[0_0_40px_rgba(255,0,0,0.5)]' : ''}`
-                            }`}
-                        >
-                            <Shield className={`w-5 h-5 ${!isGhostCaptured && 'animate-pulse'}`} />
-                            {isGhostCaptured ? 'RECORDING ARCHIVED' : 'Archive Winner\'s Ghost'}
-                            
-                            {/* Glitch Overlay for Button */}
-                            {isGlitching && (
-                                <div className="absolute inset-0 bg-primary/20 animate-pulse pointer-events-none" />
-                            )}
-                        </button>
-                    </div>
-                )}
 
                 <div className="flex flex-col gap-4 w-full max-w-xs transition-all duration-300">
                     {isHost ? (
@@ -2157,9 +2549,6 @@ const io = new Server(server, {
     }
 });
 
-// In-memory state to track rooms and players
-const rooms = {};
-
 const generateRoomCode = () => {
     return Math.random().toString(36).substring(2, 6).toUpperCase();
 };
@@ -2178,6 +2567,17 @@ const QUOTES = [
     { text: 'Run: git commit -m "fix: resolve #42 — null-pointer exception" && git push.', difficulty: 'hard', category: 'prose' },
     { text: 'She said, "It\'s 2 AM — why are you still coding?!" He replied: "One more bug."', difficulty: 'hard', category: 'prose' },
 ];
+
+const CODE_SNIPPETS = [
+    { text: 'function debounce(fn, delay) {\n    let timer;\n    return (...args) => {\n        clearTimeout(timer);\n        timer = setTimeout(() => fn(...args), delay);\n    };\n}', difficulty: 'medium', category: 'code', language: 'javascript' },
+    { text: 'def get_fibonacci(n):\n    a, b = 0, 1\n    for _ in range(n):\n        yield a\n        a, b = b, a + b', difficulty: 'medium', category: 'code', language: 'python' },
+    { text: 'SELECT users.name, COUNT(orders.id) AS total_orders\nFROM users\nLEFT JOIN orders ON users.id = orders.user_id\nGROUP BY users.id\nHAVING total_orders > 5;', difficulty: 'hard', category: 'code', language: 'sql' },
+    { text: 'const root = ReactDOM.createRoot(document.getElementById("root"));\nroot.render(<App />);', difficulty: 'easy', category: 'code', language: 'javascript' },
+    { text: 'class Circle:\n    def __init__(self, radius):\n        self.radius = radius\n    def area(self):\n        return 3.14 * self.radius ** 2', difficulty: 'medium', category: 'code', language: 'python' }
+];
+
+// In-memory state to track rooms and players
+const rooms = {};
 
 let globalChampionGhost = { wpm: 0, name: '', keystrokes: [] };
 
@@ -2291,13 +2691,29 @@ io.on('connection', (socket) => {
         }
     });
 
-const CODE_SNIPPETS = [
-    { text: 'function debounce(fn, delay) {\n    let timer;\n    return (...args) => {\n        clearTimeout(timer);\n        timer = setTimeout(() => fn(...args), delay);\n    };\n}', difficulty: 'medium', category: 'code', language: 'javascript' },
-    { text: 'def get_fibonacci(n):\n    a, b = 0, 1\n    for _ in range(n):\n        yield a\n        a, b = b, a + b', difficulty: 'medium', category: 'code', language: 'python' },
-    { text: 'SELECT users.name, COUNT(orders.id) AS total_orders\nFROM users\nLEFT JOIN orders ON users.id = orders.user_id\nGROUP BY users.id\nHAVING total_orders > 5;', difficulty: 'hard', category: 'code', language: 'sql' },
-    { text: 'const root = ReactDOM.createRoot(document.getElementById("root"));\nroot.render(<App />);', difficulty: 'easy', category: 'code', language: 'javascript' },
-    { text: 'class Circle:\n    def __init__(self, radius):\n        self.radius = radius\n    def area(self):\n        return 3.14 * self.radius ** 2', difficulty: 'medium', category: 'code', language: 'python' }
-];
+// Helper to end a race
+const endRace = (roomId) => {
+    const room = rooms[roomId];
+    if (!room || room.status === 'finished') return;
+
+    room.status = 'finished';
+    if (room.timer) clearTimeout(room.timer);
+
+    // Sort players by WPM descending for results
+    const results = [...room.players].sort((a, b) => (b.wpm || 0) - (a.wpm || 0));
+    const winner = results[0];
+
+    console.log(`[${roomId}] Race Over! Winner: ${winner.name}`);
+    io.to(roomId).emit('raceOver', {
+        winnerId: winner.id,
+        winnerName: winner.name,
+        wpm: winner.wpm,
+        accuracy: winner.accuracy,
+        keystrokes: winner.keystrokes,
+        text: room.text, // Include the text so players can archive any ghost
+        results: results
+    });
+};
 
 // ... existing code ...
 
@@ -2323,16 +2739,8 @@ const CODE_SNIPPETS = [
 
     // Handle player finishing the race
     socket.on('playerFinished', (data) => {
-        console.log('--- SERVER RECEIVED PLAYER FINISHED ---');
-        console.log('Data from frontend:', data);
-        const room = rooms[data.roomId];
-        console.log('Did server find room?:', room ? 'Yes' : 'No');
-        if (room) {
-            const player = room.players.find(p => p.id === socket.id);
-            console.log('Did server find player?:', player);
-        }
-
         const { roomId, wpm, accuracy, keystrokes } = data;
+        const room = rooms[roomId];
         if (!room) return;
 
         const player = room.players.find(p => p.id === socket.id);
@@ -2341,6 +2749,7 @@ const CODE_SNIPPETS = [
             player.wpm = wpm;
             player.accuracy = accuracy;
             player.finished = true;
+            player.keystrokes = keystrokes;
 
             if (wpm > globalChampionGhost.wpm) {
                 globalChampionGhost = {
@@ -2351,16 +2760,25 @@ const CODE_SNIPPETS = [
                 console.log(`[Global Champion] New record: ${wpm} WPM by ${player.name}`);
             }
 
-            if (room.status !== 'finished') {
-                room.status = 'finished';
-                console.log(`[${roomId}] Race Over! Winner: ${player.name}`);
-                io.to(roomId).emit('raceOver', {
-                    winnerId: player.id,
-                    winnerName: player.name,
-                    wpm,
-                    accuracy,
-                    keystrokes
-                });
+            // If this is the first player to finish, start the grace period
+            if (room.status === 'playing') {
+                room.status = 'grace_period';
+                const graceDuration = 10000; // 10 seconds
+                const endTime = Date.now() + graceDuration;
+
+                console.log(`[${roomId}] Grace Period Started! Ends in 10s.`);
+                io.to(roomId).emit('gracePeriodStarted', { endTime });
+
+                room.timer = setTimeout(() => {
+                    endRace(roomId);
+                }, graceDuration);
+            }
+
+            // Check if everyone has finished
+            const allFinished = room.players.every(p => p.finished);
+            if (allFinished) {
+                console.log(`[${roomId}] All players finished. Ending race early.`);
+                endRace(roomId);
             }
         }
     });
@@ -2430,8 +2848,9 @@ import Navbar from '../components/Navbar';
 import StatCard from '../components/StatCard';
 import { Gauge, Target, Trophy, Zap, AlertTriangle, AtSign, Network, Globe, Keyboard, Shield, Crown, Star, Medal } from 'lucide-react';
 import { auth, db } from '../firebase';
-import { doc, onSnapshot, collection, query, orderBy, limit } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, orderBy, limit, getDoc } from 'firebase/firestore';
 import { loadData, saveData } from '../utils/storageUtils';
+import { generateSmartDrill } from '../utils/typingUtils';
 
 const KEYBOARD_ROWS = [
     ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
@@ -2448,6 +2867,7 @@ export default function Dashboard() {
     const [hoveredDataPoint, setHoveredDataPoint] = useState(null);
     const [rankData, setRankData] = useState(null);
     const [leaderboard, setLeaderboard] = useState([]);
+    const [leaderboardError, setLeaderboardError] = useState(null);
 
     const TIER_STYLES = {
         Novice: { Icon: Star },
@@ -2460,6 +2880,13 @@ export default function Dashboard() {
     useEffect(() => {
         // 1. Initial Load from LocalStorage (for offline/logged-out experience)
         const loadLocalData = () => {
+            // Reset to 0 before loading to prevent leakage during account switching
+            setStats({ maxWPM: 0, avgAccuracy: 0, totalTests: 0 });
+            setRecentHistory([]);
+            setRecentWPMs([]);
+            setRankData(null);
+            setPerformances({});
+
             const history = loadData('raceHistory', []);
             const nonDrillHistory = history.filter((h) => !h.isDrill);
 
@@ -2485,49 +2912,99 @@ export default function Dashboard() {
 
         loadLocalData();
 
-        // 2. Real-time Firestore Sync (if logged in)
+        // Listen for internal hydration events (e.g., from AuthModal)
+        const handleHydration = () => {
+            loadLocalData();
+        };
+        window.addEventListener('data-hydrated', handleHydration);
+
+        // 2. Comprehensive Sync from Cloud (Definitive Source of Truth)
+        const hydrateCloud = async (uid) => {
+            try {
+                const userSnap = await getDoc(doc(db, 'users', uid));
+                if (userSnap.exists()) {
+                    const data = userSnap.data();
+                    if (data.rank) setRankData(data.rank);
+                }
+            } catch (err) {
+                console.warn("Manual hydration failed:", err);
+            }
+        };
+
         let unsubscribeUser = () => {};
-        if (auth.currentUser) {
-            unsubscribeUser = onSnapshot(doc(db, 'users', auth.currentUser.uid), (docSnapshot) => {
-                if (docSnapshot.exists()) {
-                    const data = docSnapshot.data();
-                    
-                    // Sync Operator Identity
-                    if (data.operatorName) {
-                        saveData('playerName', data.operatorName);
-                    }
-                    
-                    // Sync Rank Summary
-                    if (data.rank) {
-                        saveData('rankData', data.rank);
-                        setRankData(data.rank);
-                        
-                        // Update basic stats from the summary if local is empty or less detailed
-                        const localHistory = JSON.parse(localStorage.getItem('raceHistory') || '[]');
-                        if (localHistory.length === 0) {
-                            setStats({
-                                maxWPM: data.rank.highestWPM || 0,
-                                avgAccuracy: data.rank.avgAcc || 0,
-                                totalTests: data.rank.totalRaces || 0
-                            });
+        const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+            if (user) {
+                // User logged in: Reset local before hydrate to prevent leak
+                setStats({ maxWPM: 0, avgAccuracy: 0, totalTests: 0 });
+                setRecentHistory([]);
+                setRecentWPMs([]);
+                setRankData(null);
+                
+                hydrateCloud(user.uid);
+
+                unsubscribeUser = onSnapshot(doc(db, 'users', user.uid), (docSnapshot) => {
+                    if (docSnapshot.exists()) {
+                        const data = docSnapshot.data();
+                        if (data.operatorName) saveData('playerName', data.operatorName);
+                        if (data.rank) {
+                            saveData('rankData', data.rank);
+                            setRankData(data.rank);
                         }
                     }
-                }
-            });
-        }
+                });
+            } else {
+                // User logged out: Wipe all user-specific states
+                setStats({ maxWPM: 0, avgAccuracy: 0, totalTests: 0 });
+                setRecentHistory([]);
+                setRecentWPMs([]);
+                setRankData(null);
+                loadLocalData(); // Re-load guest data
+                unsubscribeUser();
+            }
+        });
 
         // 3. Global Leaderboard Query
-        const q = query(collection(db, 'leaderboard'), orderBy('wpm', 'desc'), limit(10));
-        const unsubscribeLeaderboard = onSnapshot(q, (snapshot) => {
+        const q = query(
+            collection(db, 'leaderboard'), 
+            orderBy('wpm', 'desc'), 
+            orderBy('acc', 'desc'), 
+            limit(10)
+        );
+        const unsubscribeLeaderboard = onSnapshot(q, async (snapshot) => {
+            setLeaderboardError(null);
             const lbArray = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setLeaderboard(lbArray);
+            
+            // Pinned Row Logic: If current user is not in Top 10, fetch their personal stat
+            if (auth.currentUser && !lbArray.find(u => u.id === auth.currentUser.uid)) {
+                try {
+                    const userLBSnap = await getDoc(doc(db, 'leaderboard', auth.currentUser.uid));
+                    if (userLBSnap.exists()) {
+                        setLeaderboard([...lbArray, { id: userLBSnap.id, ...userLBSnap.data(), isPinned: true }]);
+                    } else {
+                        setLeaderboard(lbArray);
+                    }
+                } catch (err) {
+                    setLeaderboard(lbArray);
+                }
+            } else {
+                setLeaderboard(lbArray);
+            }
+        }, (error) => {
+            console.error("Leaderboard Error:", error);
+            if (error.code === 'failed-precondition') {
+                setLeaderboardError('Leaderboard Initializing...');
+            } else {
+                setLeaderboardError('Neural Sync Interrupted');
+            }
         });
 
         return () => {
+            unsubscribeAuth();
             unsubscribeUser();
             unsubscribeLeaderboard();
+            window.removeEventListener('data-hydrated', handleHydration);
         };
-    }, [auth.currentUser]);
+    }, []);
 
     const getKeyColor = (latency) => {
         if (!latency) return 'bg-slate-800/40 text-slate-600 border-slate-700/50';
@@ -2562,7 +3039,8 @@ export default function Dashboard() {
             ...Object.keys(weakKeys || {})
         ])).filter(k => typeof k === 'string' && k.length === 1);
 
-        if (keys.length === 0) return ['{', '}', ';'];
+        // FALLBACK: If no weak keys found (new user), focus on common coding symbols
+        if (keys.length === 0) return ['{', '}', '[', ']', ';', '(', ')', '<', '>', '/'];
 
         const scored = keys.map((k) => {
             const perf = perfs?.[k] || {};
@@ -2586,63 +3064,7 @@ export default function Dashboard() {
     };
 
     const generateDailyDrillText = (weakKeys) => {
-        const normalized = (weakKeys || [])
-            .filter(k => typeof k === 'string' && k.length >= 1)
-            .map(k => k[0]);
-
-        const alphaWeak = normalized.filter(k => /^[a-z0-9]$/i.test(k));
-        const punctWeak = normalized.filter(k => !/^[a-z0-9]$/i.test(k));
-
-        const quoteChar = punctWeak.find(k => k === "'" || k === '"' || k === '`') || "'";
-        const idMainChar = alphaWeak[0] || 'e';
-        const idMain = `hello${idMainChar}`;
-        const msg = `hi${alphaWeak[1] ? alphaWeak[1] : ''}`;
-        const semi = punctWeak.includes(';') ? ';' : ';';
-        const braceOpen = punctWeak.includes('{') ? '{' : '{';
-        const braceClose = punctWeak.includes('}') ? '}' : '}';
-
-        const tokens = [
-            'function', idMain, '(', ')', braceOpen,
-            'console', '.', 'log', '(', quoteChar, msg, quoteChar, ')', semi,
-            'return', idMain, semi,
-            braceClose,
-            'const', `x${alphaWeak[2] || '1'}`, '=', '(', '1', '+', '2', ')', semi,
-            'if', '(', idMain, '>', '0', ')', '{',
-            'console', '.', 'log', '(', quoteChar, msg, quoteChar, ')', semi,
-            '}'
-        ];
-
-        // Add a couple of extra appearances of other weak punctuation keys.
-        const specialPunct = punctWeak
-            .filter(k => !['{', '}', ';', '(', ')', "'", '"', '`'].includes(k))
-            .slice(0, 4);
-
-        for (const p of specialPunct) {
-            if (tokens.length + 3 > 60) break;
-            tokens.push('/*', p, '*/');
-        }
-
-        // Pad with more log calls to reach the minimum word count.
-        while (tokens.length < 30) {
-            if (tokens.length + 9 > 60) break;
-            tokens.push('console', '.', 'log', '(', quoteChar, msg, quoteChar, ')', semi);
-        }
-
-        // Enforce 30-60 word constraint.
-        const finalTokens = tokens.slice(0, 60);
-        const allowed = new Set(COMMON_CODE_CHARS);
-        for (const k of normalized) allowed.add(k);
-
-        const drillText = finalTokens.join(' ');
-        for (const ch of drillText) {
-            if (!allowed.has(ch)) {
-                // If we ever hit a rare unexpected character, replace it with a safe space.
-                // This keeps the drill within "weak keys + common code chars" scope.
-                return drillText.replaceAll(ch, ' ');
-            }
-        }
-
-        return drillText;
+        return generateSmartDrill(weakKeys, 30); // Default to 30s for the quick start
     };
 
     const handleStartDailyDrill = () => {
@@ -2676,16 +3098,33 @@ export default function Dashboard() {
             })
         );
 
-        navigate('/solo');
+        navigate('/solo', { state: { text: drillText } });
     };
 
-    // Graph Calculation
-    const maxRecentWPM = Math.max(...recentWPMs, 100);
-    const points = recentWPMs.map((wpm, i) => ({
-        x: recentWPMs.length > 1 ? (i / (recentWPMs.length - 1)) * 1000 : 500,
+    const handleKeyClick = (key) => {
+        const drillText = generateSmartDrill(key, 30);
+        navigate('/solo', { state: { text: drillText } });
+    };
+
+    // Graph Logic Fix
+    const demoData = [
+        { wpm: 45, accuracy: 98, timestamp: Date.now() },
+        { wpm: 52, accuracy: 97, timestamp: Date.now() },
+        { wpm: 48, accuracy: 99, timestamp: Date.now() },
+        { wpm: 61, accuracy: 96, timestamp: Date.now() },
+        { wpm: 55, accuracy: 98, timestamp: Date.now() },
+        { wpm: 67, accuracy: 97, timestamp: Date.now() }
+    ];
+
+    const displayHistory = recentHistory.length > 0 ? [...recentHistory].reverse() : (auth.currentUser ? [] : demoData);
+    const graphWPMs = displayHistory.map(h => h.wpm);
+
+    const maxRecentWPM = Math.max(...graphWPMs, 100);
+    const points = graphWPMs.map((wpm, i) => ({
+        x: graphWPMs.length > 1 ? (i / (graphWPMs.length - 1)) * 1000 : 500,
         y: 250 - (wpm / maxRecentWPM) * 200 - 25,
         wpm: wpm,
-        acc: recentHistory[i] ? parseFloat(recentHistory[i].accuracy).toFixed(1) : 0
+        acc: displayHistory[i] ? parseFloat(displayHistory[i].accuracy).toFixed(1) : 0
     }));
 
     const pathD = points.length >= 2 
@@ -2744,7 +3183,7 @@ export default function Dashboard() {
                                 <span className="w-1 h-1 rounded-full bg-slate-600"></span>
                                 <span className="text-primary/80">+{Math.round(rankData.avgAcc * 0.2)} Acc Bonus</span>
                                 <span className="w-1 h-1 rounded-full bg-slate-600"></span>
-                                <span className="text-primary/60">+{Math.round(rankData.drillsCompleted * 0.5)} Drill Multiplier</span>
+                                <span className="text-primary/60">+{Math.round((rankData.drillsCompleted || 0) * 0.5)} Drill Multiplier</span>
                             </div>
                         </div>
 
@@ -2774,22 +3213,22 @@ export default function Dashboard() {
                     <StatCard
                         title="Highest WPM"
                         icon={<Gauge size={24} />}
-                        value={stats.maxWPM || "0"}
+                        value={rankData?.highestWPM || stats.maxWPM || "0"}
                         trend="+4.2%"
                         subtitle="Your all-time peak performance"
                     />
                     <StatCard
                         title="Avg Accuracy"
                         icon={<Target size={24} />}
-                        value={stats.avgAccuracy || "0"}
+                        value={rankData?.avgAcc || stats.avgAccuracy || "0"}
                         valueSuffix="%"
                         trend="+0.2%"
-                        subtitle={`Average over ${stats.totalTests} tests`}
+                        subtitle={`Average over ${rankData?.totalRaces || stats.totalTests} tests`}
                     />
                     <StatCard
                         title="Total Sessions"
                         icon={<Trophy size={24} />}
-                        value={stats.totalTests || "0"}
+                        value={rankData?.totalRaces || stats.totalTests || "0"}
                         trendLabel="Live"
                         subtitle="Solo runs completed"
                     />
@@ -2811,7 +3250,7 @@ export default function Dashboard() {
                         </div>
                         <div className="w-full pt-12 px-6 pb-6 overflow-visible">
                             <div className="h-[250px] w-full relative overflow-visible">
-                                {recentWPMs.length < 2 ? (
+                                {points.length < 2 ? (
                                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/40 rounded-xl border border-dashed border-white/10">
                                         <Zap className="w-8 h-8 text-primary/40 mb-2 animate-pulse" />
                                         <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Play more games to see your trend</p>
@@ -2887,12 +3326,17 @@ export default function Dashboard() {
                             </div>
                             <button
                                 onClick={handleStartDailyDrill}
-                                className="px-6 py-3 rounded-xl bg-primary/15 border border-primary/30 hover:bg-primary/25 hover:border-primary/50 shadow-[0_0_25px_rgba(0,245,212,0.18)] transition-all active:scale-95"
+                                className="px-6 py-3 rounded-xl bg-primary/15 border border-primary/30 hover:bg-primary/25 hover:border-primary/50 shadow-[0_0_25px_rgba(0,245,212,0.18)] transition-all active:scale-95 flex flex-col items-center"
                             >
                                 <span className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary">
                                     <Zap className="w-4 h-4" />
                                     Daily Drill
                                 </span>
+                                {getWorstKeys(performances, safeParseJSON(localStorage.getItem('weakKeys'), {})).length > 0 && (
+                                    <span className="text-[8px] text-slate-500 mt-1 uppercase tracking-tighter">
+                                        Focus: {getWorstKeys(performances, safeParseJSON(localStorage.getItem('weakKeys'), {})).join(' ')}
+                                    </span>
+                                )}
                             </button>
                             
                             <div className="flex gap-4 items-center bg-black/20 p-3 rounded-xl border border-white/5">
@@ -2922,7 +3366,8 @@ export default function Dashboard() {
                                         return (
                                             <div 
                                                 key={key}
-                                                className={`group relative w-16 h-16 rounded-xl border-2 flex flex-col items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 cursor-help ${getKeyColor(data?.avg)} font-mono`}
+                                                onClick={() => handleKeyClick(key)}
+                                                className={`group relative w-16 h-16 rounded-xl border-2 flex flex-col items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer ${getKeyColor(data?.avg)} font-mono`}
                                             >
                                                 <span className="text-xl font-black uppercase">{key}</span>
                                                 {data && (
@@ -2989,14 +3434,27 @@ export default function Dashboard() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-primary/5">
-                                {leaderboard.length > 0 ? leaderboard.map((item, index) => {
-                                    const isUser = item.name === (localStorage.getItem('playerName') || 'Operator');
+                                {leaderboardError ? (
+                                    <tr>
+                                        <td colSpan="5" className="px-6 py-8 text-center text-amber-500 font-mono animate-pulse uppercase tracking-widest text-xs">
+                                            {leaderboardError}
+                                        </td>
+                                    </tr>
+                                ) : leaderboard.length > 0 ? leaderboard.map((item, index) => {
+                                    const isUser = item.id === auth.currentUser?.uid;
+                                    const isPinned = item.isPinned;
+                                    
                                     return (
-                                        <tr key={index} className={`hover:bg-slate-50/50 dark:hover:bg-primary/5 transition-colors ${isUser ? 'bg-primary/10 border-l-4 border-primary shadow-[inset_0_0_20px_rgba(0,245,212,0.05)]' : ''}`}>
-                                            <td className={`px-6 py-4 font-bold ${index === 0 || isUser ? 'text-primary' : 'text-slate-400'}`}>0{index + 1}</td>
+                                        <tr key={item.id} className={`hover:bg-slate-50/50 dark:hover:bg-primary/5 transition-colors 
+                                            ${isUser ? 'bg-primary/10 border-l-4 border-primary shadow-[inset_0_0_20px_rgba(0,245,212,0.05)]' : ''}
+                                            ${isPinned ? 'border-t-4 border-primary/40 bg-slate-900 shadow-[0_-10px_20px_rgba(0,0,0,0.5)]' : ''}
+                                        `}>
+                                            <td className={`px-6 py-4 font-bold ${index < 3 || isUser ? 'text-primary' : 'text-slate-400'}`}>
+                                                {isPinned ? <span className="text-[10px] uppercase">Your Rank</span> : index < 9 ? `0${index + 1}` : index + 1}
+                                            </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="h-8 w-8 rounded-full border border-primary/20 bg-primary/10 flex items-center justify-center font-bold text-primary">{item.name[0]?.toUpperCase() || '?'}</div>
+                                                    <div className="h-8 w-8 rounded-full border border-primary/20 bg-primary/10 flex items-center justify-center font-bold text-primary">{item.name ? item.name[0]?.toUpperCase() : '?'}</div>
                                                     <span className={`font-semibold ${isUser ? 'text-primary' : 'text-slate-900 dark:text-slate-100'}`}>{item.name} {item.tier && <span className="text-[10px] text-primary/50 ml-2">[{item.tier}]</span>}</span>
                                                 </div>
                                             </td>
@@ -3061,8 +3519,10 @@ import {
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { auth, db } from '../firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, onSnapshot, getDoc } from 'firebase/firestore';
 import { loadData, saveData } from '../utils/storageUtils';
+import { syncToLeaderboard, syncCrucialData, updateWeakKeys } from '../utils/firebaseUtils';
+import { generateSmartDrill } from '../utils/typingUtils';
 
 const PROSE_SAMPLES = [
     "The dawn of artificial intelligence marks a pivotal transformation in human history, mirroring the industrial revolution in its scope and influence. As we integrate neural networks into our daily lives, the boundary between biological and synthetic intelligence begins to blur. This era demands a new understanding of consciousness and the ethical implications of creating thinking machines that may one day surpass their creators in both logic and intuition.",
@@ -3088,17 +3548,47 @@ export default function SoloMode() {
     // Racing State
     const [text, setText] = useState('');
     const [userInput, setUserInput] = useState('');
-    const [status, setStatus] = useState('idle'); // 'idle', 'typing', 'finished'
-    const [timeLeft, setTimeLeft] = useState(30);
+    const [status, setStatus] = useState('waiting'); // waiting, typing, finished
+    
+    // Auth State Cleanup: Reset state on user switch
+    useEffect(() => {
+        const unsubscribe = auth.onAuthStateChanged((user) => {
+            if (!user) {
+                // Not logged in or logged out
+                setFinalWPM(0);
+                setUserInput('');
+                setStatus('waiting');
+                setKeystrokes([]);
+                setGhostData([]);
+                setGhostName(null);
+            }
+        });
+        return () => unsubscribe();
+    }, []);
+
+    // Inject Daily Drill Text or Ghost Data if present
+    useEffect(() => {
+        if (location.state?.text) {
+            setText(location.state.text);
+            setShowConfig(false);
+            setStatus('waiting');
+        }
+    }, [location.state]);
+
     const [finalWPM, setFinalWPM] = useState(0);
     const [isFailed, setIsFailed] = useState(false);
     const [errorMap, setErrorMap] = useState({});
     const [keystrokes, setKeystrokes] = useState([]);
+    const [timeLeft, setTimeLeft] = useState(30);
 
     // Ghost State
     const [ghostData, setGhostData] = useState([]);
     const [ghostIndex, setGhostIndex] = useState(0);
     const [ghostName, setGhostName] = useState(null);
+
+    const userInputRef = useRef("");
+    userInputRef.current = userInput;
+
 
     const inputRef = useRef(null);
     const startTimeRef = useRef(null);
@@ -3115,7 +3605,10 @@ export default function SoloMode() {
                 setText(location.state.text || "");
                 setGhostName(location.state.ghostName || "Neural Specter");
                 setShowConfig(false);
-                setTimeLeft(Math.ceil(gd[gd.length - 1].time / 1000) + 5);
+                const ghostTimeInSec = Math.ceil(gd[gd.length - 1].time / 1000);
+                const bufferedTime = ghostTimeInSec + 30;
+                setTimeLeft(bufferedTime);
+                setDuration(bufferedTime);
             }
         }
     }, [location.state]);
@@ -3236,15 +3729,16 @@ export default function SoloMode() {
     const calculateWPM = () => {
         if (!startTimeRef.current) return 0;
         const end = endTimeRef.current || Date.now();
-        const elapsedMins = (end - startTimeRef.current) / 60000;
-        if (elapsedMins <= 0) return 0;
+        const elapsedMs = Math.max(1, end - startTimeRef.current);
+        const elapsedSeconds = elapsedMs / 1000;
         const correctChars = userInput.split('').filter((char, i) => char === text[i]).length;
-        return Math.round((correctChars / 5) / elapsedMins);
+        return Math.round((correctChars / 5) / (elapsedSeconds / 60));
     };
 
     useEffect(() => {
         if (status === 'finished') {
             const wpm = calculateWPM();
+            const acc = calculateAccuracy();
             setFinalWPM(wpm);
             
             // PB Logic
@@ -3252,7 +3746,7 @@ export default function SoloMode() {
             if (!lastGhost || wpm > (lastGhost.wpm || 0)) {
                 saveData('lastRunGhost', {
                     wpm,
-                    accuracy: calculateAccuracy(),
+                    accuracy: acc,
                     keystrokes,
                     text,
                     date: Date.now(),
@@ -3262,13 +3756,25 @@ export default function SoloMode() {
 
             // History Logic
             const history = loadData('raceHistory') || [];
-            history.push({
+            const historyEntry = {
                 wpm,
-                accuracy: calculateAccuracy(),
+                accuracy: acc,
                 date: Date.now(),
                 stream
-            });
+            };
+            history.push(historyEntry);
             saveData('raceHistory', history.slice(-50));
+
+            // Hybrid Data Strategy: Sync only crucial stats
+            if (auth.currentUser) {
+                syncCrucialData(wpm, acc);
+                updateWeakKeys(errorMap);
+            } else {
+                syncToLeaderboard(wpm, acc);
+            }
+
+            // Update last local update for sync icon
+            localStorage.setItem('lastLocalUpdate', Date.now().toString());
         }
     }, [status]);
 

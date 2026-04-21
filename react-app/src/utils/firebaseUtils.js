@@ -75,7 +75,9 @@ export const syncCrucialData = async (finalWpm, finalAcc) => {
         const uid = auth.currentUser.uid;
         const userDocRef = doc(db, 'users', uid);
         const userSnap = await getDoc(userDocRef);
-        const existingRank = userSnap.data()?.rank || { highestWPM: 0, avgAcc: 0, totalRaces: 0 };
+        const userData = userSnap.data() || {};
+        const existingRank = userData.rank || { highestWPM: 0, avgAcc: 0, totalRaces: 0 };
+        const recentHistory = userData.recentHistory || [];
         
         let isNewPB = false;
         
@@ -87,12 +89,16 @@ export const syncCrucialData = async (finalWpm, finalAcc) => {
 
         const operatorName = localStorage.getItem('playerName') || auth.currentUser.displayName || auth.currentUser.email.split('@')[0];
 
+        const newRace = { wpm: finalWpm, accuracy: parseFloat(finalAcc), timestamp: Date.now() };
+        const updatedHistory = [...recentHistory, newRace].slice(-15);
+
         // 2. Prepare atomic update
         const updatePayload = {
             totalRaces: increment(1),
             "rank.totalRaces": increment(1),
             lastActive: serverTimestamp(),
-            operatorName: operatorName
+            operatorName: operatorName,
+            recentHistory: updatedHistory
         };
 
         if (isNewPB) {
@@ -121,3 +127,38 @@ export const syncCrucialData = async (finalWpm, finalAcc) => {
  * @deprecated Use syncCrucialData instead
  */
 export const pushStatsToCloud = syncCrucialData;
+
+/**
+ * Keeps track of up to 10 most missed keys across all sessions
+ * stored remotely in trainings/{uid}.
+ */
+export const updateWeakKeys = async (errorMap) => {
+    if (!auth.currentUser || !errorMap || Object.keys(errorMap).length === 0) return;
+    try {
+        const uid = auth.currentUser.uid;
+        const trainingsRef = doc(db, 'trainings', uid);
+        const trainingsSnap = await getDoc(trainingsRef);
+        
+        const existingKeys = trainingsSnap.exists() ? (trainingsSnap.data().keys || {}) : {};
+        
+        for (const [key, count] of Object.entries(errorMap)) {
+            if (!existingKeys[key]) existingKeys[key] = 0;
+            existingKeys[key] += count;
+        }
+
+        const sortedKeys = Object.entries(existingKeys)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 10);
+            
+        const top10Keys = Object.fromEntries(sortedKeys);
+
+        await setDoc(trainingsRef, {
+            keys: top10Keys,
+            lastUpdated: serverTimestamp()
+        }, { merge: true });
+
+        console.log("Synced weak keys to trainings collection.");
+    } catch (err) {
+        console.error("Failed to sync weak keys:", err);
+    }
+};

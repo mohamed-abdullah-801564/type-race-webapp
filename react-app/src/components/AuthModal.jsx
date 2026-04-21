@@ -40,7 +40,9 @@ export default function AuthModal({ onClose, onLoginSuccess }) {
                     if (data.operatorName) localStorage.setItem('playerName', data.operatorName);
                     
                     // 2. Overwrite Race History
-                    // We no longer sync raceHistory to cloud. History stays local.
+                    if (data.recentHistory) {
+                        localStorage.setItem('raceHistory', JSON.stringify(data.recentHistory));
+                    }
 
                     if (data.rank) {
                         localStorage.setItem('rankData', JSON.stringify(data.rank));

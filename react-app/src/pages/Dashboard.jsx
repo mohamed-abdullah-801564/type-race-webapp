@@ -254,7 +254,12 @@ export default function Dashboard() {
             })
         );
 
-        navigate('/solo');
+        navigate('/solo', { state: { text: drillText } });
+    };
+
+    const handleKeyClick = (key) => {
+        const drillText = generateSmartDrill(key, 30);
+        navigate('/solo', { state: { text: drillText } });
     };
 
     // Graph Logic Fix
@@ -517,7 +522,8 @@ export default function Dashboard() {
                                         return (
                                             <div 
                                                 key={key}
-                                                className={`group relative w-16 h-16 rounded-xl border-2 flex flex-col items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 cursor-help ${getKeyColor(data?.avg)} font-mono`}
+                                                onClick={() => handleKeyClick(key)}
+                                                className={`group relative w-16 h-16 rounded-xl border-2 flex flex-col items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer ${getKeyColor(data?.avg)} font-mono`}
                                             >
                                                 <span className="text-xl font-black uppercase">{key}</span>
                                                 {data && (

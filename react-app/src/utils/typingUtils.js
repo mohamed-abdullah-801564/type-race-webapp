@@ -43,8 +43,13 @@ const CHAR_TO_WORDS = {
  * @returns {string} 
  */
 export const generateSmartDrill = (weakKeys = [], durationInSeconds = 30) => {
-    // Convert to array if it's an error map
-    let keys = Array.isArray(weakKeys) ? weakKeys : Object.keys(weakKeys);
+    // Convert to array if it's an error map or single string
+    let keys = [];
+    if (typeof weakKeys === 'string') {
+        keys = [weakKeys];
+    } else {
+        keys = Array.isArray(weakKeys) ? weakKeys : Object.keys(weakKeys);
+    }
     keys = keys.filter(k => typeof k === 'string' && k.length === 1);
 
     const SYMBOLS = ['{', '}', ';', '[', ']', '(', ')', '<', '>', '/', '=', '+'];

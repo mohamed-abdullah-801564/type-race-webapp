@@ -21,7 +21,7 @@ import Navbar from '../components/Navbar';
 import { auth, db } from '../firebase';
 import { doc, onSnapshot, getDoc } from 'firebase/firestore';
 import { loadData, saveData } from '../utils/storageUtils';
-import { syncToLeaderboard, syncCrucialData } from '../utils/firebaseUtils';
+import { syncToLeaderboard, syncCrucialData, updateWeakKeys } from '../utils/firebaseUtils';
 import { generateSmartDrill } from '../utils/typingUtils';
 
 const PROSE_SAMPLES = [
@@ -268,6 +268,7 @@ export default function SoloMode() {
             // Hybrid Data Strategy: Sync only crucial stats
             if (auth.currentUser) {
                 syncCrucialData(wpm, acc);
+                updateWeakKeys(errorMap);
             } else {
                 syncToLeaderboard(wpm, acc);
             }

@@ -9,7 +9,7 @@ import { loadData, saveData } from '../utils/storageUtils';
 import { syncToLeaderboard, pushStatsToCloud } from '../utils/firebaseUtils';
 import { useNavigate } from 'react-router-dom';
 
-const SOCKET_SERVER = 'http://localhost:3001';
+const SOCKET_SERVER = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001';
 
 export default function Multiplayer() {
     const navigate = useNavigate();
@@ -122,7 +122,7 @@ export default function Multiplayer() {
             const countInterval = setInterval(() => {
                 const now = Date.now();
                 const remaining = Math.ceil((startTimeRef.current - now) / 1000);
-                
+
                 if (remaining > 0) {
                     setCountdown(remaining);
                 } else {
@@ -142,18 +142,18 @@ export default function Multiplayer() {
             console.log('--- FRONTEND RECEIVED RACE OVER ---', data);
             if (timerRef.current) clearInterval(timerRef.current);
             setTimeLeft(0);
-             // Handle Race Over immediately to avoid gray screen
+            // Handle Race Over immediately to avoid gray screen
             if (data && data.results) {
                 setWinnerData(data);
                 setGameState('finished');
             }
             setGraceEndTime(null);
-            
+
             // Trigger Glitch Effect for Data Retrieval feel
             setIsGlitching(true);
             setTimeout(() => setIsGlitching(false), 1500);
 
-             // Update leaderboard if we won/finished
+            // Update leaderboard if we won/finished
             const ourResult = data.results?.find(p => p.id === socket?.id);
             if (ourResult) {
                 syncToLeaderboard(ourResult.wpm, ourResult.accuracy);
@@ -316,9 +316,9 @@ export default function Multiplayer() {
     const handleJoinRoom = (e) => {
         e.preventDefault();
         if (!joinInput.trim() || !playerName) return;
-        socket.emit('joinRoom', { 
-            roomId: joinInput.trim(), 
-            user: { playerName } 
+        socket.emit('joinRoom', {
+            roomId: joinInput.trim(),
+            user: { playerName }
         }, (res) => {
             if (res.success) {
                 setRoomId(res.room.id);
@@ -459,7 +459,7 @@ export default function Multiplayer() {
         try {
             const existing = loadData('ghostLibrary', []);
             saveData('ghostLibrary', [...existing, newGhost]);
-            
+
             // UI Feedback
             alert(`Ghost of ${playerData.name} archived to local vault!`);
         } catch (err) {
@@ -473,7 +473,7 @@ export default function Multiplayer() {
         if (!roomId) {
             return (
                 <div className="flex flex-col items-center justify-center h-full max-w-md mx-auto space-y-8 faded-ui flex-1 relative">
-                    <button 
+                    <button
                         onClick={() => { socket.disconnect(); navigate('/'); }}
                         className="absolute -top-12 left-0 flex items-center gap-2 text-slate-500 hover:text-primary transition-colors font-bold uppercase tracking-widest text-xs group"
                     >
@@ -532,7 +532,7 @@ export default function Multiplayer() {
                 </header>
 
                 <div className="flex justify-end mb-4 px-4">
-                    <button 
+                    <button
                         onClick={handleExitLobby}
                         className="px-6 py-2 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-red-500 hover:text-white transition-all shadow-lg"
                     >
@@ -572,11 +572,10 @@ export default function Multiplayer() {
                                     <button
                                         key={d}
                                         onClick={() => setDifficulty(d)}
-                                        className={`flex-1 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
-                                            difficulty === d 
-                                            ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(0,245,212,0.1)]' 
-                                            : 'text-slate-500 hover:text-slate-300'
-                                        }`}
+                                        className={`flex-1 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${difficulty === d
+                                                ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(0,245,212,0.1)]'
+                                                : 'text-slate-500 hover:text-slate-300'
+                                            }`}
                                     >
                                         {d}
                                     </button>
@@ -587,21 +586,19 @@ export default function Multiplayer() {
                             <div className="flex gap-1 bg-slate-800/30 p-1 rounded-xl border border-slate-700/30 w-full">
                                 <button
                                     onClick={() => setCategory('prose')}
-                                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
-                                        category === 'prose' 
-                                        ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(0,245,212,0.1)]' 
-                                        : 'text-slate-500 hover:text-slate-300'
-                                    }`}
+                                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${category === 'prose'
+                                            ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(0,245,212,0.1)]'
+                                            : 'text-slate-500 hover:text-slate-300'
+                                        }`}
                                 >
                                     <FileText className="w-3.5 h-3.5" /> Prose
                                 </button>
                                 <button
                                     onClick={() => setCategory('code')}
-                                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
-                                        category === 'code' 
-                                        ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(0,245,212,0.1)]' 
-                                        : 'text-slate-500 hover:text-slate-300'
-                                    }`}
+                                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${category === 'code'
+                                            ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(0,245,212,0.1)]'
+                                            : 'text-slate-500 hover:text-slate-300'
+                                        }`}
                                 >
                                     <Code className="w-3.5 h-3.5" /> Code
                                 </button>
@@ -659,7 +656,7 @@ export default function Multiplayer() {
 
                     {gameState === 'grace_period' && graceEndTime && (
                         <div className="absolute top-0 right-0 z-[60] bg-red-600 text-white px-6 py-3 rounded-bl-2xl font-black uppercase tracking-[0.2em] shadow-lg animate-in slide-in-from-top-4 duration-300">
-                             10s GRACE PERIOD: {Math.max(0, Math.ceil((graceEndTime - Date.now()) / 1000))}s
+                            10s GRACE PERIOD: {Math.max(0, Math.ceil((graceEndTime - Date.now()) / 1000))}s
                         </div>
                     )}
 
@@ -779,7 +776,7 @@ export default function Multiplayer() {
                                         </div>
                                     </div>
                                     {!isUs && p.keystrokes?.length > 0 && (
-                                        <button 
+                                        <button
                                             onClick={() => handleArchiveGhost(p)}
                                             className="p-2 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:text-primary hover:border-primary/40 hover:bg-primary/10 transition-all group"
                                             title="Archive Ghost"
@@ -814,9 +811,9 @@ export default function Multiplayer() {
                             Wait for host...
                         </div>
                     )}
-                    
-                    <Link 
-                        to="/" 
+
+                    <Link
+                        to="/"
                         className="flex items-center justify-center gap-2 px-8 py-4 border border-white/10 text-slate-400 font-bold rounded-2xl hover:bg-white/5 hover:text-white transition-all uppercase tracking-widest text-sm"
                     >
                         Return to Dashboard
@@ -836,7 +833,7 @@ export default function Multiplayer() {
                     <h2 className="text-3xl font-black text-white uppercase italic tracking-wider">Identity Required</h2>
                     <p className="text-slate-500 font-medium">Enter your nickname to enter the arena</p>
                 </div>
-                <form 
+                <form
                     onSubmit={(e) => {
                         e.preventDefault();
                         if (tempName.trim()) {
