@@ -262,17 +262,8 @@ export default function Dashboard() {
         navigate('/solo', { state: { text: drillText } });
     };
 
-    // Graph Logic Fix
-    const demoData = [
-        { wpm: 45, accuracy: 98, timestamp: Date.now() },
-        { wpm: 52, accuracy: 97, timestamp: Date.now() },
-        { wpm: 48, accuracy: 99, timestamp: Date.now() },
-        { wpm: 61, accuracy: 96, timestamp: Date.now() },
-        { wpm: 55, accuracy: 98, timestamp: Date.now() },
-        { wpm: 67, accuracy: 97, timestamp: Date.now() }
-    ];
-
-    const displayHistory = recentHistory.length > 0 ? [...recentHistory].reverse() : (auth.currentUser ? [] : demoData);
+    // Graph Logic Fix — no demo data; show empty state for new users
+    const displayHistory = recentHistory.length > 0 ? [...recentHistory].reverse() : [];
     const graphWPMs = displayHistory.map(h => h.wpm);
 
     const maxRecentWPM = Math.max(...graphWPMs, 100);

@@ -24,6 +24,7 @@ export default function Multiplayer() {
     const [playerName, setPlayerName] = useState('');
     const [tempName, setTempName] = useState('');
     const [winnerData, setWinnerData] = useState(null);
+    const [isCreating, setIsCreating] = useState(false);
 
     // Typing Mechanics State
     const [text, setText] = useState('');
@@ -156,7 +157,16 @@ export default function Multiplayer() {
             // Update leaderboard if we won/finished
             const ourResult = data.results?.find(p => p.id === socket?.id);
             if (ourResult) {
-                syncToLeaderboard(ourResult.wpm, ourResult.accuracy);
+                const safeWpm = ourResult.wpm || 0;
+                const safeAcc = ourResult.accuracy || 0;
+                syncToLeaderboard(safeWpm, safeAcc);
+
+                // Fix: Also persist result to localStorage so Dashboard graph updates
+                try {
+                    const existing = JSON.parse(localStorage.getItem('raceHistory') || '[]');
+                    existing.push({ wpm: safeWpm, accuracy: safeAcc, date: Date.now(), stream: category });
+                    localStorage.setItem('raceHistory', JSON.stringify(existing.slice(-50)));
+                } catch (e) { console.warn('localStorage write failed', e); }
             }
 
             // Update last local update for sync icon
@@ -253,7 +263,15 @@ export default function Multiplayer() {
                 const correct = currentVal.split('').filter((char, i) => char === text[i]).length;
                 const elapsedMins = 0.5; // 30 seconds
                 const finalWpm = Math.round((correct / 5) / elapsedMins) || 0;
-                const finalAcc = currentVal.length > 0 ? Math.round((correct / currentVal.length) * 100) : 0;
+                // NaN fix: guard against zero-length input
+                const finalAcc = currentVal.length > 0 ? Math.round((correct / currentVal.length) * 100) || 0 : 0;
+
+                // Dashboard Stats fix: persist race result to localStorage
+                try {
+                    const existing = JSON.parse(localStorage.getItem('raceHistory') || '[]');
+                    existing.push({ wpm: finalWpm, accuracy: finalAcc, date: Date.now(), stream: category });
+                    localStorage.setItem('raceHistory', JSON.stringify(existing.slice(-50)));
+                } catch (e) { console.warn('localStorage write failed', e); }
 
                 const currentPlayers = playersRef.current;
                 if (currentPlayers.length > 0) {
@@ -266,7 +284,7 @@ export default function Multiplayer() {
                     setWinnerData(prev => prev || {
                         winnerName: topPlayer.name,
                         wpm: topPlayer.wpm,
-                        accuracy: topPlayer.id === socket?.id ? finalAcc : 100, // Approximate accuracy if not us
+                        accuracy: topPlayer.id === socket?.id ? finalAcc : (topPlayer.accuracy || 100),
                         winnerId: topPlayer.id
                     });
                 } else {
@@ -303,8 +321,10 @@ export default function Multiplayer() {
 
     // 3. Actions
     const handleCreateRoom = () => {
-        if (!playerName) return;
+        if (!playerName || isCreating) return;
+        setIsCreating(true);
         socket.emit('createRoom', { playerName }, (res) => {
+            setIsCreating(false);
             if (res.success) {
                 setRoomId(res.roomId);
                 setIsHost(true);
@@ -486,9 +506,17 @@ export default function Multiplayer() {
 
                         <button
                             onClick={handleCreateRoom}
-                            className="w-full py-4 bg-primary text-background-dark font-bold rounded-xl hover:bg-primary/90 transition-colors shadow-[0_0_20px_rgba(0,245,212,0.3)] flex items-center justify-center gap-2 text-lg"
+                            disabled={isCreating}
+                            className="w-full py-4 bg-primary text-background-dark font-bold rounded-xl hover:bg-primary/90 transition-colors shadow-[0_0_20px_rgba(0,245,212,0.3)] flex items-center justify-center gap-2 text-lg disabled:opacity-70 disabled:cursor-wait"
                         >
-                            <Network className="w-6 h-6" /> Create New Room
+                            {isCreating ? (
+                                <>
+                                    <span className="w-5 h-5 border-2 border-background-dark border-t-transparent rounded-full animate-spin" />
+                                    Creating Node...
+                                </>
+                            ) : (
+                                <><Network className="w-6 h-6" /> Create New Room</>
+                            )}
                         </button>
 
                         <div className="flex items-center gap-4 my-8">
@@ -723,7 +751,7 @@ export default function Multiplayer() {
         // SCENARIO FIX: If the race ends but winnerData hasn't propagated across the socket yet
         if (!winnerData) {
             return (
-                <div className="flex-1 flex flex-col items-center justify-center p-20 animate-pulse">
+                <div className="flex-1 flex flex-col items-center justify-center p-20 animate-pulse bg-background-dark min-h-screen w-full">
                     <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mb-6" />
                     <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Syncing Final Results...</h2>
                     <p className="text-slate-500 mt-2">Waiting for neural data from other operators</p>

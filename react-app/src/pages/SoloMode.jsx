@@ -138,16 +138,27 @@ export default function SoloMode() {
         let animationFrame;
         if (status === 'typing' && ghostData.length > 0) {
             const animate = () => {
-                const elapsed = Date.now() - startTimeRef.current;
-                const nextIndex = ghostData.findIndex(k => k.time > elapsed);
-                if (nextIndex !== -1) {
-                    setGhostIndex(nextIndex);
-                } else {
-                    setGhostIndex(ghostData.length);
+                // Guard: startTimeRef may not be set yet on very first frame
+                if (!startTimeRef.current) {
+                    animationFrame = requestAnimationFrame(animate);
+                    return;
                 }
+                const elapsed = Date.now() - startTimeRef.current;
+                // Find the last keystroke whose timestamp has already passed
+                let index = 0;
+                for (let i = 0; i < ghostData.length; i++) {
+                    if (ghostData[i].time <= elapsed) {
+                        index = i + 1;
+                    } else {
+                        break;
+                    }
+                }
+                setGhostIndex(index);
                 animationFrame = requestAnimationFrame(animate);
             };
             animationFrame = requestAnimationFrame(animate);
+        } else {
+            setGhostIndex(0);
         }
         return () => cancelAnimationFrame(animationFrame);
     }, [status, ghostData]);
@@ -407,7 +418,7 @@ export default function SoloMode() {
                                             colorClass = userInput[index] === char ? "text-primary drop-shadow-[0_0_8px_rgba(0,245,212,0.4)]" : "text-red-500 bg-red-500/10 rounded-sm";
                                         }
                                         const isCursor = index === userInput.length && status !== 'finished';
-                                        const isGhost = ghostData.length > 0 && index === ghostIndex && status === 'typing';
+                                        const isGhost = ghostData.length > 0 && ghostData[ghostIndex] !== undefined && index === ghostIndex && status === 'typing';
 
                                         return (
                                             <span key={index} className="relative">
