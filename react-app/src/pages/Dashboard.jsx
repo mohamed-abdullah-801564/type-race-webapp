@@ -80,7 +80,18 @@ export default function Dashboard() {
                 const userSnap = await getDoc(doc(db, 'users', uid));
                 if (userSnap.exists()) {
                     const data = userSnap.data();
-                    if (data.rank) setRankData(data.rank);
+                    if (data.rank) {
+                        setRankData(data.rank);
+                        setStats({
+                            maxWPM: data.rank.highestWPM || 0,
+                            avgAccuracy: data.rank.avgAcc || 0,
+                            totalTests: data.rank.totalRaces || 0
+                        });
+                    }
+                    if (data.recentHistory) {
+                        setRecentHistory(data.recentHistory);
+                        setRecentWPMs(data.recentHistory.map(h => h.wpm));
+                    }
                 }
             } catch (err) {
                 console.warn("Manual hydration failed:", err);
@@ -105,6 +116,17 @@ export default function Dashboard() {
                         if (data.rank) {
                             saveData('rankData', data.rank);
                             setRankData(data.rank);
+                            
+                            // Hydrate aggregate stats
+                            setStats({
+                                maxWPM: data.rank.highestWPM || 0,
+                                avgAccuracy: data.rank.avgAcc || 0,
+                                totalTests: data.rank.totalRaces || 0
+                            });
+                        }
+                        if (data.recentHistory) {
+                            setRecentHistory(data.recentHistory);
+                            setRecentWPMs(data.recentHistory.map(h => h.wpm));
                         }
                     }
                 });

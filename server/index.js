@@ -130,7 +130,7 @@ io.on('connection', (socket) => {
         // Broadcast to EVERYONE in the room including the host
         io.to(roomId).emit('raceStarted', {
             text: selectedQuote,
-            startTime: Date.now() + 3000, // Give frontend ~3s to count down
+            countdown: 3, // Give frontend ~3s to count down
             championGhost: globalChampionGhost
         });
     });

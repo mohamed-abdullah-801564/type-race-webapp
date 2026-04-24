@@ -102,7 +102,7 @@ export default function Multiplayer() {
         });
 
         // raceStarted
-        socket.on('raceStarted', ({ text, startTime, championGhost }) => {
+        socket.on('raceStarted', ({ text, countdown: serverCountdown, championGhost }) => {
             setText(text);
             setChampionGhost(championGhost || null);
             setGameState('countdown');
@@ -114,28 +114,24 @@ export default function Multiplayer() {
             setCurrentWpm(0);
             setGhostIndex(0);
             keystrokesRef.current = [];
-            startTimeRef.current = startTime;
-
-            const timeUntilStart = startTime - Date.now();
-            let count = Math.ceil(timeUntilStart / 1000);
-            setCountdown(count);
-
+            
+            // Simple interval-based countdown to ensure sync
+            setCountdown(3);
             const countInterval = setInterval(() => {
-                const now = Date.now();
-                const remaining = Math.ceil((startTimeRef.current - now) / 1000);
-
-                if (remaining > 0) {
-                    setCountdown(remaining);
-                } else {
-                    clearInterval(countInterval);
-                    setCountdown(0);
-                    setGameState('racing');
-                    // Focus input exactly when countdown hits 0
-                    if (inputRef.current) {
-                        inputRef.current.focus();
+                setCountdown(prev => {
+                    if (prev <= 1) {
+                        clearInterval(countInterval);
+                        setGameState('racing');
+                        startTimeRef.current = Date.now();
+                        // Focus input exactly when countdown hits 0
+                        if (inputRef.current) {
+                            inputRef.current.focus();
+                        }
+                        return 0;
                     }
-                }
-            }, 100);
+                    return prev - 1;
+                });
+            }, 1000);
         });
 
         // raceOver
@@ -420,7 +416,7 @@ export default function Multiplayer() {
                 socket.emit('playerFinished', {
                     roomId: roomIdRef.current,
                     wpm: calculatedWpm,
-                    accuracy: finalAccuracy,
+                    accuracy: isNaN(finalAccuracy) ? 0 : finalAccuracy,
                     keystrokes: keystrokesRef.current
                 });
             }
@@ -751,10 +747,14 @@ export default function Multiplayer() {
         // SCENARIO FIX: If the race ends but winnerData hasn't propagated across the socket yet
         if (!winnerData) {
             return (
-                <div className="flex-1 flex flex-col items-center justify-center p-20 animate-pulse bg-background-dark min-h-screen w-full">
-                    <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mb-6" />
-                    <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Syncing Final Results...</h2>
-                    <p className="text-slate-500 mt-2">Waiting for neural data from other operators</p>
+                <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background-dark p-20">
+                    <div className="relative">
+                        <div className="w-24 h-24 border-4 border-primary/20 rounded-full" />
+                        <div className="absolute inset-0 w-24 h-24 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                        <div className="absolute inset-0 w-24 h-24 border-4 border-primary/40 rounded-full animate-pulse scale-110" />
+                    </div>
+                    <h2 className="text-3xl font-black text-white uppercase tracking-[-0.05em] mt-10 animate-pulse">Syncing Neural Data...</h2>
+                    <p className="text-primary/60 font-mono text-xs mt-4 tracking-[0.2em] uppercase">Aggregating distributed race packets</p>
                 </div>
             );
         }
