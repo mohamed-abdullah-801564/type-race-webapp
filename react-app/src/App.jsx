@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard';
 import SoloMode from './pages/SoloMode';
 import Multiplayer from './pages/Multiplayer';
 import GhostVault from './pages/GhostVault';
+import TrainingAcademy from './pages/TrainingAcademy';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
           <Route path="/solo" element={<SoloMode />} />
           <Route path="/multiplayer" element={<Multiplayer />} />
           <Route path="/vault" element={<GhostVault />} />
+          <Route path="/academy" element={<TrainingAcademy />} />
         </Routes>
       </div>
     </BrowserRouter>

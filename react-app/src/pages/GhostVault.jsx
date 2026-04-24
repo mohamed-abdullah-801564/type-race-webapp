@@ -60,14 +60,14 @@ export default function GhostVault() {
         const date = ghost.date ? new Date(ghost.date).toLocaleDateString() : (ghost.timestamp ? new Date(ghost.timestamp).toLocaleDateString() : 'Unknown Date');
 
         return (
-            <div className="group relative bg-black/40 border-2 border-primary/10 hover:border-primary/40 rounded-2xl p-6 transition-all duration-300 hover:shadow-[0_0_20px_rgba(0,245,212,0.1)] overflow-hidden">
-                {/* Subtle Green Glow for Card */}
-                <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-primary/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="group relative bg-black/40 border-2 border-primary/10 hover:border-primary/60 rounded-2xl p-6 transition-all duration-300 hover:shadow-[0_0_30px_rgba(0,245,212,0.2)] overflow-hidden hover:scale-[1.02] active:scale-[0.98]">
+                {/* Subtle Primary Glow for Card */}
+                <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-primary/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity animate-pulse" />
                 
                 <div className="flex justify-between items-start mb-4 gap-4">
                     <div className="flex flex-col min-w-0 flex-1">
                         <span className="text-[10px] font-black text-primary/50 uppercase tracking-[0.2em] mb-1">Entity ID</span>
-                        <h3 className="text-xl font-bold text-white truncate w-full">{name}</h3>
+                        <h3 className="text-xl font-bold text-white truncate max-w-[150px]">{name}</h3>
                     </div>
                     <div className="text-right">
                         <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] block mb-1">Frequency</span>

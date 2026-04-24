@@ -35,10 +35,6 @@ export default function Navbar({ isFaded = false }) {
         setStats(rankData);
     }, [isSettingsOpen, isProfileOpen, user]); // Include user to refresh when auth state changes
 
-    useEffect(() => {
-        const unsub = auth.onAuthStateChanged((u) => setUser(u));
-        return () => unsub();
-    }, []);
 
     const handleSaveName = async (e) => {
         e.preventDefault();
@@ -162,6 +158,9 @@ export default function Navbar({ isFaded = false }) {
                 </Link>
                 <Link to="/solo" className={`${currentPath === '/solo' ? 'text-primary border-b-2 border-primary pb-1' : 'text-slate-500 hover:text-primary transition-colors'}`}>
                     Solo Mode
+                </Link>
+                <Link to="/academy" className={`${currentPath === '/academy' ? 'text-primary border-b-2 border-primary pb-1' : 'text-slate-500 hover:text-primary transition-colors'}`}>
+                    Academy
                 </Link>
                 <Link to="/multiplayer" className={`${currentPath === '/multiplayer' ? 'text-primary border-b-2 border-primary pb-1' : 'text-slate-500 hover:text-primary transition-colors'}`}>
                     Multiplayer

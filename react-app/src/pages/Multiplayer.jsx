@@ -6,13 +6,16 @@ import { Trophy, Users, Timer, Target, Zap, RotateCcw, ArrowRight, Network, Copy
 import { auth, db } from '../firebase';
 import { addDoc, collection, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { loadData, saveData } from '../utils/storageUtils';
-import { syncToLeaderboard, pushStatsToCloud } from '../utils/firebaseUtils';
 import { useNavigate } from 'react-router-dom';
+import { recordKeyLatency, isTrackableKey } from '../utils/heatmapUtils';
+import useToast from '../hooks/useToast';
+import ToastContainer from '../components/ToastContainer';
 
 const SOCKET_SERVER = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001';
 
 export default function Multiplayer() {
     const navigate = useNavigate();
+    const { toasts, addToast, removeToast } = useToast();
     const [socket, setSocket] = useState(null);
     const [roomId, setRoomId] = useState('');
     const [joinInput, setJoinInput] = useState('');
@@ -61,6 +64,7 @@ export default function Multiplayer() {
     const userInputRef = useRef('');
     const roomIdRef = useRef('');
     const playersRef = useRef([]);
+    const lastKeystrokeTimeRef = useRef(null);
 
     // Keep playerNameRef in sync with state
     useEffect(() => { playerNameRef.current = playerName; }, [playerName]);
@@ -114,6 +118,7 @@ export default function Multiplayer() {
             setCurrentWpm(0);
             setGhostIndex(0);
             keystrokesRef.current = [];
+            lastKeystrokeTimeRef.current = null;
             
             // Simple interval-based countdown to ensure sync
             setCountdown(3);
@@ -389,6 +394,16 @@ export default function Multiplayer() {
                     const timeOffset = Date.now() - startTimeRef.current;
                     keystrokesRef.current.push({ char: typedChar, time: timeOffset });
                 }
+
+                // Heatmap Tracking Logic
+                const isCorrect = typedChar === expectedChar;
+                if (isCorrect && isTrackableKey(typedChar)) {
+                    if (lastKeystrokeTimeRef.current !== null) {
+                        const latencyMs = Date.now() - lastKeystrokeTimeRef.current;
+                        recordKeyLatency(typedChar, latencyMs);
+                    }
+                }
+                lastKeystrokeTimeRef.current = Date.now();
             }
 
             setUserInput(val);
@@ -477,10 +492,10 @@ export default function Multiplayer() {
             saveData('ghostLibrary', [...existing, newGhost]);
 
             // UI Feedback
-            alert(`Ghost of ${playerData.name} archived to local vault!`);
+            addToast({ message: `Ghost of ${playerData.name} archived to local vault!`, type: 'success' });
         } catch (err) {
             console.error("Failed to archive ghost:", err);
-            alert("Archive protocol failed. Check storage allocation.");
+            addToast({ message: "Archive protocol failed. Check storage allocation.", type: 'error' });
         }
     };
 
@@ -900,11 +915,12 @@ export default function Multiplayer() {
                 {!playerName ? renderNickname() : (
                     <>
                         {gameState === 'lobby' && renderLobby()}
-                        {(gameState === 'racing' || gameState === 'countdown') && renderRace()}
+                        {(gameState === 'racing' || gameState === 'countdown' || gameState === 'grace_period') && renderRace()}
                         {gameState === 'finished' && renderFinished()}
                     </>
                 )}
             </main>
+            <ToastContainer toasts={toasts} removeToast={removeToast} />
         </div>
     );
 }

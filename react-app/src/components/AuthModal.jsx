@@ -51,7 +51,7 @@ export default function AuthModal({ onClose, onLoginSuccess }) {
 
                     // 4. Instant Name Sync Fix
                     if (!data.operatorName) {
-                        const emailPrefix = user.email.split('@')[0];
+                        const emailPrefix = userCredential.user.email.split('@')[0];
                         await updateDoc(userDocRef, { operatorName: emailPrefix });
                         localStorage.setItem('playerName', emailPrefix);
                     }

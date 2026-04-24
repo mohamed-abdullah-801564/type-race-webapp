@@ -15,14 +15,16 @@ import {
     Terminal,
     Shield,
     BarChart2,
-    UserCircle
+    UserCircle,
+    Trophy
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { auth, db } from '../firebase';
 import { doc, onSnapshot, getDoc } from 'firebase/firestore';
 import { loadData, saveData } from '../utils/storageUtils';
 import { syncToLeaderboard, syncCrucialData, updateWeakKeys } from '../utils/firebaseUtils';
-import { generateSmartDrill } from '../utils/typingUtils';
+import { generateSmartDrill, ACADEMY_MODULES } from '../utils/typingUtils';
+import { recordKeyLatency, isTrackableKey } from '../utils/heatmapUtils';
 
 const PROSE_SAMPLES = [
     "The dawn of artificial intelligence marks a pivotal transformation in human history, mirroring the industrial revolution in its scope and influence. As we integrate neural networks into our daily lives, the boundary between biological and synthetic intelligence begins to blur. This era demands a new understanding of consciousness and the ethical implications of creating thinking machines that may one day surpass their creators in both logic and intuition.",
@@ -76,6 +78,7 @@ export default function SoloMode() {
     }, [location.state]);
 
     const [finalWPM, setFinalWPM] = useState(0);
+    const [academyUnlocked, setAcademyUnlocked] = useState(false);
     const [isFailed, setIsFailed] = useState(false);
     const [errorMap, setErrorMap] = useState({});
     const [keystrokes, setKeystrokes] = useState([]);
@@ -93,6 +96,7 @@ export default function SoloMode() {
     const inputRef = useRef(null);
     const startTimeRef = useRef(null);
     const endTimeRef = useRef(null);
+    const lastKeystrokeTimeRef = useRef(null);
     const lastKeystrokeTimestampRef = useRef(null);
     const timerRef = useRef(null);
 
@@ -112,6 +116,14 @@ export default function SoloMode() {
                 setTimeLeft(bufferedTime);
                 setDuration(bufferedTime);
             }
+        } else if (location.state?.isAcademy) {
+            const text = location.state.text || "";
+            const academyDuration = Math.max(30, Math.ceil(text.length / 3));
+            setTimeLeft(academyDuration);
+            setDuration(academyDuration);
+            setText(text);
+            setGhostName(null);
+            setShowConfig(false);
         }
     }, [location.state]);
 
@@ -122,8 +134,8 @@ export default function SoloMode() {
                 setTimeLeft(prev => {
                     if (prev <= 1) {
                         clearInterval(timerRef.current);
-                        setStatus('finished');
                         endTimeRef.current = Date.now();
+                        setStatus('finished');
                         return 0;
                     }
                     return prev - 1;
@@ -171,7 +183,7 @@ export default function SoloMode() {
         const val = e.target.value;
         const now = Date.now();
 
-        if (status === 'idle' && val.length > 0) {
+        if (status === 'waiting' && val.length > 0) {
             setStatus('typing');
             startTimeRef.current = now;
         }
@@ -194,6 +206,16 @@ export default function SoloMode() {
                     const key = expectedChar.toLowerCase();
                     setErrorMap(prev => ({ ...prev, [key]: (prev[key] || 0) + 1 }));
                 }
+
+                // Heatmap Tracking Logic
+                const isCorrect = typedChar === expectedChar;
+                if (isCorrect && isTrackableKey(typedChar)) {
+                    if (lastKeystrokeTimeRef.current !== null) {
+                        const latencyMs = now - lastKeystrokeTimeRef.current;
+                        recordKeyLatency(typedChar, latencyMs);
+                    }
+                }
+                lastKeystrokeTimeRef.current = now;
             }
 
             setUserInput(val);
@@ -214,7 +236,7 @@ export default function SoloMode() {
 
     const resetTest = () => {
         setUserInput('');
-        setStatus('idle');
+        setStatus('waiting');
         setIsFailed(false);
         setTimeLeft(duration);
         setKeystrokes([]);
@@ -222,6 +244,7 @@ export default function SoloMode() {
         setGhostIndex(0);
         startTimeRef.current = null;
         endTimeRef.current = null;
+        lastKeystrokeTimeRef.current = null;
         if (inputRef.current) inputRef.current.focus();
     };
 
@@ -254,40 +277,59 @@ export default function SoloMode() {
             const acc = calculateAccuracy();
             setFinalWPM(wpm);
             
-            // PB Logic
-            const lastGhost = loadData('lastRunGhost');
-            if (!lastGhost || wpm > (lastGhost.wpm || 0)) {
-                saveData('lastRunGhost', {
+            // Only sync and save if it's a standard Solo Mode race
+            if (!location.state?.isAcademy && !location.state?.isGhostChallenge) {
+                // PB Logic
+                const lastGhost = loadData('lastRunGhost');
+                if (!lastGhost || wpm > (lastGhost.wpm || 0)) {
+                    saveData('lastRunGhost', {
+                        wpm,
+                        accuracy: acc,
+                        keystrokes,
+                        text,
+                        date: Date.now(),
+                        stream
+                    });
+                }
+
+                // History Logic
+                const history = loadData('raceHistory') || [];
+                const historyEntry = {
                     wpm,
                     accuracy: acc,
-                    keystrokes,
-                    text,
                     date: Date.now(),
                     stream
-                });
+                };
+                history.push(historyEntry);
+                saveData('raceHistory', history.slice(-50));
+
+                // Hybrid Data Strategy: Sync only crucial stats
+                if (auth.currentUser) {
+                    syncCrucialData(wpm, acc);
+                    updateWeakKeys(errorMap);
+                } else {
+                    syncToLeaderboard(wpm, acc);
+                }
+
+                // Update last local update for sync icon
+                localStorage.setItem('lastLocalUpdate', Date.now().toString());
             }
-
-            // History Logic
-            const history = loadData('raceHistory') || [];
-            const historyEntry = {
-                wpm,
-                accuracy: acc,
-                date: Date.now(),
-                stream
-            };
-            history.push(historyEntry);
-            saveData('raceHistory', history.slice(-50));
-
-            // Hybrid Data Strategy: Sync only crucial stats
-            if (auth.currentUser) {
-                syncCrucialData(wpm, acc);
-                updateWeakKeys(errorMap);
-            } else {
-                syncToLeaderboard(wpm, acc);
+            // Handle Academy Progression
+            if (location.state?.isAcademy) {
+                if (wpm >= 20 && parseFloat(acc) >= 90) {
+                    setAcademyUnlocked(true);
+                    const progress = JSON.parse(localStorage.getItem('academyProgress') || '["mod_1"]');
+                    const currentIndex = ACADEMY_MODULES.findIndex(m => m.id === location.state.moduleId);
+                    
+                    if (currentIndex !== -1 && currentIndex < ACADEMY_MODULES.length - 1) {
+                        const nextId = ACADEMY_MODULES[currentIndex + 1].id;
+                        if (!progress.includes(nextId)) {
+                            progress.push(nextId);
+                            localStorage.setItem('academyProgress', JSON.stringify(progress));
+                        }
+                    }
+                }
             }
-
-            // Update last local update for sync icon
-            localStorage.setItem('lastLocalUpdate', Date.now().toString());
         }
     }, [status]);
 
@@ -383,7 +425,9 @@ export default function SoloMode() {
                                         <span className="text-[10px] font-black uppercase tracking-[0.2em]">Neural Ghost Overlay: {ghostName}</span>
                                     </div>
                                 )}
-                                <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-1">Temporal Node</span>
+                                <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-1">
+                                    {location.state?.isAcademy ? `TRAINING PROTOCOL: ${location.state.academyTitle}` : 'Temporal Node'}
+                                </span>
                                 <div className="text-7xl font-black text-white font-mono leading-none flex items-baseline gap-2">
                                     {status === 'finished' ? finalWPM : timeLeft}
                                     <span className="text-xl text-primary/40 uppercase font-sans tracking-widest">{status === 'finished' ? 'WPM' : 'Sec'}</span>
@@ -436,7 +480,7 @@ export default function SoloMode() {
                                     })}
                                 </div>
 
-                                {status === 'idle' && (
+                                {status === 'waiting' && (
                                     <div className="absolute inset-0 flex items-center justify-center bg-background-dark/40 backdrop-blur-[2px] rounded-[40px] pointer-events-none">
                                         <div className="flex flex-col items-center gap-4 animate-pulse">
                                             <div className="flex items-center gap-8 text-primary/30">
@@ -450,6 +494,20 @@ export default function SoloMode() {
                                 )}
                             </div>
 
+                            {academyUnlocked && (
+                                <div className="mt-8 p-6 bg-primary/10 border border-primary/30 rounded-3xl animate-in fade-in zoom-in duration-500">
+                                    <div className="flex items-center gap-4 text-primary">
+                                        <div className="bg-primary text-black p-2 rounded-lg">
+                                            <Trophy className="w-6 h-6" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xl font-black uppercase italic tracking-tighter">Module Complete!</h3>
+                                            <p className="text-xs font-bold text-primary/60 uppercase tracking-widest">Next Protocol Unlocked in Central Hub</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             {status === 'finished' && (
                                 <div className="mt-12 flex gap-4 animate-in slide-in-from-bottom-6 duration-500">
                                     <button 
@@ -459,13 +517,23 @@ export default function SoloMode() {
                                         <RotateCcw className="w-5 h-5" />
                                         Reboot Grid
                                     </button>
-                                    <button 
-                                        onClick={() => setShowConfig(true)}
-                                        className="flex items-center gap-3 px-10 py-5 bg-white/5 border border-white/10 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-white/10 transition-all"
-                                    >
-                                        <Settings className="w-5 h-5" />
-                                        Adjust Params
-                                    </button>
+                                    {location.state?.isAcademy ? (
+                                        <button 
+                                            onClick={() => navigate('/academy')}
+                                            className="flex items-center gap-3 px-10 py-5 bg-primary/20 border border-primary/20 text-primary rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-primary/30 transition-all"
+                                        >
+                                            <ChevronRight className="w-5 h-5" />
+                                            Return to Academy
+                                        </button>
+                                    ) : (
+                                        <button 
+                                            onClick={() => setShowConfig(true)}
+                                            className="flex items-center gap-3 px-10 py-5 bg-white/5 border border-white/10 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-white/10 transition-all"
+                                        >
+                                            <Settings className="w-5 h-5" />
+                                            Adjust Params
+                                        </button>
+                                    )}
                                 </div>
                             )}
                         </div>
