@@ -747,7 +747,7 @@ export default function Multiplayer() {
         // SCENARIO FIX: If the race ends but winnerData hasn't propagated across the socket yet
         if (!winnerData) {
             return (
-                <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background-dark p-20">
+                <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-background-dark animate-pulse">
                     <div className="relative">
                         <div className="w-24 h-24 border-4 border-primary/20 rounded-full" />
                         <div className="absolute inset-0 w-24 h-24 border-4 border-primary border-t-transparent rounded-full animate-spin" />

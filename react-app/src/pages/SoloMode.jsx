@@ -101,11 +101,13 @@ export default function SoloMode() {
         if (location.state?.isGhostChallenge) {
             const gd = location.state.ghostData || [];
             if (gd.length > 0) {
-                setGhostData(gd);
+                const firstTime = gd[0]?.time || 0;
+                const normalizedGhost = gd.map(k => ({ ...k, time: Math.max(0, k.time - firstTime) }));
+                setGhostData(normalizedGhost);
                 setText(location.state.text || "");
                 setGhostName(location.state.ghostName || "Neural Specter");
                 setShowConfig(false);
-                const ghostTimeInSec = Math.ceil(gd[gd.length - 1].time / 1000);
+                const ghostTimeInSec = Math.ceil(normalizedGhost[normalizedGhost.length - 1].time / 1000);
                 const bufferedTime = ghostTimeInSec + 30;
                 setTimeLeft(bufferedTime);
                 setDuration(bufferedTime);
