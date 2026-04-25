@@ -94,18 +94,24 @@ export default function TrainingAcademy() {
                              <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Training Curriculum</span>
                         </div>
                         <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">Neural Path</h2>
-                        <div className="flex items-center gap-3 mt-4">
-                            <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                        <div className="mt-8">
+                            <div className="flex justify-between items-center mb-3">
+                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Overall Progress</span>
+                                <span className="text-[10px] font-black text-primary uppercase">
+                                    {unlockedIds.length} of {ACADEMY_MODULES.length} Modules
+                                </span>
+                            </div>
+                            <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
                                 <div 
                                     className="h-full bg-primary shadow-[0_0_10px_#00f5d4] transition-all duration-1000"
                                     style={{ width: `${Math.round((unlockedIds.length / ACADEMY_MODULES.length) * 100)}%` }}
                                 />
                             </div>
-                            <span className="text-[10px] font-black text-primary font-mono whitespace-nowrap">
-                                {Math.round((unlockedIds.length / ACADEMY_MODULES.length) * 100)}%
-                            </span>
+                            <div className="text-[10px] text-slate-600 font-bold mt-2 italic uppercase tracking-widest">
+                                {Math.round((unlockedIds.length / ACADEMY_MODULES.length) * 100)}% Complete
+                            </div>
                         </div>
-                        <div className="h-0.5 w-12 bg-primary/20 mt-4" />
+                        <div className="h-0.5 w-12 bg-primary/20 mt-6" />
                     </div>
 
                     <div className="flex-1 overflow-y-auto px-4 space-y-2 pb-12 custom-scrollbar">
@@ -175,9 +181,141 @@ export default function TrainingAcademy() {
 
                 {/* Dashboard: Module Detail */}
                 <div className="flex-1 bg-black/40 flex flex-col p-12 lg:p-24 overflow-y-auto">
-                    {showProtocol ? (
-                        <div className="max-w-2xl w-full mx-auto my-auto animate-in fade-in zoom-in duration-500 overflow-y-auto max-h-screen py-12 custom-scrollbar">
-                            <div className="bg-slate-900/98 backdrop-blur-xl border border-primary/20 rounded-3xl p-12 w-full shadow-[0_0_60px_rgba(0,245,212,0.1)]">
+                    <div className="max-w-4xl w-full mx-auto animate-in fade-in slide-in-from-right-12 duration-700">
+                        {/* Meta Info */}
+                        <div className="flex items-center gap-4 mb-14">
+                            <div className={`flex items-center gap-2 px-4 py-1.5 border rounded-full ${
+                                selectedModule.isTest 
+                                ? 'bg-amber-500/10 border-amber-500/30' 
+                                : 'bg-primary/5 border-primary/20'
+                            }`}>
+                                {selectedModule.isTest ? (
+                                    <ShieldAlert className="w-3.5 h-3.5 text-amber-500" />
+                                ) : (
+                                    <Activity className="w-3.5 h-3.5 text-primary" />
+                                )}
+                                <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${
+                                    selectedModule.isTest ? 'text-amber-500' : 'text-primary'
+                                }`}>
+                                    {selectedModule.isTest ? 'Priority Assessment: Required' : 'Neural Status: Optimal'}
+                                </span>
+                            </div>
+                            <div className="flex-1 h-px bg-white/5" />
+                        </div>
+
+                        {/* Heading */}
+                        <div className="relative mb-16">
+                            <div className="absolute -left-12 top-0 bottom-0 w-1 bg-gradient-to-b from-primary to-transparent" />
+                            <h1 className="text-6xl lg:text-7xl font-black text-white uppercase tracking-tighter italic mb-6">
+                                {selectedModule.title}
+                            </h1>
+                            <p className="text-xl text-slate-400 font-medium leading-relaxed max-w-2xl">
+                                {selectedModule.description}
+                            </p>
+                        </div>
+
+                        {/* Specs Grid */}
+                        <div className="grid grid-cols-2 gap-8 mb-16">
+                            <div className="bg-white/[0.02] border border-white/5 rounded-[32px] p-10 group hover:border-primary/20 transition-all">
+                                <div className="flex items-center gap-3 mb-8">
+                                    <Target className="w-5 h-5 text-primary opacity-40" />
+                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Protocol Targets</span>
+                                </div>
+                                <div className="flex flex-wrap gap-3 mb-8">
+                                    {selectedModule.keys.map(key => (
+                                        <div key={key} className="w-12 h-12 flex items-center justify-center bg-black/60 border border-white/10 rounded-2xl text-lg font-mono font-bold text-slate-300 group-hover:border-primary/40 group-hover:text-primary transition-all group-hover:-translate-y-1 shadow-[0_4px_0_rgba(255,255,255,0.05)]">
+                                            {key}
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="space-y-4 pt-6 border-t border-white/5">
+                                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-500">
+                                        <span>Target Velocity</span>
+                                        <span className="text-primary">{selectedModule.minWPM} WPM</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-500">
+                                        <span>Accuracy Req</span>
+                                        <span className="text-primary">{selectedModule.minAccuracy}%</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-500">
+                                        <span>Error Allowance</span>
+                                        <span className="text-primary">{selectedModule.maxErrors} MAX</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-white/[0.02] border border-white/5 rounded-[32px] p-10 group hover:border-primary/20 transition-all">
+                                <div className="flex items-center gap-3 mb-8">
+                                    <Shield className="w-5 h-5 text-primary opacity-40" />
+                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Complexity Level</span>
+                                </div>
+                                <div className="space-y-6">
+                                    <div className="flex justify-between items-end">
+                                        <span className="text-[10px] font-bold text-slate-600 uppercase">Integrity Requirements</span>
+                                        <span className={`text-md font-black uppercase ${getDifficultyColor(selectedModule)}`}>
+                                            {selectedModule.isTest ? 'Assessment' : selectedModule.difficulty}
+                                        </span>
+                                    </div>
+                                    <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                        <div 
+                                            className={`h-full shadow-[0_0_15px] transition-all duration-1000 ${
+                                                selectedModule.isTest ? 'bg-amber-500 shadow-amber-500/50' : 'bg-primary shadow-primary/50'
+                                            }`} 
+                                            style={{ width: selectedModule.isTest ? '100%' : (selectedModule.difficulty === 'easy' ? '33%' : (selectedModule.difficulty === 'medium' ? '66%' : '100%')) }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Preview */}
+                        <div className="bg-white/[0.03] border border-white/5 rounded-[32px] p-10 mb-12 relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 p-6">
+                                <Terminal className="w-5 h-5 text-white/5 group-hover:text-primary/20 transition-colors" />
+                            </div>
+                            <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest block mb-4">Neural Packet Preview</span>
+                            <div className="text-xl font-mono text-slate-400 bg-black/20 p-8 rounded-2xl border border-white/5 italic select-none line-clamp-3">
+                                {selectedModule.texts[0]}...
+                            </div>
+                        </div>
+
+                        {/* Execute Button */}
+                        <button 
+                            onClick={handleStartModule}
+                            className={`w-full group relative flex items-center justify-between p-10 rounded-[40px] overflow-hidden transition-all hover:scale-[1.01] active:scale-[0.99] shadow-2xl ${
+                                selectedModule.isTest 
+                                ? 'bg-amber-500 shadow-amber-500/25' 
+                                : 'bg-primary shadow-primary/25'
+                            }`}
+                        >
+                            <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.15)_50%,transparent_75%)] bg-[length:250%_250%] animate-[shimmer_3s_infinite]" />
+                            <div className="relative z-10 flex items-center gap-8">
+                                <div className="w-16 h-16 rounded-2xl bg-background-dark flex items-center justify-center border border-white/10 group-hover:rotate-12 transition-transform duration-500">
+                                    {selectedModule.isTest ? (
+                                        <AlertTriangle className="w-7 h-7 text-amber-500 fill-amber-500/10" />
+                                    ) : (
+                                        <Play className="w-7 h-7 text-primary fill-current" />
+                                    )}
+                                </div>
+                                <div className="text-left">
+                                    <div className={`text-xs font-black uppercase tracking-widest mb-1 ${
+                                        selectedModule.isTest ? 'text-background-dark/70' : 'text-background-dark/50'
+                                    }`}>
+                                        {selectedModule.isTest ? 'Critical Assessment' : 'Execute Protocol'}
+                                    </div>
+                                    <div className="text-3xl lg:text-4xl font-black text-background-dark uppercase italic tracking-tighter">
+                                        {selectedModule.isTest ? 'Initiate Final Test' : 'Begin Module'}
+                                    </div>
+                                </div>
+                            </div>
+                            <ChevronRight className="w-12 h-12 text-background-dark relative z-10 group-hover:translate-x-3 transition-transform" />
+                        </button>
+                    </div>
+
+                    {/* Protocol Modal Overlay */}
+                    {showProtocol && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-background-dark/80 backdrop-blur-md animate-in fade-in duration-300">
+                            <div className="bg-slate-900 border border-primary/20 rounded-3xl p-10 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-[0_0_60px_rgba(0,245,212,0.15)] relative custom-scrollbar animate-in fade-in zoom-in duration-500">
                                 <div className="text-center mb-10">
                                     <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] block mb-2">INITIAL PROTOCOL</span>
                                     <h2 className="text-4xl font-black text-white uppercase italic tracking-tighter">{selectedModule.title}</h2>
@@ -254,137 +392,6 @@ export default function TrainingAcademy() {
                                     </button>
                                 </div>
                             </div>
-                        </div>
-                    ) : (
-                        <div className="max-w-4xl w-full mx-auto animate-in fade-in slide-in-from-right-12 duration-700">
-                            {/* Meta Info */}
-                            <div className="flex items-center gap-4 mb-14">
-                                <div className={`flex items-center gap-2 px-4 py-1.5 border rounded-full ${
-                                    selectedModule.isTest 
-                                    ? 'bg-amber-500/10 border-amber-500/30' 
-                                    : 'bg-primary/5 border-primary/20'
-                                }`}>
-                                    {selectedModule.isTest ? (
-                                        <ShieldAlert className="w-3.5 h-3.5 text-amber-500" />
-                                    ) : (
-                                        <Activity className="w-3.5 h-3.5 text-primary" />
-                                    )}
-                                    <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${
-                                        selectedModule.isTest ? 'text-amber-500' : 'text-primary'
-                                    }`}>
-                                        {selectedModule.isTest ? 'Priority Assessment: Required' : 'Neural Status: Optimal'}
-                                    </span>
-                                </div>
-                                <div className="flex-1 h-px bg-white/5" />
-                            </div>
-
-                            {/* Heading */}
-                            <div className="relative mb-16">
-                                <div className="absolute -left-12 top-0 bottom-0 w-1 bg-gradient-to-b from-primary to-transparent" />
-                                <h1 className="text-6xl lg:text-7xl font-black text-white uppercase tracking-tighter italic mb-6">
-                                    {selectedModule.title}
-                                </h1>
-                                <p className="text-xl text-slate-400 font-medium leading-relaxed max-w-2xl">
-                                    {selectedModule.description}
-                                </p>
-                            </div>
-
-                            {/* Specs Grid */}
-                            <div className="grid grid-cols-2 gap-8 mb-16">
-                                <div className="bg-white/[0.02] border border-white/5 rounded-[32px] p-10 group hover:border-primary/20 transition-all">
-                                    <div className="flex items-center gap-3 mb-8">
-                                        <Target className="w-5 h-5 text-primary opacity-40" />
-                                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Protocol Targets</span>
-                                    </div>
-                                    <div className="flex flex-wrap gap-3 mb-8">
-                                        {selectedModule.keys.map(key => (
-                                            <div key={key} className="w-12 h-12 flex items-center justify-center bg-black/60 border border-white/10 rounded-2xl text-lg font-mono font-bold text-slate-300 group-hover:border-primary/40 group-hover:text-primary transition-all group-hover:-translate-y-1 shadow-[0_4px_0_rgba(255,255,255,0.05)]">
-                                                {key}
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div className="space-y-4 pt-6 border-t border-white/5">
-                                        <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-500">
-                                            <span>Target Velocity</span>
-                                            <span className="text-primary">{selectedModule.minWPM} WPM</span>
-                                        </div>
-                                        <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-500">
-                                            <span>Accuracy Req</span>
-                                            <span className="text-primary">{selectedModule.minAccuracy}%</span>
-                                        </div>
-                                        <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-500">
-                                            <span>Error Allowance</span>
-                                            <span className="text-primary">{selectedModule.maxErrors} MAX</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="bg-white/[0.02] border border-white/5 rounded-[32px] p-10 group hover:border-primary/20 transition-all">
-                                    <div className="flex items-center gap-3 mb-8">
-                                        <Shield className="w-5 h-5 text-primary opacity-40" />
-                                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Complexity Level</span>
-                                    </div>
-                                    <div className="space-y-6">
-                                        <div className="flex justify-between items-end">
-                                            <span className="text-[10px] font-bold text-slate-600 uppercase">Integrity Requirements</span>
-                                            <span className={`text-md font-black uppercase ${getDifficultyColor(selectedModule)}`}>
-                                                {selectedModule.isTest ? 'Assessment' : selectedModule.difficulty}
-                                            </span>
-                                        </div>
-                                        <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                                            <div 
-                                                className={`h-full shadow-[0_0_15px] transition-all duration-1000 ${
-                                                    selectedModule.isTest ? 'bg-amber-500 shadow-amber-500/50' : 'bg-primary shadow-primary/50'
-                                                }`} 
-                                                style={{ width: selectedModule.isTest ? '100%' : (selectedModule.difficulty === 'easy' ? '33%' : (selectedModule.difficulty === 'medium' ? '66%' : '100%')) }}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Preview */}
-                            <div className="bg-white/[0.03] border border-white/5 rounded-[32px] p-10 mb-12 relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 p-6">
-                                    <Terminal className="w-5 h-5 text-white/5 group-hover:text-primary/20 transition-colors" />
-                                </div>
-                                <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest block mb-4">Neural Packet Preview</span>
-                                <div className="text-xl font-mono text-slate-400 bg-black/20 p-8 rounded-2xl border border-white/5 italic select-none line-clamp-3">
-                                    {selectedModule.texts[0]}...
-                                </div>
-                            </div>
-
-                            {/* Execute Button */}
-                            <button 
-                                onClick={handleStartModule}
-                                className={`w-full group relative flex items-center justify-between p-10 rounded-[40px] overflow-hidden transition-all hover:scale-[1.01] active:scale-[0.99] shadow-2xl ${
-                                    selectedModule.isTest 
-                                    ? 'bg-amber-500 shadow-amber-500/25' 
-                                    : 'bg-primary shadow-primary/25'
-                                }`}
-                            >
-                                <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.15)_50%,transparent_75%)] bg-[length:250%_250%] animate-[shimmer_3s_infinite]" />
-                                <div className="relative z-10 flex items-center gap-8">
-                                    <div className="w-16 h-16 rounded-2xl bg-background-dark flex items-center justify-center border border-white/10 group-hover:rotate-12 transition-transform duration-500">
-                                        {selectedModule.isTest ? (
-                                            <AlertTriangle className="w-7 h-7 text-amber-500 fill-amber-500/10" />
-                                        ) : (
-                                            <Play className="w-7 h-7 text-primary fill-current" />
-                                        )}
-                                    </div>
-                                    <div className="text-left">
-                                        <div className={`text-xs font-black uppercase tracking-widest mb-1 ${
-                                            selectedModule.isTest ? 'text-background-dark/70' : 'text-background-dark/50'
-                                        }`}>
-                                            {selectedModule.isTest ? 'Critical Assessment' : 'Execute Protocol'}
-                                        </div>
-                                        <div className="text-3xl lg:text-4xl font-black text-background-dark uppercase italic tracking-tighter">
-                                            {selectedModule.isTest ? 'Initiate Final Test' : 'Begin Module'}
-                                        </div>
-                                    </div>
-                                </div>
-                                <ChevronRight className="w-12 h-12 text-background-dark relative z-10 group-hover:translate-x-3 transition-transform" />
-                            </button>
                         </div>
                     )}
                 </div>

@@ -4,7 +4,7 @@
     --color-primary: #00f5d4;
     --color-background-light: #f5f8f8;
     --color-background-dark: #0f2320;
-    --font-display: "Inter", sans-serif;
+    --font-display: "Space Grotesk", sans-serif;
     --font-mono: "JetBrains Mono", monospace;
     --radius: 0.25rem;
     --radius-lg: 0.5rem;
@@ -85,6 +85,7 @@
 body,
 #root {
     @apply min-h-screen bg-background-light text-slate-900 selection:bg-primary/30;
+    font-family: var(--font-display);
 }
 
 body,
