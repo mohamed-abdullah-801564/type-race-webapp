@@ -59,47 +59,58 @@ export default function GhostVault() {
         const name = ghost.name || ghost.operatorName || 'Unknown Ghost';
         const date = ghost.date ? new Date(ghost.date).toLocaleDateString() : (ghost.timestamp ? new Date(ghost.timestamp).toLocaleDateString() : 'Unknown Date');
 
+        const diffColors = {
+            'LEGENDARY': 'text-red-500 border-red-500',
+            'ELITE': 'text-orange-500 border-orange-500',
+            'EXPERT': 'text-yellow-500 border-yellow-500',
+            'ADVANCED': 'text-green-500 border-green-500'
+        };
+
         return (
-            <div className="group relative bg-black/40 border-2 border-primary/10 hover:border-primary/60 rounded-2xl p-6 transition-all duration-300 hover:shadow-[0_0_30px_rgba(0,245,212,0.2)] overflow-hidden hover:scale-[1.02] active:scale-[0.98]">
-                {/* Subtle Primary Glow for Card */}
-                <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-primary/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity animate-pulse" />
-                
-                <div className="flex justify-between items-start mb-4 gap-4">
-                    <div className="flex flex-col min-w-0 flex-1">
-                        <span className="text-[10px] font-black text-primary/50 uppercase tracking-[0.2em] mb-1">Entity ID</span>
-                        <h3 className="text-xl font-bold text-white truncate max-w-[150px]">{name}</h3>
-                    </div>
-                    <div className="text-right">
-                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] block mb-1">Frequency</span>
-                        <div className="text-2xl font-black text-primary font-mono">{ghost.wpm}<span className="text-[10px] ml-1">WPM</span></div>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="bg-white/[0.03] p-3 rounded-xl border border-white/5">
-                        <span className="text-[9px] text-slate-500 uppercase font-black tracking-widest block mb-1 text-center">Stability</span>
-                        <div className="text-sm font-bold text-slate-200 text-center">{ghost.accuracy || '98'}%</div>
-                    </div>
-                    <div className="bg-white/[0.03] p-3 rounded-xl border border-white/5">
-                        <span className="text-[9px] text-slate-500 uppercase font-black tracking-widest block mb-1 text-center">Timestamp</span>
-                        <div className="text-[10px] font-bold text-slate-400 text-center">{date}</div>
-                    </div>
-                </div>
-
-                {type === 'global' && (
-                    <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0 translate-x-2 group-hover:translate-x-0 pointer-events-none">
-                        <div className="bg-black/80 backdrop-blur-md border border-primary/20 p-2 rounded-lg text-[8px] font-black uppercase text-primary">
-                            Win Rate: {Math.max(1, 100 - Math.round(ghost.wpm / 2))}%
+            <div className="group bg-black/60 border-2 border-white/5 hover:border-primary/40 rounded-3xl p-6 flex flex-col gap-5 transition-all duration-300 hover:shadow-[0_0_30px_rgba(0,245,212,0.1)]">
+                {/* Card Header: Name/Badge Left, WPM Hero Right */}
+                <div className="flex justify-between items-start">
+                    <div className="flex flex-col gap-2">
+                        <h3 className="text-2xl font-black text-white leading-tight">
+                            {name}
+                        </h3>
+                        <div className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border w-fit ${diffColors[difficulty.label] || 'text-primary border-primary'}`}>
+                            {difficulty.label}
                         </div>
                     </div>
-                )}
+                    <div className="text-right">
+                        <div className="text-5xl font-black text-primary font-mono leading-none">
+                            {ghost.wpm}
+                        </div>
+                        <div className="text-[10px] text-primary/50 uppercase tracking-widest mt-1">
+                            WPM
+                        </div>
+                    </div>
+                </div>
 
+                {/* Stats Row */}
+                <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-black/40 border border-white/5 rounded-xl p-3">
+                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">Accuracy</span>
+                        <div className="text-sm font-bold text-slate-200">
+                            {ghost.accuracy || '98'}%
+                        </div>
+                    </div>
+                    <div className="bg-black/40 border border-white/5 rounded-xl p-3">
+                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">Captured</span>
+                        <div className="text-sm font-bold text-slate-200">
+                            {date}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Challenge Button */}
                 <button 
                     onClick={() => handleChallenge(ghost)}
-                    className="w-full py-3 bg-primary/10 border border-primary/20 hover:bg-primary text-primary hover:text-background-dark font-black uppercase tracking-[0.2em] text-[10px] rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2 group/btn"
+                    className="w-full py-4 bg-primary/10 hover:bg-primary border border-primary/30 hover:border-primary text-primary hover:text-background-dark font-black uppercase tracking-[0.2em] text-[11px] rounded-xl transition-all active:scale-95 flex items-center justify-center gap-3"
                 >
-                    <Activity className={`w-4 h-4 group-hover/btn:animate-pulse`} />
-                    Initiate Challenge
+                    <Activity className="w-4 h-4" />
+                    Challenge Ghost
                 </button>
             </div>
         );

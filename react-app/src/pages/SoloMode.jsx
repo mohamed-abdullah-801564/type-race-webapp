@@ -99,6 +99,7 @@ export default function SoloMode() {
     const lastKeystrokeTimeRef = useRef(null);
     const lastKeystrokeTimestampRef = useRef(null);
     const timerRef = useRef(null);
+    const errorMapRef = useRef({});
 
     // Initial Ghost Check (from Vault)
     useEffect(() => {
@@ -118,7 +119,7 @@ export default function SoloMode() {
             }
         } else if (location.state?.isAcademy) {
             const text = location.state.text || "";
-            const academyDuration = Math.max(30, Math.ceil(text.length / 3));
+            const academyDuration = location.state.duration || Math.max(30, Math.ceil(text.length / 3));
             setTimeLeft(academyDuration);
             setDuration(academyDuration);
             setText(text);
@@ -204,7 +205,11 @@ export default function SoloMode() {
                 const expectedChar = text[val.length - 1];
                 if (typedChar !== expectedChar) {
                     const key = expectedChar.toLowerCase();
-                    setErrorMap(prev => ({ ...prev, [key]: (prev[key] || 0) + 1 }));
+                    setErrorMap(prev => {
+                        const next = { ...prev, [key]: (prev[key] || 0) + 1 };
+                        errorMapRef.current = next;
+                        return next;
+                    });
                 }
 
                 // Heatmap Tracking Logic
@@ -238,9 +243,11 @@ export default function SoloMode() {
         setUserInput('');
         setStatus('waiting');
         setIsFailed(false);
+        setAcademyUnlocked(false);
         setTimeLeft(duration);
         setKeystrokes([]);
         setErrorMap({});
+        errorMapRef.current = {};
         setGhostIndex(0);
         startTimeRef.current = null;
         endTimeRef.current = null;
@@ -271,12 +278,20 @@ export default function SoloMode() {
         return Math.round((correctChars / 5) / (elapsedSeconds / 60));
     };
 
+    const getTopErrors = () => {
+        const errors = Object.entries(errorMapRef.current)
+            .map(([key, count]) => ({ key, count }))
+            .sort((a, b) => b.count - a.count);
+        return errors.length >= 3 ? errors.slice(0, 3) : [];
+    };
+
     useEffect(() => {
         if (status === 'finished') {
             const wpm = calculateWPM();
             const acc = calculateAccuracy();
+            const totalErrors = Object.values(errorMapRef.current).reduce((sum, count) => sum + count, 0);
             setFinalWPM(wpm);
-            
+
             // Only sync and save if it's a standard Solo Mode race
             if (!location.state?.isAcademy && !location.state?.isGhostChallenge) {
                 // PB Logic
@@ -316,7 +331,11 @@ export default function SoloMode() {
             }
             // Handle Academy Progression
             if (location.state?.isAcademy) {
-                if (wpm >= 20 && parseFloat(acc) >= 90) {
+                const requiredWPM = location.state?.minWPM || 20;
+                const requiredAccuracy = location.state?.minAccuracy || 90;
+                const allowedErrors = location.state?.maxErrors || 15;
+                
+                if (wpm >= requiredWPM && parseFloat(acc) >= requiredAccuracy && totalErrors <= allowedErrors) {
                     setAcademyUnlocked(true);
                     const progress = JSON.parse(localStorage.getItem('academyProgress') || '["mod_1"]');
                     const currentIndex = ACADEMY_MODULES.findIndex(m => m.id === location.state.moduleId);
@@ -328,6 +347,8 @@ export default function SoloMode() {
                             localStorage.setItem('academyProgress', JSON.stringify(progress));
                         }
                     }
+                } else {
+                    setIsFailed(true);
                 }
             }
         }
@@ -497,12 +518,32 @@ export default function SoloMode() {
                             {academyUnlocked && (
                                 <div className="mt-8 p-6 bg-primary/10 border border-primary/30 rounded-3xl animate-in fade-in zoom-in duration-500">
                                     <div className="flex items-center gap-4 text-primary">
-                                        <div className="bg-primary text-black p-2 rounded-lg">
+                                        <div className="bg-primary text-black p-2 rounded-lg shadow-[0_0_15px_rgba(0,245,212,0.5)]">
                                             <Trophy className="w-6 h-6" />
                                         </div>
                                         <div>
                                             <h3 className="text-xl font-black uppercase italic tracking-tighter">Module Complete!</h3>
                                             <p className="text-xs font-bold text-primary/60 uppercase tracking-widest">Next Protocol Unlocked in Central Hub</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                             {isFailed && status === 'finished' && (
+                                <div className="mt-8 p-6 bg-red-500/10 border border-red-500/30 rounded-3xl animate-in fade-in zoom-in duration-500">
+                                    <div className="flex items-center gap-4 text-red-500">
+                                        <div className="bg-red-500 text-white p-2 rounded-lg shadow-[0_0_15px_rgba(239,68,68,0.5)]">
+                                            <Skull className="w-6 h-6" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xl font-black uppercase italic tracking-tighter">
+                                                {location.state?.isAcademy ? "Protocol Failure" : "Protocol Failed"}
+                                            </h3>
+                                            <p className="text-xs font-bold text-red-500/60 uppercase tracking-widest">
+                                                {location.state?.isAcademy 
+                                                    ? "Performance below required parameters. Targets not met." 
+                                                    : "High latency or excessive errors detected."}
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
@@ -534,6 +575,35 @@ export default function SoloMode() {
                                             Adjust Params
                                         </button>
                                     )}
+                                </div>
+                            )}
+
+                            {!location.state?.isAcademy && status === 'finished' && getTopErrors().length > 0 && (
+                                <div className="mt-8 bg-white/[0.03] border border-white/10 rounded-3xl p-8 w-full max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <BarChart2 className="w-4 h-4 text-primary" />
+                                        <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Neural Weak Point Analysis</span>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-3 gap-4 mb-8">
+                                        {getTopErrors().map(({ key, count }) => (
+                                            <div key={key} className="bg-black/40 border border-white/5 rounded-2xl p-4 flex flex-col items-center">
+                                                <div className="w-10 h-10 flex items-center justify-center bg-red-500/10 border border-red-500/20 rounded-xl text-xl font-mono font-black text-red-500 mb-2">
+                                                    {key.toUpperCase()}
+                                                </div>
+                                                <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Errors</div>
+                                                <div className="text-xl font-mono font-black text-white">{count}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <button 
+                                        onClick={() => navigate('/academy', { state: { suggestedKeys: getTopErrors().map(e => e.key) } })}
+                                        className="w-full py-4 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:bg-primary/10 hover:border-primary/30 hover:text-primary transition-all group flex items-center justify-center gap-2"
+                                    >
+                                        Train These Keys in Academy
+                                        <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                                    </button>
                                 </div>
                             )}
                         </div>
