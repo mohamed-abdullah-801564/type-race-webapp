@@ -58,8 +58,8 @@ export default function Achievements() {
                                 key={achievement.id}
                                 className={`group relative bg-black/40 border-2 rounded-3xl p-8 flex flex-col items-center gap-4 text-center transition-all duration-500 ${
                                     earned 
-                                    ? 'border-yellow-500/30 shadow-[0_0_30px_rgba(234,179,8,0.05)] hover:border-yellow-500/60 hover:shadow-[0_0_40px_rgba(234,179,8,0.15)]' 
-                                    : 'border-white/5 opacity-40 grayscale hover:opacity-60 transition-opacity'
+                                    ? 'border-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.2)]' 
+                                    : 'border-white/5 opacity-40 grayscale'
                                 }`}
                             >
                                 {/* Rarity Badge */}
@@ -68,7 +68,7 @@ export default function Achievements() {
                                 </div>
 
                                 {/* Icon */}
-                                <div className={`text-5xl mb-2 transition-transform duration-500 ${earned ? 'group-hover:scale-125' : ''}`}>
+                                <div className={`text-5xl mb-2 transition-transform duration-500 ${earned ? 'group-hover:scale-110' : ''}`}>
                                     {achievement.icon}
                                 </div>
 
@@ -82,16 +82,16 @@ export default function Achievements() {
                                     </p>
                                 </div>
 
-                                {/* Lock Icon for unearned */}
+                                {/* Lock Icon overlay for unearned */}
                                 {!earned && (
-                                    <div className="absolute bottom-4 right-4">
-                                        <Lock className="w-4 h-4 text-slate-700" />
+                                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-3xl backdrop-blur-[1px]">
+                                        <Lock className="w-8 h-8 text-slate-400 opacity-80" />
                                     </div>
                                 )}
 
                                 {/* Glow effect on hover for earned */}
                                 {earned && (
-                                    <div className="absolute inset-0 bg-yellow-500/5 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                                    <div className="absolute inset-0 bg-yellow-400/5 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
                                 )}
                             </div>
                         );

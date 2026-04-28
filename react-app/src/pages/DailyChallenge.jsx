@@ -307,7 +307,7 @@ export default function DailyChallenge() {
                     <div className="mb-8 bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 flex items-center gap-4 animate-in fade-in slide-in-from-top-4">
                         <Lock className="w-5 h-5 text-amber-500" />
                         <p className="text-amber-500 text-sm font-medium uppercase tracking-wider">
-                            Neural Link not established. <button onClick={() => window.dispatchEvent(new Event('open-auth-modal'))} className="underline hover:text-amber-400">Sign in</button> to appear on the leaderboard.
+                            Neural Link not established. <button onClick={() => setShowAuth(true)} className="underline cursor-pointer font-black hover:text-amber-300 transition-colors">Sign in</button> to appear on the leaderboard.
                         </p>
                     </div>
                 )}

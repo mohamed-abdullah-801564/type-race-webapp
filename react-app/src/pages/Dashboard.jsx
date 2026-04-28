@@ -284,8 +284,7 @@ export default function Dashboard() {
     };
 
     const handleKeyClick = (key) => {
-        const drillText = generateSmartDrill(key, 30);
-        navigate('/solo', { state: { text: drillText } });
+        navigate(`/practice?key=${key}`);
     };
 
     const displayHistory = recentHistory;

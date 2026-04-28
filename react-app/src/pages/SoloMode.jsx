@@ -53,6 +53,9 @@ export default function SoloMode() {
     const [showConfig, setShowConfig] = useState(true);
     const [stream, setStream] = useState('prose'); // 'prose' or 'code'
     const [duration, setDuration] = useState(30); // 30, 60, 120
+    const [mode, setMode] = useState('time'); // 'time' or 'length'
+    const [targetLines, setTargetLines] = useState(5); // 5, 10, 15, 20
+    const [elapsedTime, setElapsedTime] = useState(0);
 
     // Racing State
     const [text, setText] = useState('');
@@ -139,23 +142,30 @@ export default function SoloMode() {
 
     // Timer Logic
     useEffect(() => {
-        if (status === 'typing' && timeLeft > 0) {
-            timerRef.current = setInterval(() => {
-                setTimeLeft(prev => {
-                    if (prev <= 1) {
-                        clearInterval(timerRef.current);
-                        endTimeRef.current = Date.now();
-                        setStatus('finished');
-                        return 0;
-                    }
-                    return prev - 1;
-                });
-            }, 1000);
+        if (status === 'typing') {
+            if (mode === 'time') {
+                timerRef.current = setInterval(() => {
+                    setTimeLeft(prev => {
+                        if (prev <= 1) {
+                            clearInterval(timerRef.current);
+                            endTimeRef.current = Date.now();
+                            setStatus('finished');
+                            return 0;
+                        }
+                        return prev - 1;
+                    });
+                }, 1000);
+            } else {
+                // Length mode: count up, no time limit
+                timerRef.current = setInterval(() => {
+                    setElapsedTime(prev => prev + 1);
+                }, 1000);
+            }
         } else {
             clearInterval(timerRef.current);
         }
         return () => clearInterval(timerRef.current);
-    }, [status]);
+    }, [status, mode]);
 
     // Ghost Pacer Logic
     useEffect(() => {
@@ -258,6 +268,7 @@ export default function SoloMode() {
         setIsFailed(false);
         setAcademyUnlocked(false);
         setTimeLeft(duration);
+        setElapsedTime(0);
         setKeystrokes([]);
         setFinalAcc(100);
         setErrorMap({});
@@ -272,8 +283,19 @@ export default function SoloMode() {
 
     const handleStartRace = () => {
         const samples = stream === 'prose' ? PROSE_SAMPLES : CODE_SAMPLES;
-        setText(samples[Math.floor(Math.random() * samples.length)]);
+        if (mode === 'length') {
+            const targetWordCount = targetLines * 12;
+            let combined = '';
+            while (combined.split(' ').filter(w => w.length > 0).length < targetWordCount) {
+                combined += (combined ? ' ' : '') + samples[Math.floor(Math.random() * samples.length)];
+            }
+            const words = combined.split(' ').filter(w => w.length > 0).slice(0, targetWordCount);
+            setText(words.join(' '));
+        } else {
+            setText(samples[Math.floor(Math.random() * samples.length)]);
+        }
         setTimeLeft(duration);
+        setElapsedTime(0);
         setShowConfig(false);
         resetTest();
     };
@@ -286,6 +308,11 @@ export default function SoloMode() {
 
     const calculateWPM = () => {
         if (!startTimeRef.current) return 0;
+        if (mode === 'length') {
+            const seconds = Math.max(1, elapsedTime);
+            const correctChars = userInput.split('').filter((char, i) => char === text[i]).length;
+            return Math.round((correctChars / 5) / (seconds / 60));
+        }
         const end = endTimeRef.current || Date.now();
         const elapsedMs = Math.max(1, end - startTimeRef.current);
         const elapsedSeconds = elapsedMs / 1000;
@@ -451,19 +478,52 @@ export default function SoloMode() {
                                     </div>
                                 </div>
 
-                                <div>
-                                    <label className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-4 block">Session Duration (Seconds)</label>
-                                    <div className="flex gap-4">
-                                        {[30, 60, 120].map((d) => (
-                                            <button 
-                                                key={d}
-                                                onClick={() => setDuration(d)}
-                                                className={`flex-1 py-4 rounded-xl border-2 font-black text-lg transition-all ${duration === d ? 'bg-primary text-black border-primary shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-white/5 border-transparent text-slate-500 hover:border-white/20'}`}
-                                            >
-                                                {d}
-                                            </button>
-                                        ))}
+                                {mode === 'time' && (
+                                    <div>
+                                        <label className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-4 block">Session Duration (Seconds)</label>
+                                        <div className="flex gap-4">
+                                            {[30, 60, 120].map((d) => (
+                                                <button 
+                                                    key={d}
+                                                    onClick={() => setDuration(d)}
+                                                    className={`flex-1 py-4 rounded-xl border-2 font-black text-lg transition-all ${duration === d ? 'bg-primary text-black border-primary shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-white/5 border-transparent text-slate-500 hover:border-white/20'}`}
+                                                >
+                                                    {d}
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
+                                )}
+
+                                <div>
+                                    <label className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-4 block">Practice Mode</label>
+                                    <div className="flex gap-4">
+                                        <button
+                                            onClick={() => setMode('time')}
+                                            className={`flex-1 py-4 rounded-xl border-2 font-black text-sm transition-all ${mode === 'time' ? 'bg-primary text-black border-primary shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-white/5 border-transparent text-slate-500 hover:border-white/20'}`}
+                                        >
+                                            Time Based
+                                        </button>
+                                        <button
+                                            onClick={() => setMode('length')}
+                                            className={`flex-1 py-4 rounded-xl border-2 font-black text-sm transition-all ${mode === 'length' ? 'bg-primary text-black border-primary shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-white/5 border-transparent text-slate-500 hover:border-white/20'}`}
+                                        >
+                                            Length Based
+                                        </button>
+                                    </div>
+                                    {mode === 'length' && (
+                                        <div className="flex gap-4 mt-4">
+                                            {[5, 10, 15, 20].map((l) => (
+                                                <button
+                                                    key={l}
+                                                    onClick={() => setTargetLines(l)}
+                                                    className={`flex-1 py-4 rounded-xl border-2 font-black text-lg transition-all ${targetLines === l ? 'bg-primary text-black border-primary shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-white/5 border-transparent text-slate-500 hover:border-white/20'}`}
+                                                >
+                                                    {l}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
 
                                 <button 
@@ -491,8 +551,10 @@ export default function SoloMode() {
                                     {location.state?.isAcademy ? `TRAINING PROTOCOL: ${location.state.academyTitle}` : 'Temporal Node'}
                                 </span>
                                 <div className="text-7xl font-black text-white font-mono leading-none flex items-baseline gap-2">
-                                    {status === 'finished' ? finalWPM : timeLeft}
-                                    <span className="text-xl text-primary/40 uppercase font-sans tracking-widest">{status === 'finished' ? 'WPM' : 'Sec'}</span>
+                                    {status === 'finished' ? finalWPM : (mode === 'length' ? elapsedTime : timeLeft)}
+                                    <span className={`text-xl uppercase font-sans tracking-widest ${status === 'finished' ? 'text-primary/40' : mode === 'length' ? 'text-primary' : 'text-primary/40'}`}>
+                                        {status === 'finished' ? 'WPM' : mode === 'length' ? 'Sec Elapsed' : 'Sec'}
+                                    </span>
                                 </div>
                             </div>
                             

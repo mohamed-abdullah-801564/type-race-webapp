@@ -8,6 +8,7 @@ export default function AuthModal({ onClose, onLoginSuccess }) {
     const [isLogin, setIsLogin] = useState(true);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [operatorName, setOperatorName] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
@@ -21,6 +22,9 @@ export default function AuthModal({ onClose, onLoginSuccess }) {
                 userCredential = await signInWithEmailAndPassword(auth, email, password);
             } else {
                 userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                // Save operator name to localStorage immediately
+                const resolvedName = operatorName.trim() || userCredential.user.email.split('@')[0];
+                localStorage.setItem('playerName', resolvedName);
             }
             // Sync Logic
             try {
@@ -61,12 +65,12 @@ export default function AuthModal({ onClose, onLoginSuccess }) {
                     localStorage.setItem('lastLocalUpdate', (Date.now() - 1000).toString()); // Cloud is current
                 } else {
                     // New Cloud User -> Push initial profile summary (if guest data exists)
-                    const operatorName = localStorage.getItem('playerName') || userCredential.user.email.split('@')[0];
+                    const resolvedOperatorName = operatorName.trim() || localStorage.getItem('playerName') || userCredential.user.email.split('@')[0];
                     const localRank = JSON.parse(localStorage.getItem('rankData') || 'null');
                     const localHistory = JSON.parse(localStorage.getItem('raceHistory') || '[]');
                     
                     await setDoc(userDocRef, {
-                        operatorName,
+                        operatorName: resolvedOperatorName,
                         rank: localRank,
                         lastSync: serverTimestamp(),
                         email: userCredential.user.email
@@ -118,6 +122,16 @@ export default function AuthModal({ onClose, onLoginSuccess }) {
                         onChange={(e) => setEmail(e.target.value)}
                         className="w-full bg-black/40 border border-primary/20 focus:border-primary text-white text-sm font-mono px-4 py-3 rounded-lg outline-none transition-all placeholder:text-slate-600"
                     />
+                    {!isLogin && (
+                        <input 
+                            type="text" 
+                            placeholder="OPERATOR NAME" 
+                            maxLength={15}
+                            value={operatorName}
+                            onChange={(e) => setOperatorName(e.target.value)}
+                            className="w-full bg-black/40 border border-primary/20 focus:border-primary text-white text-sm font-mono px-4 py-3 rounded-lg outline-none transition-all placeholder:text-slate-600 uppercase tracking-widest"
+                        />
+                    )}
                     <input 
                         type="password" 
                         placeholder="ACCESS CODE" 
@@ -136,7 +150,7 @@ export default function AuthModal({ onClose, onLoginSuccess }) {
                 </form>
                 
                 <div className="mt-6 text-center">
-                    <button type="button" onClick={() => setIsLogin(!isLogin)} className="text-xs font-bold text-slate-500 hover:text-primary transition-colors tracking-widest uppercase">
+                    <button type="button" onClick={() => { setIsLogin(!isLogin); setOperatorName(''); }} className="text-xs font-bold text-slate-500 hover:text-primary transition-colors tracking-widest uppercase">
                         {isLogin ? 'Create new connection' : 'Use existing link'}
                     </button>
                 </div>

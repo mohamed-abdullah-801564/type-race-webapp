@@ -7,6 +7,7 @@ import GhostVault from './pages/GhostVault';
 import TrainingAcademy from './pages/TrainingAcademy';
 import DailyChallenge from './pages/DailyChallenge';
 import Achievements from './pages/Achievements';
+import KeyPractice from './pages/KeyPractice';
 
 import RouteGuard from './components/RouteGuard';
 
@@ -22,6 +23,7 @@ function App() {
           <Route path="/academy" element={<RouteGuard><TrainingAcademy /></RouteGuard>} />
           <Route path="/daily" element={<DailyChallenge />} />
           <Route path="/achievements" element={<Achievements />} />
+          <Route path="/practice" element={<KeyPractice />} />
         </Routes>
       </div>
     </BrowserRouter>
