@@ -10,6 +10,8 @@ import { useNavigate } from 'react-router-dom';
 import { recordKeyLatency, isTrackableKey } from '../utils/heatmapUtils';
 import useToast from '../hooks/useToast';
 import ToastContainer from '../components/ToastContainer';
+import { playErrorSound, playSuccessSound } from '../utils/soundUtils';
+
 
 const SOCKET_SERVER = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001';
 
@@ -158,6 +160,7 @@ export default function Multiplayer() {
             // Update leaderboard if we won/finished
             const ourResult = data.results?.find(p => p.id === socket?.id);
             if (ourResult) {
+                playSuccessSound();
                 const safeWpm = ourResult.wpm || 0;
                 const safeAcc = ourResult.accuracy || 0;
                 syncToLeaderboard(safeWpm, safeAcc);
@@ -165,7 +168,7 @@ export default function Multiplayer() {
                 // Fix: Also persist result to localStorage so Dashboard graph updates
                 try {
                     const existing = JSON.parse(localStorage.getItem('raceHistory') || '[]');
-                    existing.push({ wpm: safeWpm, accuracy: safeAcc, date: Date.now(), stream: category });
+                    existing.push({ wpm: safeWpm, accuracy: safeAcc, date: Date.now(), stream: category, mode: 'multiplayer' });
                     localStorage.setItem('raceHistory', JSON.stringify(existing.slice(-50)));
                 } catch (e) { console.warn('localStorage write failed', e); }
             }
@@ -270,7 +273,7 @@ export default function Multiplayer() {
                 // Dashboard Stats fix: persist race result to localStorage
                 try {
                     const existing = JSON.parse(localStorage.getItem('raceHistory') || '[]');
-                    existing.push({ wpm: finalWpm, accuracy: finalAcc, date: Date.now(), stream: category });
+                    existing.push({ wpm: finalWpm, accuracy: finalAcc, date: Date.now(), stream: category, mode: 'multiplayer' });
                     localStorage.setItem('raceHistory', JSON.stringify(existing.slice(-50)));
                 } catch (e) { console.warn('localStorage write failed', e); }
 
@@ -386,6 +389,7 @@ export default function Multiplayer() {
                 const typedChar = val[val.length - 1];
                 const expectedChar = text[val.length - 1];
                 if (typedChar !== expectedChar && expectedChar !== ' ') {
+                    playErrorSound();
                     const missedChar = expectedChar.toLowerCase();
                     setErrorMap(prev => ({ ...prev, [missedChar]: (prev[missedChar] || 0) + 1 }));
                 }

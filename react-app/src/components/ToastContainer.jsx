@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, AlertTriangle, Info, X } from 'lucide-react';
+import { CheckCircle, XCircle, AlertTriangle, Info, X, Trophy } from 'lucide-react';
 
 const TOAST_STYLES = {
     success: {
@@ -25,6 +25,14 @@ const TOAST_STYLES = {
         color: 'text-cyan-400',
         borderColor: 'border-cyan-500/40',
         label: 'INFO'
+    },
+    achievement: {
+        icon: Trophy,
+        color: 'text-yellow-400',
+        borderColor: 'border-yellow-500/40',
+        label: 'ACHIEVEMENT UNLOCKED',
+        glow: 'shadow-[0_0_20px_rgba(234,179,8,0.2)]',
+        bar: 'bg-yellow-500'
     }
 };
 
@@ -44,7 +52,7 @@ function Toast({ toast, onRemove }) {
 
     return (
         <div 
-            className={`bg-slate-900/95 backdrop-blur-xl border ${style.borderColor} rounded-2xl p-4 w-80 flex items-start gap-4 relative overflow-hidden transition-all duration-500 shadow-2xl ${
+            className={`bg-slate-900/95 backdrop-blur-xl border ${style.borderColor} rounded-2xl p-4 w-80 flex items-start gap-4 relative overflow-hidden transition-all duration-500 shadow-2xl ${style.glow || ''} ${
                 visible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8'
             }`}
         >
@@ -71,7 +79,7 @@ function Toast({ toast, onRemove }) {
             {/* Progress Bar */}
             <div className="absolute bottom-0 left-0 h-[2px] bg-white/10 w-full" />
             <div 
-                className={`absolute bottom-0 left-0 h-[2px] opacity-60 ${style.color.replace('text-', 'bg-')}`}
+                className={`absolute bottom-0 left-0 h-[2px] opacity-60 ${style.bar || style.color.replace('text-', 'bg-')}`}
                 style={{
                     animation: 'toast-drain 3s linear forwards'
                 }}

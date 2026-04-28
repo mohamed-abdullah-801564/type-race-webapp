@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
+import useToast from '../hooks/useToast';
+import ToastContainer from '../components/ToastContainer';
+import { checkAchievements, saveAchievements, buildStatsForAchievements } from '../utils/achievementUtils';
+import { launchConfetti } from '../utils/confettiUtils';
 import { 
     Zap, 
     RotateCcw, 
@@ -25,6 +29,8 @@ import { loadData, saveData } from '../utils/storageUtils';
 import { syncToLeaderboard, syncCrucialData, updateWeakKeys } from '../utils/firebaseUtils';
 import { generateSmartDrill, ACADEMY_MODULES } from '../utils/typingUtils';
 import { recordKeyLatency, isTrackableKey } from '../utils/heatmapUtils';
+import { playErrorSound, playSuccessSound } from '../utils/soundUtils';
+
 
 const PROSE_SAMPLES = [
     "The dawn of artificial intelligence marks a pivotal transformation in human history, mirroring the industrial revolution in its scope and influence. As we integrate neural networks into our daily lives, the boundary between biological and synthetic intelligence begins to blur. This era demands a new understanding of consciousness and the ethical implications of creating thinking machines that may one day surpass their creators in both logic and intuition.",
@@ -41,6 +47,7 @@ const CODE_SAMPLES = [
 export default function SoloMode() {
     const location = useLocation();
     const navigate = useNavigate();
+    const { toasts, addToast, removeToast } = useToast();
 
     // Configuration State
     const [showConfig, setShowConfig] = useState(true);
@@ -78,6 +85,7 @@ export default function SoloMode() {
     }, [location.state]);
 
     const [finalWPM, setFinalWPM] = useState(0);
+    const [finalAcc, setFinalAcc] = useState(100);
     const [academyUnlocked, setAcademyUnlocked] = useState(false);
     const [isFailed, setIsFailed] = useState(false);
     const [errorMap, setErrorMap] = useState({});
@@ -91,6 +99,7 @@ export default function SoloMode() {
 
     const userInputRef = useRef("");
     userInputRef.current = userInput;
+    const backspacePressedRef = useRef(false);
 
 
     const inputRef = useRef(null);
@@ -204,6 +213,7 @@ export default function SoloMode() {
                 const typedChar = val[val.length - 1];
                 const expectedChar = text[val.length - 1];
                 if (typedChar !== expectedChar) {
+                    playErrorSound();
                     const key = expectedChar.toLowerCase();
                     setErrorMap(prev => {
                         const next = { ...prev, [key]: (prev[key] || 0) + 1 };
@@ -233,6 +243,9 @@ export default function SoloMode() {
     };
 
     const handleKeyDown = (e) => {
+        if (e.key === 'Backspace') {
+            backspacePressedRef.current = true;
+        }
         if (e.key === 'Tab') {
             e.preventDefault();
             resetTest();
@@ -246,12 +259,14 @@ export default function SoloMode() {
         setAcademyUnlocked(false);
         setTimeLeft(duration);
         setKeystrokes([]);
+        setFinalAcc(100);
         setErrorMap({});
         errorMapRef.current = {};
         setGhostIndex(0);
         startTimeRef.current = null;
         endTimeRef.current = null;
         lastKeystrokeTimeRef.current = null;
+        backspacePressedRef.current = false;
         if (inputRef.current) inputRef.current.focus();
     };
 
@@ -291,6 +306,7 @@ export default function SoloMode() {
             const acc = calculateAccuracy();
             const totalErrors = Object.values(errorMapRef.current).reduce((sum, count) => sum + count, 0);
             setFinalWPM(wpm);
+            setFinalAcc(acc);
 
             // Only sync and save if it's a standard Solo Mode race
             if (!location.state?.isAcademy && !location.state?.isGhostChallenge) {
@@ -313,7 +329,9 @@ export default function SoloMode() {
                     wpm,
                     accuracy: acc,
                     date: Date.now(),
-                    stream
+                    stream,
+                    mode: 'solo',
+                    noBackspace: !backspacePressedRef.current
                 };
                 history.push(historyEntry);
                 saveData('raceHistory', history.slice(-50));
@@ -328,8 +346,26 @@ export default function SoloMode() {
 
                 // Update last local update for sync icon
                 localStorage.setItem('lastLocalUpdate', Date.now().toString());
+
+                // Achievement Check Logic
+                const stats = buildStatsForAchievements();
+                const newAchievements = checkAchievements(stats);
+                if (newAchievements.length > 0) {
+                    saveAchievements(newAchievements);
+                    newAchievements.forEach(a => {
+                        addToast({ message: `${a.icon} ${a.title} — ${a.description}`, type: 'achievement' });
+                    });
+
+                    // Launch highest rarity confetti
+                    const hasLegendary = newAchievements.some(a => a.rarity === 'legendary');
+                    const hasRare = newAchievements.some(a => a.rarity === 'rare');
+                    
+                    if (hasLegendary) launchConfetti('legendary');
+                    else if (hasRare) launchConfetti('rare');
+                }
             }
             // Handle Academy Progression
+            let failedAcademy = false;
             if (location.state?.isAcademy) {
                 const requiredWPM = location.state?.minWPM || 20;
                 const requiredAccuracy = location.state?.minAccuracy || 90;
@@ -348,8 +384,13 @@ export default function SoloMode() {
                         }
                     }
                 } else {
+                    failedAcademy = true;
                     setIsFailed(true);
                 }
+            }
+
+            if (!failedAcademy) {
+                playSuccessSound();
             }
         }
     }, [status]);
@@ -530,26 +571,71 @@ export default function SoloMode() {
                             )}
 
                              {isFailed && status === 'finished' && (
-                                <div className="mt-8 p-6 bg-red-500/10 border border-red-500/30 rounded-3xl animate-in fade-in zoom-in duration-500">
-                                    <div className="flex items-center gap-4 text-red-500">
-                                        <div className="bg-red-500 text-white p-2 rounded-lg shadow-[0_0_15px_rgba(239,68,68,0.5)]">
-                                            <Skull className="w-6 h-6" />
+                                <div className="mt-8 w-full max-w-2xl bg-red-950/30 border-2 border-red-500/30 rounded-3xl p-10 animate-in fade-in zoom-in duration-500">
+                                    {/* Header Section */}
+                                    <div className="flex items-center gap-4 mb-2">
+                                        <Skull className="text-red-400 w-8 h-8" />
+                                        <h3 className="text-2xl font-black text-red-400 uppercase italic tracking-tighter">PROTOCOL FAILURE</h3>
+                                    </div>
+                                    <p className="text-sm text-red-400/60 font-bold uppercase tracking-widest mb-8">
+                                        Performance parameters not met. Review your stats below.
+                                    </p>
+
+                                    {/* Stats Comparison Grid */}
+                                    <div className="grid grid-cols-3 gap-4 mb-8">
+                                        {/* Speed Metric */}
+                                        <div className="bg-black/40 border border-white/5 rounded-2xl p-6 flex flex-col items-center gap-2">
+                                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Speed</span>
+                                            <div className={`text-3xl font-black font-mono ${finalWPM >= (location.state?.minWPM || 20) ? 'text-primary' : 'text-red-400'}`}>
+                                                {finalWPM}
+                                            </div>
+                                            <span className="text-[10px] text-slate-500 uppercase font-bold tracking-tight">Required: {location.state?.minWPM || 20}</span>
                                         </div>
-                                        <div>
-                                            <h3 className="text-xl font-black uppercase italic tracking-tighter">
-                                                {location.state?.isAcademy ? "Protocol Failure" : "Protocol Failed"}
-                                            </h3>
-                                            <p className="text-xs font-bold text-red-500/60 uppercase tracking-widest">
-                                                {location.state?.isAcademy 
-                                                    ? "Performance below required parameters. Targets not met." 
-                                                    : "High latency or excessive errors detected."}
-                                            </p>
+
+                                        {/* Accuracy Metric */}
+                                        <div className="bg-black/40 border border-white/5 rounded-2xl p-6 flex flex-col items-center gap-2">
+                                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Accuracy</span>
+                                            <div className={`text-3xl font-black font-mono ${parseFloat(finalAcc) >= (location.state?.minAccuracy || 90) ? 'text-primary' : 'text-red-400'}`}>
+                                                {finalAcc}%
+                                            </div>
+                                            <span className="text-[10px] text-slate-500 uppercase font-bold tracking-tight">Required: {location.state?.minAccuracy || 90}%</span>
                                         </div>
+
+                                        {/* Errors Metric */}
+                                        <div className="bg-black/40 border border-white/5 rounded-2xl p-6 flex flex-col items-center gap-2">
+                                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Errors</span>
+                                            <div className={`text-3xl font-black font-mono ${Object.values(errorMapRef.current).reduce((sum, count) => sum + count, 0) <= (location.state?.maxErrors || 15) ? 'text-primary' : 'text-red-400'}`}>
+                                                {Object.values(errorMapRef.current).reduce((sum, count) => sum + count, 0)}
+                                            </div>
+                                            <span className="text-[10px] text-slate-500 uppercase font-bold tracking-tight">Required: {location.state?.maxErrors || 15}</span>
+                                        </div>
+                                    </div>
+
+                                    <p className="text-center text-sm text-slate-400 font-medium leading-relaxed mt-4 mb-8">
+                                        Don't give up. Every expert was once a beginner. Focus on accuracy first, speed will follow.
+                                    </p>
+
+                                    {/* Action Buttons */}
+                                    <div className="flex row gap-4">
+                                        <button 
+                                            onClick={resetTest}
+                                            className="flex-1 py-4 bg-red-500 hover:bg-red-400 text-white font-black uppercase tracking-widest rounded-2xl transition-all flex items-center justify-center gap-2"
+                                        >
+                                            <RotateCcw className="w-5 h-5" />
+                                            Try Again
+                                        </button>
+                                        <button 
+                                            onClick={() => navigate('/academy')}
+                                            className="flex-1 py-4 bg-white/5 border border-white/10 text-slate-400 hover:text-white font-black uppercase tracking-widest rounded-2xl transition-all flex items-center justify-center gap-2"
+                                        >
+                                            Return to Academy
+                                            <ChevronRight className="w-5 h-5" />
+                                        </button>
                                     </div>
                                 </div>
                             )}
 
-                            {status === 'finished' && (
+                            {status === 'finished' && !isFailed && (
                                 <div className="mt-12 flex gap-4 animate-in slide-in-from-bottom-6 duration-500">
                                     <button 
                                         onClick={resetTest}
@@ -629,6 +715,7 @@ export default function SoloMode() {
                     </div>
                 )}
             </main>
+            <ToastContainer toasts={toasts} removeToast={removeToast} />
         </div>
     );
 }

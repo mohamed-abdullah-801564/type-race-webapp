@@ -44,17 +44,19 @@ export default function Dashboard() {
             setPerformances({});
 
             const history = loadData('raceHistory', []);
-            const nonDrillHistory = history.filter((h) => !h.isDrill);
+            const sortedHistory = history
+                .filter((h) => !h.isDrill)
+                .sort((a, b) => (a.date || a.timestamp || 0) - (b.date || b.timestamp || 0));
 
-            if (nonDrillHistory.length > 0) {
-                const maxWPM = Math.max(...nonDrillHistory.map(h => h.wpm));
-                const avgAcc = nonDrillHistory.reduce((acc, h) => acc + parseFloat(h.accuracy), 0) / nonDrillHistory.length;
+            if (sortedHistory.length > 0) {
+                const maxWPM = Math.max(...sortedHistory.map(h => h.wpm));
+                const avgAcc = sortedHistory.reduce((acc, h) => acc + parseFloat(h.accuracy), 0) / sortedHistory.length;
                 setStats({
                     maxWPM,
                     avgAccuracy: avgAcc.toFixed(1),
-                    totalTests: nonDrillHistory.length
+                    totalTests: sortedHistory.length
                 });
-                const last10 = nonDrillHistory.slice(-10);
+                const last10 = sortedHistory.slice(-10);
                 setRecentHistory(last10);
                 setRecentWPMs(last10.map(h => h.wpm));
             }
@@ -89,8 +91,9 @@ export default function Dashboard() {
                         });
                     }
                     if (data.recentHistory) {
-                        setRecentHistory(data.recentHistory);
-                        setRecentWPMs(data.recentHistory.map(h => h.wpm));
+                        const sorted = [...data.recentHistory].sort((a, b) => (a.date || a.timestamp || 0) - (b.date || b.timestamp || 0));
+                        setRecentHistory(sorted);
+                        setRecentWPMs(sorted.map(h => h.wpm));
                     }
                 }
             } catch (err) {
@@ -125,8 +128,9 @@ export default function Dashboard() {
                             });
                         }
                         if (data.recentHistory) {
-                            setRecentHistory(data.recentHistory);
-                            setRecentWPMs(data.recentHistory.map(h => h.wpm));
+                            const sorted = [...data.recentHistory].sort((a, b) => (a.date || a.timestamp || 0) - (b.date || b.timestamp || 0));
+                            setRecentHistory(sorted);
+                            setRecentWPMs(sorted.map(h => h.wpm));
                         }
                     }
                 });
@@ -284,25 +288,35 @@ export default function Dashboard() {
         navigate('/solo', { state: { text: drillText } });
     };
 
-    // Graph Logic Fix — no demo data; show empty state for new users
-    const displayHistory = recentHistory.length > 0 ? [...recentHistory].reverse() : [];
-    const graphWPMs = displayHistory.map(h => h.wpm);
+    const displayHistory = recentHistory;
+    const maxRecentWPM = Math.max(...displayHistory.map(h => h.wpm), 100);
 
-    const maxRecentWPM = Math.max(...graphWPMs, 100);
-    const points = graphWPMs.map((wpm, i) => ({
-        x: graphWPMs.length > 1 ? (i / (graphWPMs.length - 1)) * 1000 : 500,
-        y: 250 - (wpm / maxRecentWPM) * 200 - 25,
-        wpm: wpm,
-        acc: displayHistory[i] ? parseFloat(displayHistory[i].accuracy).toFixed(1) : 0
-    }));
+    const soloHistory = displayHistory.filter(h => h.mode === 'solo' || !h.mode);
+    const multiHistory = displayHistory.filter(h => h.mode === 'multiplayer');
+    const dailyHistory = displayHistory.filter(h => h.mode === 'daily');
 
-    const pathD = points.length >= 2 
-        ? `M${points[0].x},${points[0].y} ${points.slice(1).map(p => `L${p.x},${p.y}`).join(' ')}`
+    const getPoints = (history) => {
+        const wpms = history.map(h => h.wpm);
+        return wpms.map((wpm, i) => ({
+            x: wpms.length > 1 ? (i / (wpms.length - 1)) * 1000 : 500,
+            y: 250 - (wpm / maxRecentWPM) * 200 - 25,
+            wpm: wpm,
+            acc: history[i] ? parseFloat(history[i].accuracy).toFixed(1) : 0,
+            mode: history[i]?.mode || 'solo'
+        }));
+    };
+
+    const soloPoints = getPoints(soloHistory);
+    const multiPoints = getPoints(multiHistory);
+    const dailyPoints = getPoints(dailyHistory);
+
+    const getPathD = (pts) => pts.length >= 2 
+        ? `M${pts[0].x},${pts[0].y} ${pts.slice(1).map(p => `L${p.x},${p.y}`).join(' ')}`
         : "";
 
-    const fillD = points.length >= 2
-        ? `${pathD} V250 H${points[0].x} Z`
-        : "";
+    const soloPathD = getPathD(soloPoints);
+    const multiPathD = getPathD(multiPoints);
+    const dailyPathD = getPathD(dailyPoints);
     return (
         <div className="layout-container flex h-full grow flex-col">
             <Navbar />
@@ -413,13 +427,13 @@ export default function Dashboard() {
                             </div>
                             <div className="flex gap-2">
                                 <span className="flex items-center gap-1 text-xs font-medium text-primary">
-                                    <span className="h-2 w-2 rounded-full bg-primary"></span> Current Trend
+                                    <span className="h-2 w-2 rounded-full bg-primary"></span> Performance Graph
                                 </span>
                             </div>
                         </div>
                         <div className="w-full pt-12 px-6 pb-6 overflow-visible">
                             <div className="h-[250px] w-full relative overflow-visible">
-                                {points.length < 2 ? (
+                                {displayHistory.length < 2 ? (
                                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/40 rounded-xl border border-dashed border-white/10">
                                         <Zap className="w-8 h-8 text-primary/40 mb-2 animate-pulse" />
                                         <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Play more games to see your trend</p>
@@ -427,30 +441,42 @@ export default function Dashboard() {
                                 ) : (
                                     <>
                                     <svg className="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 1000 250">
-                                        <defs>
-                                            <linearGradient id="glowGradient" x1="0" x2="0" y1="0" y2="1">
-                                                <stop offset="0%" stopColor="#00f5d4" stopOpacity="0.3"></stop>
-                                                <stop offset="100%" stopColor="#00f5d4" stopOpacity="0"></stop>
-                                            </linearGradient>
-                                        </defs>
-                                        <path d={fillD} fill="url(#glowGradient)"></path>
-                                        <path className="chart-glow" d={pathD} fill="none" stroke="#00f5d4" strokeLinecap="round" strokeWidth="4"></path>
-                                        {/* Points */}
-                                        {points.map((p, i) => (
+                                        <path d={soloPathD} fill="none" stroke="#00f5d4" strokeWidth="3" strokeLinecap="round" />
+                                        <path d={multiPathD} fill="none" stroke="#a855f7" strokeWidth="3" strokeLinecap="round" />
+                                        <path d={dailyPathD} fill="none" stroke="#f59e0b" strokeWidth="3" strokeLinecap="round" />
+                                        
+                                        {/* Solo Points */}
+                                        {soloPoints.map((p, i) => (
                                             <circle 
-                                                key={i} 
-                                                cx={p.x} 
-                                                cy={p.y} 
-                                                fill="#00f5d4" 
-                                                r="6" 
+                                                key={`solo-${i}`} cx={p.x} cy={p.y} fill="#00f5d4" r="5" 
                                                 className="drop-shadow-[0_0_8px_rgba(0,245,212,0.8)] cursor-pointer transition-all duration-300 transform-gpu hover:scale-150 origin-center"
                                                 style={{ transformOrigin: `${p.x}px ${p.y}px` }}
                                                 onMouseEnter={() => setHoveredDataPoint({ ...p, index: i + 1 })}
                                                 onMouseLeave={() => setHoveredDataPoint(null)}
-                                            ></circle>
+                                            />
                                         ))}
 
-                                        {/* Dynamic Tooltip */}
+                                        {/* Multi Points */}
+                                        {multiPoints.map((p, i) => (
+                                            <circle 
+                                                key={`multi-${i}`} cx={p.x} cy={p.y} fill="#a855f7" r="5" 
+                                                className="drop-shadow-[0_0_8px_rgba(168,85,247,0.8)] cursor-pointer transition-all duration-300 transform-gpu hover:scale-150 origin-center"
+                                                style={{ transformOrigin: `${p.x}px ${p.y}px` }}
+                                                onMouseEnter={() => setHoveredDataPoint({ ...p, index: i + 1 })}
+                                                onMouseLeave={() => setHoveredDataPoint(null)}
+                                            />
+                                        ))}
+
+                                        {/* Daily Points */}
+                                        {dailyPoints.map((p, i) => (
+                                            <circle 
+                                                key={`daily-${i}`} cx={p.x} cy={p.y} fill="#f59e0b" r="5" 
+                                                className="drop-shadow-[0_0_8px_rgba(245,158,11,0.8)] cursor-pointer transition-all duration-300 transform-gpu hover:scale-150 origin-center"
+                                                style={{ transformOrigin: `${p.x}px ${p.y}px` }}
+                                                onMouseEnter={() => setHoveredDataPoint({ ...p, index: i + 1 })}
+                                                onMouseLeave={() => setHoveredDataPoint(null)}
+                                            />
+                                        ))}
                                     </svg>
                                     {hoveredDataPoint && (
                                         <div
@@ -463,16 +489,22 @@ export default function Dashboard() {
                                                 top: `${(hoveredDataPoint.y / 250) * 100}%`
                                             }}
                                         >
-                                            <div className="bg-slate-900 border border-primary text-white text-xs font-mono font-bold px-4 py-2 rounded-lg shadow-2xl whitespace-nowrap">
-                                                Run {hoveredDataPoint.index} | WPM: {hoveredDataPoint.wpm} | Acc: {hoveredDataPoint.acc}%
+                                            <div className="bg-slate-900 border border-primary text-white text-[10px] font-mono font-bold px-4 py-2 rounded-lg shadow-2xl whitespace-nowrap">
+                                                <span className="text-primary">{hoveredDataPoint.mode.toUpperCase()}</span> | Run {hoveredDataPoint.index} | WPM: {hoveredDataPoint.wpm} | Acc: {hoveredDataPoint.acc}%
                                             </div>
                                         </div>
                                     )}
 
-                                    <div className="absolute -bottom-6 left-0 w-full flex justify-between text-[10px] text-slate-500 px-1 font-mono">
-                                        {points.map((_, i) => (
-                                            <span key={i}>Run {i + 1}</span>
-                                        ))}
+                                    <div className="absolute -bottom-10 left-0 w-full flex justify-center gap-6">
+                                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                                            <div className="w-2 h-2 rounded-full bg-[#00f5d4]"></div> Solo Mode
+                                        </div>
+                                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                                            <div className="w-2 h-2 rounded-full bg-[#a855f7]"></div> Multiplayer
+                                        </div>
+                                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                                            <div className="w-2 h-2 rounded-full bg-[#f59e0b]"></div> Daily Challenge
+                                        </div>
                                     </div>
                                 </>
                             )}

@@ -5,6 +5,10 @@ import SoloMode from './pages/SoloMode';
 import Multiplayer from './pages/Multiplayer';
 import GhostVault from './pages/GhostVault';
 import TrainingAcademy from './pages/TrainingAcademy';
+import DailyChallenge from './pages/DailyChallenge';
+import Achievements from './pages/Achievements';
+
+import RouteGuard from './components/RouteGuard';
 
 function App() {
   return (
@@ -14,8 +18,10 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/solo" element={<SoloMode />} />
           <Route path="/multiplayer" element={<Multiplayer />} />
-          <Route path="/vault" element={<GhostVault />} />
-          <Route path="/academy" element={<TrainingAcademy />} />
+          <Route path="/vault" element={<RouteGuard><GhostVault /></RouteGuard>} />
+          <Route path="/academy" element={<RouteGuard><TrainingAcademy /></RouteGuard>} />
+          <Route path="/daily" element={<DailyChallenge />} />
+          <Route path="/achievements" element={<Achievements />} />
         </Routes>
       </div>
     </BrowserRouter>

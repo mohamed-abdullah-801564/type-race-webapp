@@ -64,6 +64,29 @@ const CODE_SNIPPETS = [
     }
 ];
 
+const DAILY_CHALLENGE_POOL = [
+    "The future of programming lies in the harmonious integration of human creativity and machine intelligence. As we develop more advanced algorithms, we must remember that the core of every great application is the intent of its creator. Coding is not just about syntax; it is about solving problems that matter to real people. Every line of code we write has the potential to simplify a task, connect a community, or even save a life. Let us build digital tools that empower and inspire the next generation of innovators.",
+    "In the rapidly evolving landscape of cybersecurity, resilience is more than just a defensive strategy. It is a mindset that anticipates failure and prepares for recovery at every level of the system architecture. We must move beyond simple perimeter defenses and embrace a zero-trust model that verifies every connection and every user. In a world where data is the most valuable currency, protecting it is our highest responsibility. True security is achieved through continuous vigilance, robust encryption, and a commitment to transparency in all our virtual operations.",
+    "Artificial intelligence is not a replacement for human thought, but a powerful catalyst for its expansion. By automating the mundane and the repetitive, AI allows us to focus our energy on the truly complex and the profoundly creative. We are entering an era where the boundaries between the physical and the digital are increasingly blurred, demanding a new ethical framework for technological development. We must ensure that these powerful tools are used to reduce inequality and enhance the common good. Innovation should always be guided by empathy and a vision for progress.",
+    "The architecture of a successful software system is built on the foundation of clean, modular, and maintainable code. Technical debt may offer a short-term speed boost, but it inevitably leads to a long-term paralysis of growth and innovation. Effective engineers understand that code is read far more often than it is written, making clarity our primary objective. We should strive to build systems that are flexible enough to evolve with changing requirements while remaining robust enough to handle unexpected failures. Excellence in engineering is a journey of constant learning and refinement.",
+    "Data is the lifeblood of the modern enterprise, but raw information only gains value when it is transformed into actionable knowledge. Through the lens of advanced analytics, we can identify hidden trends and make predictions that drive strategic growth. However, with this power comes a significant ethical obligation to respect user privacy and ensure data integrity at every stage. We must build data systems that are not only efficient but also transparent and fair. In a data-driven world, trust is the most critical asset we must protect and nurture.",
+    "Cloud computing has fundamentally democratized access to high-performance infrastructure, enabling startups to compete with established giants on a global scale. By abstracting away the complexities of hardware management, the cloud allows developers to focus entirely on building great products. However, as we move more of our lives into the virtual sphere, we must be mindful of the environmental and social impacts of our digital footprint. Sustainability should be a core design principle for every modern application. Let us build a digital future that is both powerful and responsible.",
+    "Open source software is the ultimate testament to the power of global collaboration and the free exchange of ideas. By sharing our work with the world, we enable others to learn, build, and innovate in ways we could never have imagined alone. This collective intelligence has built the very foundations of the modern internet, proving that cooperation is more effective than competition. We must continue to support and contribute to the communities that make this possible. Together, we can solve the world's most difficult problems through the simple act of sharing.",
+    "User experience design is the bridge between complex technology and the people who use it every day. A great interface is invisible, allowing the user to achieve their goals with minimal effort and maximum delight. We must prioritize accessibility and inclusivity, ensuring that our digital tools are usable by everyone, regardless of their background or ability. Empathy is the most important tool in a designer's toolkit, allowing us to see the world through the eyes of our users. Let us create technology that feels human, intuitive, and truly helpful.",
+    "The advent of blockchain technology has introduced a new paradigm for trust and decentralization in the digital world. By enabling peer-to-peer transactions without the need for traditional intermediaries, we can build more transparent and resilient systems. However, the path to mainstream adoption is paved with significant technical and regulatory challenges that we must navigate with care. We should focus on creating real-world value and solving practical problems rather than chasing hype. In a decentralized future, every individual should have the power to control their own digital identity and assets.",
+    "The internet of things is connecting billions of devices, creating a vast and intricate web of intelligence that spans the entire globe. From smart homes to industrial automation, these connected systems are making our lives more efficient and our industries more productive. However, the massive scale of these networks introduces unprecedented security and privacy risks that we must address proactively. We must design for security from the very beginning, ensuring that every connected device is a reliable and safe node in the network. The future is connected, and we must make it secure."
+];
+
+const getDailyChallenge = () => {
+    const dateString = new Date().toISOString().split('T')[0];
+    const index = dateString.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) % DAILY_CHALLENGE_POOL.length;
+    return {
+        text: DAILY_CHALLENGE_POOL[index],
+        date: dateString,
+        index: index
+    };
+};
+
 // In-memory state to track rooms and players
 const rooms = {};
 
@@ -223,6 +246,11 @@ const endRace = (roomId) => {
         const pool = source.filter(q => q.difficulty === diff);
         const selected = pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : source[0];
         if (callback) callback({ success: true, text: selected.text });
+    });
+
+    // Provide the Daily Challenge
+    socket.on('getDailyChallenge', (callback) => {
+        if (callback) callback({ success: true, ...getDailyChallenge() });
     });
 
     // Handle player finishing the race

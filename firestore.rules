@@ -19,5 +19,11 @@ service cloud.firestore {
       allow create: if request.auth != null;
       allow update, delete: if false;
     }
+
+    // Daily scores collection rule
+    match /daily_scores/{date}/scores/{uid} {
+        allow read: if true;
+        allow write: if request.auth != null && request.auth.uid == uid;
+    }
   }
 }
