@@ -23,6 +23,7 @@ import {
     Trophy
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
+import MobileBanner from '../components/MobileBanner';
 import { auth, db } from '../firebase';
 import { doc, onSnapshot, getDoc } from 'firebase/firestore';
 import { loadData, saveData } from '../utils/storageUtils';
@@ -426,15 +427,16 @@ export default function SoloMode() {
 
     return (
         <div className="min-h-screen bg-background-dark text-slate-300 font-sans selection:bg-primary/30 selection:text-primary flex flex-col overflow-hidden relative">
+            <MobileBanner />
             {/* Scanline Effect */}
-            <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%] z-50" />
+            <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-size-[100%_2px,3px_100%] z-50" />
             
             <Navbar isFaded={isFocusMode} />
 
             <main className="flex-1 flex flex-col relative z-10 transition-all duration-500">
                 {showConfig ? (
                     <div className="flex-1 flex items-center justify-center p-6 animate-in fade-in zoom-in duration-500">
-                        <div className="max-w-2xl w-full bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-10 shadow-2xl relative overflow-hidden group">
+                        <div className="max-w-2xl w-full bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-6 md:p-10 shadow-2xl relative overflow-hidden group">
                            <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
                                 <Terminal className="w-32 h-32 text-primary" />
                            </div>
@@ -450,7 +452,7 @@ export default function SoloMode() {
                            <div className="space-y-10">
                                 <div>
                                     <label className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-4 block">Data Stream Source</label>
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <button 
                                             onClick={() => setStream('prose')}
                                             className={`flex items-center gap-4 p-5 rounded-2xl border-2 transition-all ${stream === 'prose' ? 'bg-primary/20 border-primary shadow-[0_0_20px_rgba(0,245,212,0.2)] text-white' : 'bg-white/5 border-transparent text-slate-500 hover:border-white/20'}`}
@@ -486,7 +488,7 @@ export default function SoloMode() {
                                                 <button 
                                                     key={d}
                                                     onClick={() => setDuration(d)}
-                                                    className={`flex-1 py-4 rounded-xl border-2 font-black text-lg transition-all ${duration === d ? 'bg-primary text-black border-primary shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-white/5 border-transparent text-slate-500 hover:border-white/20'}`}
+                                                    className={`flex-1 py-3 md:py-4 rounded-xl border-2 font-black text-lg transition-all ${duration === d ? 'bg-primary text-black border-primary shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-white/5 border-transparent text-slate-500 hover:border-white/20'}`}
                                                 >
                                                     {d}
                                                 </button>
@@ -500,13 +502,13 @@ export default function SoloMode() {
                                     <div className="flex gap-4">
                                         <button
                                             onClick={() => setMode('time')}
-                                            className={`flex-1 py-4 rounded-xl border-2 font-black text-sm transition-all ${mode === 'time' ? 'bg-primary text-black border-primary shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-white/5 border-transparent text-slate-500 hover:border-white/20'}`}
+                                            className={`flex-1 py-3 md:py-4 rounded-xl border-2 font-black text-sm transition-all ${mode === 'time' ? 'bg-primary text-black border-primary shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-white/5 border-transparent text-slate-500 hover:border-white/20'}`}
                                         >
                                             Time Based
                                         </button>
                                         <button
                                             onClick={() => setMode('length')}
-                                            className={`flex-1 py-4 rounded-xl border-2 font-black text-sm transition-all ${mode === 'length' ? 'bg-primary text-black border-primary shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-white/5 border-transparent text-slate-500 hover:border-white/20'}`}
+                                            className={`flex-1 py-3 md:py-4 rounded-xl border-2 font-black text-sm transition-all ${mode === 'length' ? 'bg-primary text-black border-primary shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-white/5 border-transparent text-slate-500 hover:border-white/20'}`}
                                         >
                                             Length Based
                                         </button>
@@ -517,7 +519,7 @@ export default function SoloMode() {
                                                 <button
                                                     key={l}
                                                     onClick={() => setTargetLines(l)}
-                                                    className={`flex-1 py-4 rounded-xl border-2 font-black text-lg transition-all ${targetLines === l ? 'bg-primary text-black border-primary shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-white/5 border-transparent text-slate-500 hover:border-white/20'}`}
+                                                    className={`flex-1 py-3 md:py-4 rounded-xl border-2 font-black text-lg transition-all ${targetLines === l ? 'bg-primary text-black border-primary shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-white/5 border-transparent text-slate-500 hover:border-white/20'}`}
                                                 >
                                                     {l}
                                                 </button>
@@ -550,9 +552,9 @@ export default function SoloMode() {
                                 <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-1">
                                     {location.state?.isAcademy ? `TRAINING PROTOCOL: ${location.state.academyTitle}` : 'Temporal Node'}
                                 </span>
-                                <div className="text-7xl font-black text-white font-mono leading-none flex items-baseline gap-2">
+                                <div className="text-4xl md:text-7xl font-black text-white font-mono leading-none flex items-baseline gap-2">
                                     {status === 'finished' ? finalWPM : (mode === 'length' ? elapsedTime : timeLeft)}
-                                    <span className={`text-xl uppercase font-sans tracking-widest ${status === 'finished' ? 'text-primary/40' : mode === 'length' ? 'text-primary' : 'text-primary/40'}`}>
+                                    <span className={`text-sm md:text-xl uppercase font-sans tracking-widest ${status === 'finished' ? 'text-primary/40' : mode === 'length' ? 'text-primary' : 'text-primary/40'}`}>
                                         {status === 'finished' ? 'WPM' : mode === 'length' ? 'Sec Elapsed' : 'Sec'}
                                     </span>
                                 </div>
@@ -560,7 +562,7 @@ export default function SoloMode() {
                             
                             <div className="flex flex-col items-end">
                                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-1">Neural Precision</span>
-                                <div className="text-5xl font-bold text-slate-200 font-mono leading-none">
+                                <div className="text-3xl md:text-5xl font-bold text-slate-200 font-mono leading-none">
                                     {calculateAccuracy()}<span className="text-xl opacity-30">%</span>
                                 </div>
                             </div>
@@ -569,7 +571,7 @@ export default function SoloMode() {
                         {/* Centered Typing Interface */}
                         <div className="flex-1 flex flex-col items-center justify-center mb-24 relative">
                             <div 
-                                className={`w-full max-w-4xl p-12 bg-white/[0.02] border border-white/5 rounded-[40px] shadow-2xl relative transition-all duration-500 ${status === 'typing' ? 'scale-[1.05] bg-white/[0.05] border-primary/20 shadow-[0_0_50px_rgba(0,0,0,0.5)]' : ''}`}
+                                className={`w-full max-w-4xl p-4 md:p-12 bg-white/2 border border-white/5 rounded-2xl md:rounded-[40px] shadow-2xl relative transition-all duration-500 ${status === 'typing' ? 'scale-[1.05] bg-white/5 border-primary/20 shadow-[0_0_50px_rgba(0,0,0,0.5)]' : ''}`}
                                 onClick={() => inputRef.current?.focus()}
                             >
                                 <input
@@ -581,7 +583,7 @@ export default function SoloMode() {
                                     className="absolute opacity-0 pointer-events-none"
                                 />
 
-                                <div className="text-2xl font-mono leading-relaxed select-none relative z-10 tracking-tight">
+                                <div className="text-base md:text-2xl font-mono leading-relaxed select-none relative z-10 tracking-tight">
                                     {text.split('').map((char, index) => {
                                         let colorClass = "text-slate-600";
                                         if (index < userInput.length) {
@@ -605,12 +607,12 @@ export default function SoloMode() {
                                 </div>
 
                                 {status === 'waiting' && (
-                                    <div className="absolute inset-0 flex items-center justify-center bg-background-dark/40 backdrop-blur-[2px] rounded-[40px] pointer-events-none">
+                                    <div className="absolute inset-0 flex items-center justify-center bg-background-dark/40 backdrop-blur-[2px] rounded-2xl md:rounded-[40px] pointer-events-none">
                                         <div className="flex flex-col items-center gap-4 animate-pulse">
                                             <div className="flex items-center gap-8 text-primary/30">
-                                                <div className="h-px w-24 bg-gradient-to-r from-transparent to-primary/20" />
+                                                <div className="h-px w-24 bg-linear-to-r from-transparent to-primary/20" />
                                                 <Activity className="w-8 h-8" />
-                                                <div className="h-px w-24 bg-gradient-to-l from-transparent to-primary/20" />
+                                                <div className="h-px w-24 bg-linear-to-l from-transparent to-primary/20" />
                                             </div>
                                             <span className="text-[10px] font-black uppercase tracking-[0.5em] text-white/30">Initiate Input Sequence</span>
                                         </div>
@@ -698,10 +700,10 @@ export default function SoloMode() {
                             )}
 
                             {status === 'finished' && !isFailed && (
-                                <div className="mt-12 flex gap-4 animate-in slide-in-from-bottom-6 duration-500">
+                                <div className="mt-12 flex flex-col md:flex-row gap-4 animate-in slide-in-from-bottom-6 duration-500">
                                     <button 
                                         onClick={resetTest}
-                                        className="flex items-center gap-3 px-10 py-5 bg-primary text-black rounded-2xl font-black uppercase tracking-widest text-xs hover:scale-105 transition-all shadow-[0_0_20px_rgba(0,245,212,0.3)]"
+                                        className="w-full md:w-auto flex items-center gap-3 px-10 py-5 bg-primary text-black rounded-2xl font-black uppercase tracking-widest text-xs hover:scale-105 transition-all shadow-[0_0_20px_rgba(0,245,212,0.3)]"
                                     >
                                         <RotateCcw className="w-5 h-5" />
                                         Reboot Grid
@@ -709,7 +711,7 @@ export default function SoloMode() {
                                     {location.state?.isAcademy ? (
                                         <button 
                                             onClick={() => navigate('/academy')}
-                                            className="flex items-center gap-3 px-10 py-5 bg-primary/20 border border-primary/20 text-primary rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-primary/30 transition-all"
+                                            className="w-full md:w-auto flex items-center gap-3 px-10 py-5 bg-primary/20 border border-primary/20 text-primary rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-primary/30 transition-all"
                                         >
                                             <ChevronRight className="w-5 h-5" />
                                             Return to Academy
@@ -717,7 +719,7 @@ export default function SoloMode() {
                                     ) : (
                                         <button 
                                             onClick={() => setShowConfig(true)}
-                                            className="flex items-center gap-3 px-10 py-5 bg-white/5 border border-white/10 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-white/10 transition-all"
+                                            className="w-full md:w-auto flex items-center gap-3 px-10 py-5 bg-white/5 border border-white/10 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-white/10 transition-all"
                                         >
                                             <Settings className="w-5 h-5" />
                                             Adjust Params
@@ -727,7 +729,7 @@ export default function SoloMode() {
                             )}
 
                             {!location.state?.isAcademy && status === 'finished' && getTopErrors().length > 0 && (
-                                <div className="mt-8 bg-white/[0.03] border border-white/10 rounded-3xl p-8 w-full max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <div className="mt-8 bg-white/3 border border-white/10 rounded-3xl p-8 w-full max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
                                     <div className="flex items-center gap-3 mb-6">
                                         <BarChart2 className="w-4 h-4 text-primary" />
                                         <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Neural Weak Point Analysis</span>

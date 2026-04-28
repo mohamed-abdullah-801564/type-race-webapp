@@ -121,11 +121,11 @@ export default function GhostVault() {
             <Navbar />
             
             {/* Terminal Background Effect */}
-            <div className="fixed inset-0 pointer-events-none opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%] z-0" />
+            <div className="fixed inset-0 pointer-events-none opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-size-[100%_2px,3px_100%] z-0" />
 
-            <main className="flex-1 px-8 py-12 lg:px-24 z-10 relative">
+            <main className="flex-1 px-4 md:px-8 lg:px-24 py-12 z-10 relative">
                 {/* Header Section */}
-                <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-8">
+                <div className="flex flex-col md:flex-row items-start justify-between gap-6 md:gap-8 mb-12 overflow-hidden">
                     <div className="space-y-2">
                         <div className="flex items-center gap-2 mb-4">
                             <div className="bg-primary/20 p-2 rounded-lg border border-primary/30">
@@ -133,11 +133,11 @@ export default function GhostVault() {
                             </div>
                             <span className="text-xs font-black text-primary uppercase tracking-[0.4em]">Subsystem: GHOST_VAULT v4.1</span>
                         </div>
-                        <h1 className="text-5xl font-black text-white italic tracking-tighter uppercase whitespace-nowrap">Neural Capture <span className="text-primary tracking-normal not-italic underline decoration-primary/30 decoration-8 underline-offset-4">Archive</span></h1>
-                        <p className="text-slate-500 font-medium max-w-xl uppercase text-[10px] tracking-[0.2em]">Established link with the distributed ghost network. Browsing encrypted keystroke recordings from the local grid and global nexus.</p>
+                        <h1 className="text-3xl md:text-5xl font-black text-white italic tracking-tighter uppercase whitespace-nowrap">Neural Capture <span className="text-primary tracking-normal not-italic underline decoration-primary/30 decoration-8 underline-offset-4">Archive</span></h1>
+                        <p className="text-slate-500 font-medium max-w-xl uppercase text-[8px] md:text-[10px] tracking-[0.2em] break-words">Established link with the distributed ghost network. Browsing encrypted keystroke recordings from the local grid and global nexus.</p>
                     </div>
 
-                    <div className="flex bg-slate-900/80 backdrop-blur-xl p-1.5 rounded-2xl border border-white/5 shadow-2xl">
+                    <div className="flex bg-slate-900/80 backdrop-blur-xl p-1.5 rounded-2xl border border-white/5 shadow-2xl shrink-0">
                         <button 
                             onClick={() => setActiveTab('private')}
                             className={`flex items-center gap-3 px-8 py-4 rounded-xl transition-all duration-500 font-black text-[10px] uppercase tracking-widest ${activeTab === 'private' ? 'bg-primary text-background-dark shadow-[0_0_20px_rgba(0,245,212,0.3)]' : 'text-slate-500 hover:text-slate-300'}`}
@@ -154,8 +154,8 @@ export default function GhostVault() {
                 </div>
 
                 {/* Dashboard Stats Row */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-12">
-                    <div className="bg-white/[0.02] border border-white/5 p-4 rounded-xl flex items-center gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+                    <div className="bg-white/2 border border-white/5 p-4 rounded-xl flex items-center gap-4">
                         <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
                             <Activity className="w-5 h-5" />
                         </div>
@@ -164,7 +164,7 @@ export default function GhostVault() {
                             <span className="text-lg font-bold text-white font-mono">{privateGhosts.length + globalGhosts.length}</span>
                         </div>
                     </div>
-                    <div className="bg-white/[0.02] border border-white/5 p-4 rounded-xl flex items-center gap-4">
+                    <div className="bg-white/2 border border-white/5 p-4 rounded-xl flex items-center gap-4">
                         <div className="w-10 h-10 rounded-lg bg-cyan-500/10 flex items-center justify-center text-cyan-400 border border-cyan-500/20">
                             <Cpu className="w-5 h-5" />
                         </div>
@@ -183,7 +183,7 @@ export default function GhostVault() {
                     </div>
                 ) : (
                     <>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                             {(activeTab === 'private' ? privateGhosts : globalGhosts).map((ghost, index) => (
                                 <div key={ghost.id} className="animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: `${index * 50}ms` }}>
                                     <GhostCard ghost={ghost} type={activeTab} />

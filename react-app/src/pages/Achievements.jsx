@@ -27,11 +27,11 @@ export default function Achievements() {
     return (
         <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-primary/30 relative">
             {/* Background Scanline Effect */}
-            <div className="fixed inset-0 opacity-[0.03] pointer-events-none z-50 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]" />
+            <div className="fixed inset-0 opacity-[0.03] pointer-events-none z-50 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-size-[100%_2px,3px_100%]" />
             
             <Navbar />
 
-            <main className="max-w-7xl mx-auto px-6 py-16 relative">
+            <main className="max-w-7xl mx-auto px-4 md:px-8 lg:px-20 py-16 relative">
                 {/* Header Section */}
                 <div className="flex flex-col items-center text-center mb-20">
                     <div className="relative mb-6">

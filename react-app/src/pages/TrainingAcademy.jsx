@@ -81,13 +81,13 @@ export default function TrainingAcademy() {
     return (
         <div className="min-h-screen bg-background-dark text-slate-300 font-sans selection:bg-primary/30 selection:text-primary flex flex-col relative overflow-hidden">
             {/* Cyber Scanline Effect */}
-            <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%] z-50" />
+            <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-size-[100%_2px,3px_100%] z-50" />
             
             <Navbar />
 
-            <main className="flex-1 flex overflow-hidden relative z-10">
+            <main className="flex-1 flex flex-col md:flex-row overflow-hidden relative z-10">
                 {/* Sidebar: Progressive Curriculum */}
-                <div className="w-[380px] border-r border-white/5 bg-black/20 flex flex-col pt-12">
+                <div className="md:w-[380px] w-full border-r border-white/5 bg-black/20 flex flex-col pt-12">
                     <div className="px-8 mb-8 text-left">
                         <div className="flex items-center gap-2 mb-2">
                              <GraduationCap className="w-4 h-4 text-primary" />
@@ -182,6 +182,14 @@ export default function TrainingAcademy() {
                 {/* Dashboard: Module Detail */}
                 <div className="flex-1 bg-black/40 flex flex-col p-12 lg:p-24 overflow-y-auto">
                     <div className="max-w-4xl w-full mx-auto animate-in fade-in slide-in-from-right-12 duration-700">
+                        {selectedModule && (
+                            <button
+                                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                                className="md:hidden mb-6 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-300 font-bold uppercase tracking-widest text-[10px] hover:text-primary hover:border-primary/30 transition-all"
+                            >
+                                Back to Curriculum
+                            </button>
+                        )}
                         {/* Meta Info */}
                         <div className="flex items-center gap-4 mb-14">
                             <div className={`flex items-center gap-2 px-4 py-1.5 border rounded-full ${
@@ -205,7 +213,7 @@ export default function TrainingAcademy() {
 
                         {/* Heading */}
                         <div className="relative mb-16">
-                            <div className="absolute -left-12 top-0 bottom-0 w-1 bg-gradient-to-b from-primary to-transparent" />
+                            <div className="absolute -left-12 top-0 bottom-0 w-1 bg-linear-to-b from-primary to-transparent" />
                             <h1 className="text-6xl lg:text-7xl font-black text-white uppercase tracking-tighter italic mb-6">
                                 {selectedModule.title}
                             </h1>
@@ -216,7 +224,7 @@ export default function TrainingAcademy() {
 
                         {/* Specs Grid */}
                         <div className="grid grid-cols-2 gap-8 mb-16">
-                            <div className="bg-white/[0.02] border border-white/5 rounded-[32px] p-10 group hover:border-primary/20 transition-all">
+                            <div className="bg-white/2 border border-white/5 rounded-[32px] p-10 group hover:border-primary/20 transition-all">
                                 <div className="flex items-center gap-3 mb-8">
                                     <Target className="w-5 h-5 text-primary opacity-40" />
                                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Protocol Targets</span>
@@ -244,7 +252,7 @@ export default function TrainingAcademy() {
                                 </div>
                             </div>
 
-                            <div className="bg-white/[0.02] border border-white/5 rounded-[32px] p-10 group hover:border-primary/20 transition-all">
+                            <div className="bg-white/2 border border-white/5 rounded-[32px] p-10 group hover:border-primary/20 transition-all">
                                 <div className="flex items-center gap-3 mb-8">
                                     <Shield className="w-5 h-5 text-primary opacity-40" />
                                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Complexity Level</span>
@@ -269,7 +277,7 @@ export default function TrainingAcademy() {
                         </div>
 
                         {/* Preview */}
-                        <div className="bg-white/[0.03] border border-white/5 rounded-[32px] p-10 mb-12 relative overflow-hidden group">
+                        <div className="bg-white/3 border border-white/5 rounded-[32px] p-10 mb-12 relative overflow-hidden group">
                             <div className="absolute top-0 right-0 p-6">
                                 <Terminal className="w-5 h-5 text-white/5 group-hover:text-primary/20 transition-colors" />
                             </div>
@@ -288,7 +296,7 @@ export default function TrainingAcademy() {
                                 : 'bg-primary shadow-primary/25'
                             }`}
                         >
-                            <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.15)_50%,transparent_75%)] bg-[length:250%_250%] animate-[shimmer_3s_infinite]" />
+                            <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.15)_50%,transparent_75%)] bg-size-[250%_250%] animate-[shimmer_3s_infinite]" />
                             <div className="relative z-10 flex items-center gap-8">
                                 <div className="w-16 h-16 rounded-2xl bg-background-dark flex items-center justify-center border border-white/10 group-hover:rotate-12 transition-transform duration-500">
                                     {selectedModule.isTest ? (
@@ -385,7 +393,7 @@ export default function TrainingAcademy() {
                                             : 'bg-primary shadow-primary/25'
                                         }`}
                                     >
-                                        <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.15)_50%,transparent_75%)] bg-[length:250%_250%] animate-[shimmer_3s_infinite]" />
+                                        <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.15)_50%,transparent_75%)] bg-size-[250%_250%] animate-[shimmer_3s_infinite]" />
                                         <span className="text-xl font-black text-background-dark uppercase italic tracking-tighter relative z-10">
                                             Begin Training
                                         </span>

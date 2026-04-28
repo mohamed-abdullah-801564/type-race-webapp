@@ -320,11 +320,11 @@ export default function Dashboard() {
         <div className="layout-container flex h-full grow flex-col">
             <Navbar />
 
-            <main className="flex-1 px-6 py-8 lg:px-20 space-y-8">
+            <main className="flex-1 px-4 md:px-6 py-8 lg:px-20 space-y-8">
                 {/* Guest Mode Banner */}
                 {!auth.currentUser && (
                     <div className="bg-amber-500/10 border border-amber-500/20 p-6 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden animate-in fade-in slide-in-from-top-4 duration-500">
-                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_0%,_rgba(245,158,11,0.05)_100%)] pointer-events-none" />
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(245,158,11,0.05)_100%)] pointer-events-none" />
                         <div className="flex items-center gap-4 relative z-10">
                             <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.2)]">
                                 <AlertTriangle className="w-6 h-6" />
@@ -344,7 +344,7 @@ export default function Dashboard() {
                 )}
                 {/* Rank Banner */}
                 {rankData && (
-                    <div className="bg-slate-900 border border-primary/20 p-6 rounded-2xl flex flex-col md:flex-row items-center gap-6 relative overflow-hidden shadow-[0_0_15px_rgba(0,245,212,0.1)] hover:shadow-[0_0_25px_rgba(0,245,212,0.2)] transition-shadow duration-300">
+                    <div className="bg-slate-900 border border-primary/20 p-6 rounded-2xl flex flex-col md:flex-row gap-4 items-center relative overflow-hidden shadow-[0_0_15px_rgba(0,245,212,0.1)] hover:shadow-[0_0_25px_rgba(0,245,212,0.2)] transition-shadow duration-300">
                         {/* Glow effect background */}
                         <div className="absolute -right-20 -top-20 w-64 h-64 rounded-full blur-3xl opacity-20 bg-current pointer-events-none text-primary" />
                         
@@ -375,7 +375,7 @@ export default function Dashboard() {
                                 <div className="text-2xl font-black text-white font-mono">{rankData.nextTierMax - rankData.score} <span className="text-sm text-slate-500">Points</span></div>
                                 <div className="w-full md:w-48 h-2 bg-black/50 rounded-full mt-2 overflow-hidden border border-primary/20 p-px">
                                     <div 
-                                        className="h-full bg-gradient-to-r from-primary to-emerald-400 drop-shadow-[0_0_10px_rgba(0,245,212,0.8)] rounded-full w-full max-w-full" 
+                                        className="h-full bg-linear-to-r from-primary to-emerald-400 drop-shadow-[0_0_10px_rgba(0,245,212,0.8)] rounded-full w-full max-w-full" 
                                         style={{ width: `${Math.min(100, (rankData.score / rankData.nextTierMax) * 100)}%` }}
                                     ></div>
                                 </div>
@@ -430,7 +430,8 @@ export default function Dashboard() {
                                 </span>
                             </div>
                         </div>
-                        <div className="w-full pt-12 px-6 pb-6 overflow-visible">
+                        <div className="w-full pt-12 px-6 pb-6 overflow-x-auto md:overflow-hidden">
+                            <div className="min-w-[700px] md:min-w-0 md:w-full">
                             <div className="h-[250px] w-full relative overflow-visible">
                                 {displayHistory.length < 2 ? (
                                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/40 rounded-xl border border-dashed border-white/10">
@@ -496,7 +497,7 @@ export default function Dashboard() {
 
                                     <div className="absolute -bottom-10 left-0 w-full flex justify-center gap-6">
                                         <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                                            <div className="w-2 h-2 rounded-full bg-[#00f5d4]"></div> Solo Mode
+                                            <div className="w-2 h-2 rounded-full bg-primary"></div> Solo Mode
                                         </div>
                                         <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                                             <div className="w-2 h-2 rounded-full bg-[#a855f7]"></div> Multiplayer
@@ -508,13 +509,14 @@ export default function Dashboard() {
                                 </>
                             )}
                             </div>
+                            </div>
                         </div>
                     </div>
 
                     {/* Weakest Keys Analytics */}
                     {/* Keyboard Heatmap Analytics */}
                     <div className="lg:col-span-3 bg-white dark:bg-primary/5 p-8 rounded-xl border border-slate-200 dark:border-primary/10">
-                        <div className="flex items-center justify-between mb-10">
+                        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-10">
                             <div className="flex items-center gap-4">
                                 <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
                                     <Keyboard className="w-6 h-6 text-primary" />
@@ -526,7 +528,7 @@ export default function Dashboard() {
                             </div>
                             <button
                                 onClick={handleStartDailyDrill}
-                                className="px-6 py-3 rounded-xl bg-primary/15 border border-primary/30 hover:bg-primary/25 hover:border-primary/50 shadow-[0_0_25px_rgba(0,245,212,0.18)] transition-all active:scale-95 flex flex-col items-center"
+                                className="w-full md:w-auto px-6 py-3 rounded-xl bg-primary/15 border border-primary/30 hover:bg-primary/25 hover:border-primary/50 shadow-[0_0_25px_rgba(0,245,212,0.18)] transition-all active:scale-95 flex flex-col items-center"
                             >
                                 <span className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary">
                                     <Zap className="w-4 h-4" />
@@ -539,7 +541,7 @@ export default function Dashboard() {
                                 )}
                             </button>
                             
-                            <div className="flex gap-4 items-center bg-black/20 p-3 rounded-xl border border-white/5">
+                            <div className="flex flex-wrap gap-2 items-center bg-black/20 p-3 rounded-xl border border-white/5">
                                 <div className="flex items-center gap-2">
                                     <div className="w-3 h-3 rounded-full bg-primary/40"></div>
                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">&lt;200ms</span>
@@ -555,45 +557,47 @@ export default function Dashboard() {
                             </div>
                         </div>
 
-                        <div className="flex flex-col gap-3 items-center pt-20 pb-10 overflow-visible">
-                            {KEYBOARD_ROWS.map((row, rowIndex) => (
-                                <div 
-                                    key={rowIndex} 
-                                    className={`flex gap-3 ${rowIndex === 1 ? 'ml-12' : rowIndex === 2 ? 'ml-24' : ''}`}
-                                >
-                                    {row.map(key => {
-                                        const data = performances[key];
-                                        return (
-                                            <div 
-                                                key={key}
-                                                onClick={() => handleKeyClick(key)}
-                                                className={`group relative w-16 h-16 rounded-xl border-2 flex flex-col items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer ${getKeyColor(data?.avg)} font-mono`}
-                                            >
-                                                <span className="text-xl font-black uppercase">{key}</span>
-                                                {data && (
-                                                    <span className="text-[8px] font-bold opacity-60">{Math.round(data.avg)}ms</span>
-                                                )}
-                                                
-                                                {/* Tooltip */}
-                                                <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 w-32 bg-slate-900 text-white p-3 rounded-xl border border-white/10 opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-50 shadow-2xl scale-75 group-hover:scale-100 origin-bottom">
-                                                    <div className="text-[10px] font-black text-primary uppercase mb-1 border-b border-primary/20 pb-1">Key Profile: {key}</div>
-                                                    <div className="space-y-1">
-                                                        <div className="flex justify-between text-[10px]">
-                                                            <span className="text-slate-400">Avg Latency</span>
-                                                            <span className="font-bold">{data ? Math.round(data.avg) : '--'}ms</span>
+                        <div className="pb-4">
+                            <div className="flex flex-col gap-1 md:gap-3 items-center pt-20 pb-10 overflow-visible min-w-max">
+                                {KEYBOARD_ROWS.map((row, rowIndex) => (
+                                    <div 
+                                        key={rowIndex} 
+                                        className={`flex gap-1 md:gap-3 ${rowIndex === 1 ? 'ml-4 md:ml-12' : rowIndex === 2 ? 'ml-8 md:ml-24' : ''}`}
+                                    >
+                                        {row.map(key => {
+                                            const data = performances[key];
+                                            return (
+                                                <div 
+                                                    key={key}
+                                                    onClick={() => handleKeyClick(key)}
+                                                    className={`group relative w-8 h-8 md:w-16 md:h-16 rounded-xl border-2 flex flex-col items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer ${getKeyColor(data?.avg)} font-mono`}
+                                                >
+                                                    <span className="text-xs md:text-xl font-black uppercase">{key}</span>
+                                                    {data && (
+                                                        <span className="text-[6px] md:text-[8px] font-bold opacity-60">{Math.round(data.avg)}ms</span>
+                                                    )}
+                                                    
+                                                    {/* Tooltip */}
+                                                    <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 w-32 bg-slate-900 text-white p-3 rounded-xl border border-white/10 opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-50 shadow-2xl scale-75 group-hover:scale-100 origin-bottom">
+                                                        <div className="text-[10px] font-black text-primary uppercase mb-1 border-b border-primary/20 pb-1">Key Profile: {key}</div>
+                                                        <div className="space-y-1">
+                                                            <div className="flex justify-between text-[10px]">
+                                                                <span className="text-slate-400">Avg Latency</span>
+                                                                <span className="font-bold">{data ? Math.round(data.avg) : '--'}ms</span>
+                                                            </div>
+                                                            <div className="flex justify-between text-[10px]">
+                                                                <span className="text-slate-400">Hits</span>
+                                                                <span className="font-bold">{data ? data.count : '0'}</span>
+                                                            </div>
                                                         </div>
-                                                        <div className="flex justify-between text-[10px]">
-                                                            <span className="text-slate-400">Hits</span>
-                                                            <span className="font-bold">{data ? data.count : '0'}</span>
-                                                        </div>
+                                                        <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-slate-900"></div>
                                                     </div>
-                                                    <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-slate-900"></div>
                                                 </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            ))}
+                                            );
+                                        })}
+                                    </div>
+                                ))}
+                            </div>
                         </div>
 
                         <div className="mt-10 flex justify-between items-center border-t border-white/5 pt-6">
@@ -629,8 +633,8 @@ export default function Dashboard() {
                                     <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-primary/50 uppercase">Rank</th>
                                     <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-primary/50 uppercase">Typist</th>
                                     <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-primary/50 uppercase">Max WPM</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-primary/50 uppercase">Avg Accuracy</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-primary/50 uppercase">Status</th>
+                                    <th className="hidden md:table-cell px-6 py-4 text-xs font-bold text-slate-500 dark:text-primary/50 uppercase">Avg Accuracy</th>
+                                    <th className="hidden md:table-cell px-6 py-4 text-xs font-bold text-slate-500 dark:text-primary/50 uppercase">Status</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-primary/5">
@@ -659,8 +663,8 @@ export default function Dashboard() {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 font-mono font-bold text-slate-900 dark:text-white">{item.wpm}</td>
-                                            <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{item.acc}%</td>
-                                            <td className="px-6 py-4">
+                                            <td className="hidden md:table-cell px-6 py-4 text-slate-600 dark:text-slate-400">{item.acc}%</td>
+                                            <td className="hidden md:table-cell px-6 py-4">
                                                 <span className="h-2 w-2 rounded-full bg-primary inline-block mr-2 animate-pulse"></span>
                                                 <span className="text-xs text-primary">Live</span>
                                             </td>
@@ -684,7 +688,7 @@ export default function Dashboard() {
 
             <footer className="border-t border-slate-200 dark:border-primary/10 px-6 py-8 lg:px-20 bg-white dark:bg-background-dark/80 mt-auto">
                 <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                    <p className="text-sm text-slate-500">© 2024 TypeMaster Studio. Keep typing at the speed of thought.</p>
+                    <p className="text-sm text-slate-500 text-center md:text-left">© 2024 TypeMaster Studio. Keep typing at the speed of thought.</p>
                     <div className="flex gap-6">
                         <a className="text-slate-400 hover:text-primary transition-colors" href="#"><AtSign className="w-6 h-6" /></a>
                         <a className="text-slate-400 hover:text-primary transition-colors" href="#"><Network className="w-6 h-6" /></a>

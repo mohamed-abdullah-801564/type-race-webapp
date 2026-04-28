@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { recordKeyLatency, isTrackableKey } from '../utils/heatmapUtils';
 import useToast from '../hooks/useToast';
 import ToastContainer from '../components/ToastContainer';
+import MobileBanner from '../components/MobileBanner';
 import { playErrorSound, playSuccessSound } from '../utils/soundUtils';
 
 
@@ -698,7 +699,7 @@ export default function Multiplayer() {
                     )}
 
                     {gameState === 'grace_period' && graceEndTime && (
-                        <div className="absolute top-0 right-0 z-[60] bg-red-600 text-white px-6 py-3 rounded-bl-2xl font-black uppercase tracking-[0.2em] shadow-lg animate-in slide-in-from-top-4 duration-300">
+                        <div className="absolute top-0 right-0 z-60 bg-red-600 text-white px-6 py-3 rounded-bl-2xl font-black uppercase tracking-[0.2em] shadow-lg animate-in slide-in-from-top-4 duration-300">
                             10s GRACE PERIOD: {Math.max(0, Math.ceil((graceEndTime - Date.now()) / 1000))}s
                         </div>
                     )}
@@ -783,7 +784,7 @@ export default function Multiplayer() {
         return (
             <div className="flex flex-col items-center justify-center h-full max-w-2xl mx-auto space-y-10 py-20 px-4 animate-in fade-in zoom-in duration-500">
                 <div className="relative group">
-                    <div className="absolute -inset-1 bg-gradient-to-r from-primary via-purple-500 to-primary rounded-full blur opacity-40 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
+                    <div className="absolute -inset-1 bg-linear-to-r from-primary via-purple-500 to-primary rounded-full blur opacity-40 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
                     <div className="relative bg-background-dark/80 backdrop-blur-xl p-12 rounded-full border border-primary/30 flex items-center justify-center shadow-[0_0_50px_rgba(0,245,212,0.2)]">
                         <Trophy className={`w-24 h-24 ${isWinner ? 'text-primary' : 'text-slate-500'} drop-shadow-[0_0_15px_rgba(0,245,212,0.5)]`} />
                     </div>
@@ -915,6 +916,7 @@ export default function Multiplayer() {
 
     return (
         <div className="layout-container flex flex-col min-h-screen">
+            <MobileBanner />
             <main className="flex-1 flex flex-col w-full relative">
                 {!playerName ? renderNickname() : (
                     <>

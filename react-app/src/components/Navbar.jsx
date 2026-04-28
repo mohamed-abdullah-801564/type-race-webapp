@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ChevronsRight, Save, Gauge, Crown, Cloud, CloudOff, RefreshCw, AlertTriangle, X } from 'lucide-react';
+import { ChevronsRight, Save, Gauge, Crown, Cloud, CloudOff, RefreshCw, AlertTriangle, Menu, X } from 'lucide-react';
 import { doc, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import AuthModal from './AuthModal';
@@ -29,6 +29,7 @@ export default function Navbar({ isFaded = false }) {
     const [stats,          setStats]          = useState(null);
     const [isSyncing,      setIsSyncing]      = useState(false);
     const [confirmWipe,    setConfirmWipe]    = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const confirmTimerRef = useRef(null);
 
     useEffect(() => {
@@ -158,8 +159,14 @@ export default function Navbar({ isFaded = false }) {
 
                 {/* Right Side */}
                 <div className="flex flex-1 justify-end items-center gap-4">
+                    <button
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        className="md:hidden p-2 rounded-lg bg-primary/10 border border-primary/20 text-primary"
+                    >
+                        {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                    </button>
                     {user && (
-                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-white/5 group relative">
+                        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-white/5 group relative">
                             {getSyncStatus() === 'synced'
                                 ? <Cloud    className="w-3.5 h-3.5 text-cyan-400" />
                                 : <CloudOff className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
@@ -185,11 +192,54 @@ export default function Navbar({ isFaded = false }) {
                 </div>
             </header>
 
+            {isMobileMenuOpen && (
+                <div className="fixed inset-0 z-60 md:hidden">
+                    <div
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                    />
+                    <div className="fixed top-0 left-0 h-full w-72 bg-slate-900 border-r border-primary/20 flex flex-col p-8 shadow-[4px_0_30px_rgba(0,0,0,0.5)] animate-in slide-in-from-left duration-300">
+                        <Link to="/" className="flex items-center gap-4" onClick={() => setIsMobileMenuOpen(false)}>
+                            <div className="text-primary"><ChevronsRight className="w-8 h-8" /></div>
+                            <h2 className="text-xl font-bold tracking-tight text-slate-100">
+                                Type<span className="text-primary text-2xl">.</span>Master
+                            </h2>
+                        </Link>
+
+                        <nav className="flex flex-col gap-2 mt-12">
+                            {NAV_LINKS.map(({ to, label }) => (
+                                <Link
+                                    key={to}
+                                    to={to}
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    className={`px-4 py-3 rounded-xl font-bold transition-all ${currentPath === to ? 'bg-primary/10 text-primary border border-primary/20' : 'text-slate-400 hover:text-primary hover:bg-primary/10'}`}
+                                >
+                                    {label}
+                                </Link>
+                            ))}
+                        </nav>
+
+                        <div className="mt-auto flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-full border-2 border-primary/30 p-0.5 overflow-hidden">
+                                <img
+                                    alt="User Avatar"
+                                    className="h-full w-full rounded-full object-cover"
+                                    src={user?.photoURL || "https://lh3.googleusercontent.com/aida-public/AB6AXuCyZ8GeGyhabNC6yspB1cJTkrXNLe87u0X4LYSEMZo_zYdp1HBc86chYAHMyMJFLCRUs_vaoTLHsfSSlkqlBlf49XrgC3qw83Rzt1WQqIVEOt7x1bp-rp2IxMz6cMBUfdMYeiHT90RS5icaXocgWAsfhuxNwo7cm04_0cpJNSy2q93Yk4pqsAkQ5EdzokS5Px7Uh4jY_N-YsR0OUGJyzoCgk7iAAUAKFQki70GArm-GDC-UaSo0bIWnffEEMl04i1eoLnqNomwdGFs"}
+                                />
+                            </div>
+                            <span className="text-sm font-bold text-slate-300">
+                                {playerName || user?.email?.split('@')[0] || 'Player'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Profile + Settings Modal */}
             {isProfileOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background-dark/95 backdrop-blur-md animate-in fade-in duration-300">
-                    <div className="bg-slate-900 border border-primary/20 rounded-2xl p-8 max-w-md w-full shadow-[0_0_50px_rgba(0,245,212,0.15)] relative overflow-hidden overflow-y-auto max-h-[90vh]">
-                        <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]" />
+                        <div className="bg-slate-900 border border-primary/20 rounded-2xl p-8 max-w-md w-full shadow-[0_0_50px_rgba(0,245,212,0.15)] relative overflow-hidden overflow-y-auto max-h-[90vh]">
+                        <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-size-[100%_2px,3px_100%]" />
 
                         <button onClick={() => setIsProfileOpen(false)} className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white bg-slate-800/50 rounded-lg transition-colors z-10">
                             <X className="w-5 h-5" />
@@ -205,7 +255,7 @@ export default function Navbar({ isFaded = false }) {
 
                         <div className="relative z-10">
                             {/* Neural Link Status */}
-                            <div className="mb-6 p-6 bg-white/[0.03] backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl">
+                            <div className="mb-6 p-6 bg-white/3 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl">
                                 <h3 className="text-[10px] font-bold text-primary uppercase tracking-[0.3em] mb-4 flex items-center justify-between">
                                     Neural Link Status
                                     {user ? (
@@ -240,7 +290,7 @@ export default function Navbar({ isFaded = false }) {
 
                                         {stats && (
                                             <div className="grid grid-cols-2 gap-4">
-                                                <div className="bg-white/[0.03] p-5 rounded-xl border border-white/10 flex flex-col gap-2 relative overflow-hidden group/card hover:border-primary/30 transition-all">
+                                                <div className="bg-white/3 p-5 rounded-xl border border-white/10 flex flex-col gap-2 relative overflow-hidden group/card hover:border-primary/30 transition-all">
                                                     <div className="absolute -right-2 -top-2 opacity-10 group-hover/card:opacity-20 transition-opacity">
                                                         <Gauge className="w-12 h-12 text-primary" />
                                                     </div>
@@ -250,7 +300,7 @@ export default function Navbar({ isFaded = false }) {
                                                         <span className="text-[10px] text-primary/50 font-bold uppercase">Wpm</span>
                                                     </div>
                                                 </div>
-                                                <div className="bg-white/[0.03] p-5 rounded-xl border border-white/10 flex flex-col gap-2 relative overflow-hidden group/card hover:border-primary/30 transition-all">
+                                                <div className="bg-white/3 p-5 rounded-xl border border-white/10 flex flex-col gap-2 relative overflow-hidden group/card hover:border-primary/30 transition-all">
                                                     <div className="absolute -right-2 -top-2 opacity-10 group-hover/card:opacity-20 transition-opacity">
                                                         <Crown className="w-12 h-12 text-primary" />
                                                     </div>

@@ -4,6 +4,7 @@ import { io } from 'socket.io-client';
 import Navbar from '../components/Navbar';
 import AuthModal from '../components/AuthModal';
 import ToastContainer from '../components/ToastContainer';
+import MobileBanner from '../components/MobileBanner';
 import useToast from '../hooks/useToast';
 import { auth, db } from '../firebase';
 import { 
@@ -287,7 +288,7 @@ export default function DailyChallenge() {
     if (status === 'loading') {
         return (
             <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center relative overflow-hidden">
-                <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]" />
+                <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-size-[100%_2px,3px_100%]" />
                 <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4" />
                 <p className="text-primary/60 font-mono animate-pulse uppercase tracking-widest text-xs">Syncing Daily Protocol...</p>
             </div>
@@ -296,8 +297,9 @@ export default function DailyChallenge() {
 
     return (
         <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-primary/30 relative">
+            <MobileBanner />
             {/* Background Scanline Effect */}
-            <div className="fixed inset-0 opacity-[0.03] pointer-events-none z-50 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]" />
+            <div className="fixed inset-0 opacity-[0.03] pointer-events-none z-50 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-size-[100%_2px,3px_100%]" />
             
             <Navbar />
             <ToastContainer toasts={toasts} removeToast={removeToast} />
@@ -343,7 +345,7 @@ export default function DailyChallenge() {
                         </div>
                     </div>
                 ) : (
-                    <div className="grid lg:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         {/* Left Column: Typing Area */}
                         <div className="lg:col-span-2 space-y-8">
                             <div className="flex flex-col gap-2">
@@ -406,7 +408,7 @@ export default function DailyChallenge() {
                                         return (
                                             <span key={index} className={`relative ${color} transition-colors duration-150`}>
                                                 {isCursor && status !== 'finished' && (
-                                                    <span ref={cursorRef} className="absolute -left-[1px] top-0 w-[2px] h-[1.2em] bg-primary animate-pulse shadow-[0_0_8px_rgba(0,245,212,0.8)]" />
+                                                    <span ref={cursorRef} className="absolute -left-px top-0 w-[2px] h-[1.2em] bg-primary animate-pulse shadow-[0_0_8px_rgba(0,245,212,0.8)]" />
                                                 )}
                                                 {char}
                                             </span>
