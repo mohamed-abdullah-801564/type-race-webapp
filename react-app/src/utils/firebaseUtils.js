@@ -1,5 +1,6 @@
 import { auth, db } from '../firebase';
 import { doc, getDoc, updateDoc, setDoc, serverTimestamp, arrayUnion, increment } from 'firebase/firestore';
+import { validateWPM, validateAccuracy } from './sanitizeUtils';
 
 /**
  * Robustly synchronizes personal best to the leaderboard.
@@ -8,6 +9,7 @@ import { doc, getDoc, updateDoc, setDoc, serverTimestamp, arrayUnion, increment 
  * @param {number|string} acc - Accuracy percentage
  */
 export const syncToLeaderboard = async (wpm, acc) => {
+    if (!validateWPM(wpm) || !validateAccuracy(parseFloat(acc))) { console.warn('Invalid WPM or accuracy rejected'); return false; }
     if (!auth.currentUser) return;
     
     try {
@@ -69,6 +71,7 @@ export const calculateRank = (wpm) => {
  * Does NOT sync raceHistory or weakKeys (local-only).
  */
 export const syncCrucialData = async (finalWpm, finalAcc) => {
+    if (!validateWPM(finalWpm) || !validateAccuracy(parseFloat(finalAcc))) { console.warn('Invalid WPM or accuracy rejected'); return false; }
     if (!auth.currentUser) return;
 
     try {

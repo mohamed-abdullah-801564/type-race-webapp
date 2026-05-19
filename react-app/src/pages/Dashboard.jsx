@@ -7,6 +7,9 @@ import { auth, db } from '../firebase';
 import { doc, onSnapshot, collection, query, orderBy, limit, getDoc } from 'firebase/firestore';
 import { loadData, saveData } from '../utils/storageUtils';
 import { generateSmartDrill } from '../utils/typingUtils';
+import { io } from 'socket.io-client';
+
+const SOCKET_SERVER = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001';
 
 const KEYBOARD_ROWS = [
     ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
@@ -24,6 +27,17 @@ export default function Dashboard() {
     const [rankData, setRankData] = useState(null);
     const [leaderboard, setLeaderboard] = useState([]);
     const [leaderboardError, setLeaderboardError] = useState(null);
+
+    const [onlineUsers, setOnlineUsers] = useState([]);
+    const [incomingChallenge, setIncomingChallenge] = useState(null);
+    const [socket, setSocket] = useState(null);
+
+    const handleSendDuel = (targetUser) => {
+        if (!socket) return;
+        const freshRoomId = 'DUEL-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+        socket.emit('send_duel_challenge', { targetUid: targetUser.uid || targetUser.id, roomId: freshRoomId });
+        navigate('/multiplayer', { state: { roomId: freshRoomId, isHost: true } });
+    };
 
     const TIER_STYLES = {
         Novice: { Icon: Star },
@@ -79,22 +93,17 @@ export default function Dashboard() {
         // 2. Comprehensive Sync from Cloud (Definitive Source of Truth)
         const hydrateCloud = async (uid) => {
             try {
+                await auth.authStateReady();
                 const userSnap = await getDoc(doc(db, 'users', uid));
                 if (userSnap.exists()) {
                     const data = userSnap.data();
                     if (data.rank) {
-                        setRankData(data.rank);
-                        setStats({
-                            maxWPM: data.rank.highestWPM || 0,
-                            avgAccuracy: data.rank.avgAcc || 0,
-                            totalTests: data.rank.totalRaces || 0
-                        });
+                        saveData('rankData', data.rank);
                     }
                     if (data.recentHistory) {
-                        const sorted = [...data.recentHistory].sort((a, b) => (a.date || a.timestamp || 0) - (b.date || b.timestamp || 0));
-                        setRecentHistory(sorted);
-                        setRecentWPMs(sorted.map(h => h.wpm));
+                        saveData('raceHistory', data.recentHistory);
                     }
+                    loadLocalData();
                 }
             } catch (err) {
                 console.warn("Manual hydration failed:", err);
@@ -102,7 +111,7 @@ export default function Dashboard() {
         };
 
         let unsubscribeUser = () => {};
-        const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+        const unsubscribeAuth = auth.onAuthStateChanged(async (user) => {
             if (user) {
                 // User logged in: Reset local before hydrate to prevent leak
                 setStats({ maxWPM: 0, avgAccuracy: 0, totalTests: 0 });
@@ -110,6 +119,7 @@ export default function Dashboard() {
                 setRecentWPMs([]);
                 setRankData(null);
                 
+                await auth.authStateReady();
                 hydrateCloud(user.uid);
 
                 unsubscribeUser = onSnapshot(doc(db, 'users', user.uid), (docSnapshot) => {
@@ -118,20 +128,11 @@ export default function Dashboard() {
                         if (data.operatorName) saveData('playerName', data.operatorName);
                         if (data.rank) {
                             saveData('rankData', data.rank);
-                            setRankData(data.rank);
-                            
-                            // Hydrate aggregate stats
-                            setStats({
-                                maxWPM: data.rank.highestWPM || 0,
-                                avgAccuracy: data.rank.avgAcc || 0,
-                                totalTests: data.rank.totalRaces || 0
-                            });
                         }
                         if (data.recentHistory) {
-                            const sorted = [...data.recentHistory].sort((a, b) => (a.date || a.timestamp || 0) - (b.date || b.timestamp || 0));
-                            setRecentHistory(sorted);
-                            setRecentWPMs(sorted.map(h => h.wpm));
+                            saveData('raceHistory', data.recentHistory);
                         }
+                        loadLocalData();
                     }
                 });
             } else {
@@ -185,6 +186,46 @@ export default function Dashboard() {
             unsubscribeUser();
             unsubscribeLeaderboard();
             window.removeEventListener('data-hydrated', handleHydration);
+        };
+    }, []);
+
+    // Socket Connection and Challenge Listeners
+    useEffect(() => {
+        let newSocket;
+        const connectSocket = async (user) => {
+            try {
+                const token = await user.getIdToken(true);
+                newSocket = io(SOCKET_SERVER, {
+                    auth: { token }
+                });
+                
+                newSocket.on('registry_updated', (data) => {
+                    setOnlineUsers(data);
+                });
+
+                newSocket.on('duel_challenged', ({ challengerName, roomId }) => {
+                    setIncomingChallenge({ challengerName, roomId });
+                });
+
+                setSocket(newSocket);
+            } catch (err) {
+                console.error("Socket authentication failed:", err);
+            }
+        };
+
+        const unsubscribe = auth.onAuthStateChanged((user) => {
+            if (user) {
+                connectSocket(user);
+            } else {
+                if (newSocket) newSocket.disconnect();
+                setSocket(null);
+                setOnlineUsers([]);
+            }
+        });
+
+        return () => {
+            unsubscribe();
+            if (newSocket) newSocket.disconnect();
         };
     }, []);
 
@@ -647,9 +688,10 @@ export default function Dashboard() {
                                 ) : leaderboard.length > 0 ? leaderboard.map((item, index) => {
                                     const isUser = item.id === auth.currentUser?.uid;
                                     const isPinned = item.isPinned;
+                                    const isOnline = onlineUsers.some(u => u.uid === item.id);
                                     
                                     return (
-                                        <tr key={item.id} className={`hover:bg-slate-50/50 dark:hover:bg-primary/5 transition-colors 
+                                        <tr key={item.id} className={`group hover:bg-slate-50/50 dark:hover:bg-primary/5 transition-colors 
                                             ${isUser ? 'bg-primary/10 border-l-4 border-primary shadow-[inset_0_0_20px_rgba(0,245,212,0.05)]' : ''}
                                             ${isPinned ? 'border-t-4 border-primary/40 bg-slate-900 shadow-[0_-10px_20px_rgba(0,0,0,0.5)]' : ''}
                                         `}>
@@ -659,14 +701,48 @@ export default function Dashboard() {
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
                                                     <div className="h-8 w-8 rounded-full border border-primary/20 bg-primary/10 flex items-center justify-center font-bold text-primary">{item.name ? item.name[0]?.toUpperCase() : '?'}</div>
-                                                    <span className={`font-semibold ${isUser ? 'text-primary' : 'text-slate-900 dark:text-slate-100'}`}>{item.name} {item.tier && <span className="text-[10px] text-primary/50 ml-2">[{item.tier}]</span>}</span>
+                                                    <div className="flex items-center gap-2">
+                                                        {isOnline && (
+                                                            <span className="relative flex h-2 w-2 shrink-0">
+                                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                                            </span>
+                                                        )}
+                                                        {isOnline && !isUser ? (
+                                                            <button
+                                                                onClick={() => handleSendDuel(item)}
+                                                                title="Challenge to a Duel"
+                                                                className="font-semibold text-left text-slate-900 dark:text-slate-100 hover:text-primary dark:hover:text-primary transition-colors flex items-center gap-2 cursor-pointer"
+                                                            >
+                                                                <span>{item.name}</span>
+                                                                <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-primary/20 text-primary border border-primary/30 text-[9px] px-1.5 py-0.5 rounded uppercase font-black tracking-wider animate-in fade-in slide-in-from-left-1 duration-200">
+                                                                    DUEL
+                                                                </span>
+                                                                {item.tier && <span className="text-[10px] text-primary/50">[{item.tier}]</span>}
+                                                            </button>
+                                                        ) : (
+                                                            <span className={`font-semibold ${isUser ? 'text-primary' : 'text-slate-900 dark:text-slate-100'}`}>
+                                                                {item.name}
+                                                                {item.tier && <span className="text-[10px] text-primary/50 ml-2">[{item.tier}]</span>}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 font-mono font-bold text-slate-900 dark:text-white">{item.wpm}</td>
                                             <td className="hidden md:table-cell px-6 py-4 text-slate-600 dark:text-slate-400">{item.acc}%</td>
                                             <td className="hidden md:table-cell px-6 py-4">
-                                                <span className="h-2 w-2 rounded-full bg-primary inline-block mr-2 animate-pulse"></span>
-                                                <span className="text-xs text-primary">Live</span>
+                                                {isOnline ? (
+                                                    <>
+                                                        <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block mr-2 animate-pulse"></span>
+                                                        <span className="text-xs text-emerald-500 font-bold">Online</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <span className="h-2 w-2 rounded-full bg-slate-500 inline-block mr-2"></span>
+                                                        <span className="text-xs text-slate-400">Offline</span>
+                                                    </>
+                                                )}
                                             </td>
                                         </tr>
                                     );
@@ -685,6 +761,39 @@ export default function Dashboard() {
                     </div>
                 </div>
             </main>
+            {incomingChallenge && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-in fade-in duration-300">
+                    <div className="relative w-full max-w-md bg-slate-900 border border-primary/30 p-8 rounded-2xl shadow-[0_0_50px_rgba(0,245,212,0.2)] text-center space-y-6">
+                        <div className="mx-auto w-16 h-16 rounded-2xl bg-primary/10 border-2 border-primary flex items-center justify-center text-primary shadow-[0_0_20px_rgba(0,245,212,0.3)] animate-pulse">
+                            <Zap className="w-8 h-8" />
+                        </div>
+                        <div className="space-y-2">
+                            <h3 className="text-xl font-black text-white uppercase tracking-wider">Neural Duel Requested</h3>
+                            <p className="text-sm text-slate-400">
+                                <strong className="text-primary">{incomingChallenge.challengerName}</strong> has challenged you to a typing duel!
+                            </p>
+                        </div>
+                        <div className="flex gap-4">
+                            <button
+                                onClick={() => setIncomingChallenge(null)}
+                                className="flex-1 py-3 border border-white/10 hover:border-white/20 text-slate-400 hover:text-white font-bold rounded-xl transition-all"
+                            >
+                                Decline
+                            </button>
+                            <button
+                                onClick={() => {
+                                    const rId = incomingChallenge.roomId;
+                                    setIncomingChallenge(null);
+                                    navigate('/multiplayer', { state: { roomId: rId, isHost: false } });
+                                }}
+                                className="flex-1 py-3 bg-primary text-background-dark font-black rounded-xl hover:shadow-[0_0_20px_rgba(0,245,212,0.4)] hover:scale-105 transition-all active:scale-95"
+                            >
+                                Accept
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <footer className="border-t border-slate-200 dark:border-primary/10 px-6 py-8 lg:px-20 bg-white dark:bg-background-dark/80 mt-auto">
                 <div className="flex flex-col md:flex-row justify-between items-center gap-4">

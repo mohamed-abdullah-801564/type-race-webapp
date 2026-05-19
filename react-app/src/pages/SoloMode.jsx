@@ -330,7 +330,9 @@ export default function SoloMode() {
 
     useEffect(() => {
         if (status === 'finished') {
-            const wpm = calculateWPM();
+            const rawWpm = calculateWPM();
+            const safeWPM = Math.min(300, Math.max(0, rawWpm));
+            const wpm = safeWPM;
             const acc = calculateAccuracy();
             const totalErrors = Object.values(errorMapRef.current).reduce((sum, count) => sum + count, 0);
             setFinalWPM(wpm);

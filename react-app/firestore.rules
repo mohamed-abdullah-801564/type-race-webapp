@@ -1,0 +1,27 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuthenticated() { return request.auth != null; }
+    function isOwner(uid) { return request.auth.uid == uid; }
+
+    match /users/{uid} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && isOwner(uid);
+    }
+    match /leaderboard/{uid} {
+      allow read: if true;
+      allow write: if isAuthenticated() && isOwner(uid);
+    }
+    match /daily_scores/{date}/scores/{uid} {
+      allow read: if true;
+      allow write: if isAuthenticated() && isOwner(uid);
+    }
+    match /global_ghosts/{ghostId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+    }
+    match /trainings/{uid} {
+      allow read, write: if isAuthenticated() && isOwner(uid);
+    }
+  }
+}

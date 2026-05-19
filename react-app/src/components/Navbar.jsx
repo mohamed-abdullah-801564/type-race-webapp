@@ -3,11 +3,12 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ChevronsRight, Save, Gauge, Crown, Cloud, CloudOff, RefreshCw, AlertTriangle, Menu, X } from 'lucide-react';
 import { doc, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase';
+import { sanitizeName } from '../utils/sanitizeUtils';
 import AuthModal from './AuthModal';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 
 const NAV_LINKS = [
-    { to: '/',             label: 'Dashboard'   },
+    { to: '/dashboard',    label: 'Dashboard'   },
     { to: '/solo',         label: 'Solo Mode'   },
     { to: '/academy',      label: 'Academy'     },
     { to: '/daily',        label: 'Daily'       },
@@ -46,16 +47,20 @@ export default function Navbar({ isFaded = false }) {
 
     const handleSaveName = async (e) => {
         e.preventDefault();
-        if (!playerName.trim()) return;
-        localStorage.setItem('playerName', playerName.trim());
+        const cleanName = sanitizeName(playerName.trim());
+        if (!cleanName) {
+            alert("Name can only contain letters, numbers and underscores");
+            return;
+        }
+        localStorage.setItem('playerName', cleanName);
         localStorage.setItem('lastLocalUpdate', Date.now().toString());
         if (user) {
             try {
                 const userRef = doc(db, 'users', user.uid);
-                await updateDoc(userRef, { operatorName: playerName.trim(), lastUpdate: serverTimestamp() });
+                await updateDoc(userRef, { operatorName: cleanName, lastUpdate: serverTimestamp() });
                 if (stats) {
                     const lbRef = doc(db, 'leaderboard', user.uid);
-                    await setDoc(lbRef, { name: playerName.trim() }, { merge: true });
+                    await setDoc(lbRef, { name: cleanName }, { merge: true });
                 }
                 localStorage.setItem('lastCloudSync', Date.now().toString());
             } catch (err) {
@@ -191,6 +196,15 @@ export default function Navbar({ isFaded = false }) {
                     </div>
                 </div>
             </header>
+
+            {user && user.emailVerified === false && (
+                <div className="bg-amber-500/10 border-b border-amber-500/20 px-6 py-2.5 flex items-center justify-center gap-3 backdrop-blur-md sticky top-[73px] z-30">
+                    <AlertTriangle className="w-4 h-4 text-amber-500" />
+                    <span className="text-xs font-bold text-amber-500/90 uppercase tracking-widest">
+                        Please verify your email to lock down your telemetry.
+                    </span>
+                </div>
+            )}
 
             {isMobileMenuOpen && (
                 <div className="fixed inset-0 z-60 md:hidden">

@@ -1,7 +1,18 @@
+require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const admin = require('firebase-admin');
+
+// Initialize Firebase Admin
+admin.initializeApp({
+    credential: admin.credential.cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') : undefined
+    })
+});
 
 const app = express();
 app.use(cors());
@@ -12,6 +23,24 @@ const io = new Server(server, {
     cors: {
         origin: '*',
         methods: ['GET', 'POST']
+    }
+});
+
+// Authentication Middleware
+io.use(async (socket, next) => {
+    try {
+        const token = socket.handshake.auth.token;
+        if (!token) {
+            return next(new Error("Authentication error: Invalid session"));
+        }
+        const decodedToken = await admin.auth().verifyIdToken(token);
+        socket.user = { 
+            uid: decodedToken.uid,
+            name: decodedToken.name || decodedToken.email?.split('@')[0] || 'Unknown Operator'
+        };
+        next();
+    } catch (error) {
+        next(new Error("Authentication error: Invalid session"));
     }
 });
 
@@ -89,20 +118,32 @@ const getDailyChallenge = () => {
 
 // In-memory state to track rooms and players
 const rooms = {};
+const onlineOperators = {};
 
 let globalChampionGhost = { wpm: 0, name: '', keystrokes: [] };
 
 io.on('connection', (socket) => {
     console.log(`User connected: ${socket.id}`);
+    onlineOperators[socket.id] = { uid: socket.user.uid, name: socket.user.name };
+    io.emit('registry_updated', Object.values(onlineOperators));
+
+    socket.on('send_duel_challenge', ({ targetUid, roomId }) => {
+        const targetSocketId = Object.keys(onlineOperators).find(
+            sid => onlineOperators[sid].uid === targetUid
+        );
+        if (targetSocketId) {
+            io.to(targetSocketId).emit('duel_challenged', { challengerName: socket.user.name, roomId });
+        }
+    });
 
     // Create a new room
     socket.on('createRoom', (data, callback) => {
-        const roomId = generateRoomCode();
+        const roomId = data?.roomId ? data.roomId.toUpperCase() : generateRoomCode();
         // Initialize room state
         rooms[roomId] = {
             id: roomId,
             host: socket.id,
-            players: [{ id: socket.id, name: data?.playerName || 'Host', progress: 0, wpm: 0, avatar: data?.avatar }],
+            players: [{ id: socket.id, uid: socket.user.uid, name: data?.playerName || 'Host', progress: 0, wpm: 0, avatar: data?.avatar }],
             status: 'waiting'
         };
 
@@ -135,6 +176,7 @@ io.on('connection', (socket) => {
         // Add player to the room
         const newPlayer = {
             id: socket.id,
+            uid: socket.user.uid,
             name: user?.playerName || 'Player',
             progress: 0,
             wpm: 0,
@@ -181,13 +223,12 @@ io.on('connection', (socket) => {
     });
 
     // Update typing progress
-    socket.on('updateProgress', ({ roomId, playerId, progressPercentage, wpm }) => {
+    socket.on('updateProgress', ({ roomId, progressPercentage, wpm }) => {
         const room = rooms[roomId];
         if (!room) return;
 
-        // Default to the socket's id if playerId isn't directly passed
-        const pid = playerId || socket.id;
-        const player = room.players.find(p => p.id === pid);
+        // Establish absolute server authority: Ignore client-submitted ID and use authenticated socket.user.uid / socket.id
+        const player = room.players.find(p => p.id === socket.id && p.uid === socket.user.uid);
 
         if (player) {
             player.progress = progressPercentage;
@@ -259,7 +300,8 @@ const endRace = (roomId) => {
         const room = rooms[roomId];
         if (!room) return;
 
-        const player = room.players.find(p => p.id === socket.id);
+        // Establish absolute server authority: Ensure we map to the verified socket.user.uid
+        const player = room.players.find(p => p.id === socket.id && p.uid === socket.user.uid);
         if (player) {
             player.progress = 100;
             player.wpm = wpm;
@@ -321,6 +363,8 @@ const endRace = (roomId) => {
     // Handle user dropping out
     socket.on('disconnect', () => {
         console.log(`User disconnected: ${socket.id}`);
+        delete onlineOperators[socket.id];
+        io.emit('registry_updated', Object.values(onlineOperators));
 
         for (const [roomId, room] of Object.entries(rooms)) {
             const playerIndex = room.players.findIndex(p => p.id === socket.id);

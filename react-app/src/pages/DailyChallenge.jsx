@@ -73,33 +73,54 @@ export default function DailyChallenge() {
 
     // Initial Load
     useEffect(() => {
-        const socket = io(SOCKET_SERVER);
-        socketRef.current = socket;
+        let socket;
+        const connectSocket = async (user) => {
+            try {
+                const token = await user.getIdToken(true);
+                socket = io(SOCKET_SERVER, {
+                    auth: { token }
+                });
+                socketRef.current = socket;
 
-        socket.on('connect', () => {
-            socket.emit('getDailyChallenge', async (response) => {
-                if (response.success) {
-                    setChallengeText(response.text);
-                    setChallengeDate(response.date);
-                    
-                    // Check if user has played
-                    if (auth.currentUser) {
-                        const scoreDoc = await getDoc(doc(db, 'daily_scores', response.date, 'scores', auth.currentUser.uid));
-                        if (scoreDoc.exists()) {
-                            setHasPlayedToday(true);
-                            setTodayScore(scoreDoc.data());
+                socket.on('connect', () => {
+                    socket.emit('getDailyChallenge', async (response) => {
+                        if (response.success) {
+                            setChallengeText(response.text);
+                            setChallengeDate(response.date);
+                            
+                            // Check if user has played
+                            if (auth.currentUser) {
+                                const scoreDoc = await getDoc(doc(db, 'daily_scores', response.date, 'scores', auth.currentUser.uid));
+                                if (scoreDoc.exists()) {
+                                    setHasPlayedToday(true);
+                                    setTodayScore(scoreDoc.data());
+                                }
+                            }
+
+                            // Fetch Leaderboard
+                            fetchLeaderboard(response.date);
+                            setStatus('waiting');
                         }
-                    }
+                    });
+                });
+            } catch (err) {
+                console.error("Socket authentication failed:", err);
+            }
+        };
 
-                    // Fetch Leaderboard
-                    fetchLeaderboard(response.date);
-                    setStatus('waiting');
-                }
-            });
+        const unsubscribe = auth.onAuthStateChanged((user) => {
+            if (user) {
+                connectSocket(user);
+            } else {
+                if (socket) socket.disconnect();
+                socketRef.current = null;
+                setStatus('unauthenticated');
+            }
         });
 
         return () => {
-            socket.disconnect();
+            unsubscribe();
+            if (socket) socket.disconnect();
             if (timerRef.current) clearInterval(timerRef.current);
         };
     }, []);
@@ -291,6 +312,26 @@ export default function DailyChallenge() {
                 <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-size-[100%_2px,3px_100%]" />
                 <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4" />
                 <p className="text-primary/60 font-mono animate-pulse uppercase tracking-widest text-xs">Syncing Daily Protocol...</p>
+            </div>
+        );
+    }
+
+    if (status === 'unauthenticated') {
+        return (
+            <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center relative overflow-hidden">
+                <MobileBanner />
+                <Navbar />
+                <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-size-[100%_2px,3px_100%]" />
+                <Lock className="w-16 h-16 text-amber-500 mb-6 drop-shadow-[0_0_15px_rgba(245,158,11,0.3)]" />
+                <h1 className="text-3xl font-black text-white uppercase italic tracking-tighter mb-4">Neural Link Required</h1>
+                <p className="text-slate-400 mb-8 text-center max-w-md font-medium">You must establish a neural link (sign in) to access the daily challenge and compete on the global leaderboard.</p>
+                <button 
+                    onClick={() => setShowAuth(true)}
+                    className="px-8 py-4 bg-primary text-background-dark font-black uppercase tracking-widest rounded-2xl hover:shadow-[0_0_30px_rgba(0,245,212,0.4)] transition-all flex items-center gap-2 mx-auto"
+                >
+                    Sign In
+                </button>
+                {showAuth && <AuthModal onClose={() => setShowAuth(false)} onLoginSuccess={() => setShowAuth(false)} />}
             </div>
         );
     }

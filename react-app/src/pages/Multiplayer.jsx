@@ -6,7 +6,7 @@ import { Trophy, Users, Timer, Target, Zap, RotateCcw, ArrowRight, Network, Copy
 import { auth, db } from '../firebase';
 import { addDoc, collection, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { loadData, saveData } from '../utils/storageUtils';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { recordKeyLatency, isTrackableKey } from '../utils/heatmapUtils';
 import useToast from '../hooks/useToast';
 import ToastContainer from '../components/ToastContainer';
@@ -18,6 +18,8 @@ const SOCKET_SERVER = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001'
 
 export default function Multiplayer() {
     const navigate = useNavigate();
+    const location = useLocation();
+    const handledChallengeRef = useRef(false);
     const { toasts, addToast, removeToast } = useToast();
     const [socket, setSocket] = useState(null);
     const [roomId, setRoomId] = useState('');
@@ -77,11 +79,66 @@ export default function Multiplayer() {
 
     // 1. Initialize Socket
     useEffect(() => {
-        const newSocket = io(SOCKET_SERVER);
-        setSocket(newSocket);
+        let newSocket;
+        const connectSocket = async (user) => {
+            try {
+                const token = await user.getIdToken(true);
+                newSocket = io(SOCKET_SERVER, {
+                    auth: { token }
+                });
+                setSocket(newSocket);
+            } catch (err) {
+                console.error("Socket authentication failed:", err);
+            }
+        };
 
-        return () => newSocket.disconnect();
+        const unsubscribe = auth.onAuthStateChanged((user) => {
+            if (user) {
+                connectSocket(user);
+            } else {
+                if (newSocket) newSocket.disconnect();
+                setSocket(null);
+            }
+        });
+
+        return () => {
+            unsubscribe();
+            if (newSocket) newSocket.disconnect();
+        };
     }, []);
+
+    // Auto-join or auto-create room if redirected via challenge
+    useEffect(() => {
+        if (!socket || !playerName || handledChallengeRef.current) return;
+        const stateRoomId = location.state?.roomId;
+        const isChallengerHost = location.state?.isHost;
+        if (!stateRoomId) return;
+
+        handledChallengeRef.current = true;
+
+        if (isChallengerHost) {
+            socket.emit('createRoom', { playerName, roomId: stateRoomId }, (res) => {
+                if (res.success) {
+                    setRoomId(res.roomId);
+                    setIsHost(true);
+                    setPlayers(res.room.players);
+                }
+            });
+        } else {
+            socket.emit('joinRoom', {
+                roomId: stateRoomId,
+                user: { playerName }
+            }, (res) => {
+                if (res.success) {
+                    setRoomId(res.room.id);
+                    setIsHost(false);
+                    setPlayers(res.room.players);
+                } else {
+                    alert(res.error);
+                }
+            });
+        }
+    }, [socket, playerName, location.state]);
 
     // 2. Socket Listeners
     useEffect(() => {
@@ -214,7 +271,6 @@ export default function Multiplayer() {
         const emitProgress = () => {
             socket.emit('updateProgress', {
                 roomId: roomIdRef.current,
-                playerId: socket.id,
                 progressPercentage: progress,
                 wpm: currentWpm
             });
@@ -510,7 +566,7 @@ export default function Multiplayer() {
             return (
                 <div className="flex flex-col items-center justify-center h-full max-w-md mx-auto space-y-8 faded-ui flex-1 relative">
                     <button
-                        onClick={() => { socket.disconnect(); navigate('/'); }}
+                        onClick={() => { socket?.disconnect(); navigate('/'); }}
                         className="absolute -top-12 left-0 flex items-center gap-2 text-slate-500 hover:text-primary transition-colors font-bold uppercase tracking-widest text-xs group"
                     >
                         <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
