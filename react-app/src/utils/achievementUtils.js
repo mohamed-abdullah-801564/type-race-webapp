@@ -120,7 +120,7 @@ export const buildStatsForAchievements = () => {
         totalRaces: Math.max(rankData?.totalRaces || 0, raceHistory.length),
         highestWPM: rankData.highestWPM || 0,
         perfectRaces: raceHistory.filter(h => parseFloat(h.accuracy) >= 100 && h.noBackspace === true).length,
-        academyModulesCompleted: academyProgress.length,
+        academyModulesCompleted: academyProgress.includes('academy_completed') ? 13 : Math.max(0, academyProgress.length - 1),
         dailyChallengesCompleted: raceHistory.filter(h => h.mode === 'daily').length,
         currentStreak: calculateStreak(raceHistory)
     };
@@ -128,20 +128,39 @@ export const buildStatsForAchievements = () => {
     return stats;
 };
 
-const calculateStreak = (history) => {
-    if (!history || history.length === 0) return 0;
+export const calculateStreak = (history) => {
+    if (!history || !Array.isArray(history) || history.length === 0) return 0;
 
     // Get unique dates in YYYY-MM-DD format
     const dates = [...new Set(history.map(h => {
-        const d = new Date(h.date || h.timestamp);
-        return d.toISOString().split('T')[0];
-    }))].sort().reverse();
+        if (!h) return null;
+        let rawDate = h.date || h.timestamp;
+        if (!rawDate) return null;
+        const d = new Date(Number(rawDate));
+        if (isNaN(d.getTime())) return null;
+        // Extract clean local calendar format configuration maps (YYYY-MM-DD)
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }).filter(Boolean))].sort().reverse();
 
     if (dates.length === 0) return 0;
 
     // Check if most recent race was today or yesterday
-    const today = new Date().toISOString().split('T')[0];
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+    const formatDate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
+    const todayDate = new Date();
+    const yesterdayDate = new Date();
+    yesterdayDate.setDate(todayDate.getDate() - 1);
+
+    const today = formatDate(todayDate);
+    const yesterday = formatDate(yesterdayDate);
 
     if (dates[0] !== today && dates[0] !== yesterday) return 0;
 

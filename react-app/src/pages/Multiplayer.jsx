@@ -12,6 +12,9 @@ import useToast from '../hooks/useToast';
 import ToastContainer from '../components/ToastContainer';
 import MobileBanner from '../components/MobileBanner';
 import { playErrorSound, playSuccessSound } from '../utils/soundUtils';
+import { checkAchievements, saveAchievements, buildStatsForAchievements } from '../utils/achievementUtils';
+import { launchConfetti } from '../utils/confettiUtils';
+import { syncCrucialData, syncToLeaderboard } from '../utils/firebaseUtils';
 
 
 const SOCKET_SERVER = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001';
@@ -40,6 +43,11 @@ export default function Multiplayer() {
     const [timeLeft, setTimeLeft] = useState(30);
     const [difficulty, setDifficulty] = useState('medium');
     const [category, setCategory] = useState('prose');
+    const [mode, setMode] = useState('time');
+    const [duration, setDuration] = useState(30);
+    const [targetLines, setTargetLines] = useState(5);
+    const [raceMode, setRaceMode] = useState('time');
+    const [elapsedTime, setElapsedTime] = useState(0);
     const [countdown, setCountdown] = useState(3);
     const [isGhostCaptured, setIsGhostCaptured] = useState(false);
     const [isGlitching, setIsGlitching] = useState(false);
@@ -70,12 +78,16 @@ export default function Multiplayer() {
     const roomIdRef = useRef('');
     const playersRef = useRef([]);
     const lastKeystrokeTimeRef = useRef(null);
+    const raceDurationRef = useRef(30);
+    const raceModeRef = useRef('time');
+    const textRef = useRef('');
 
     // Keep playerNameRef in sync with state
     useEffect(() => { playerNameRef.current = playerName; }, [playerName]);
     useEffect(() => { userInputRef.current = userInput; }, [userInput]);
     useEffect(() => { roomIdRef.current = roomId; }, [roomId]);
     useEffect(() => { playersRef.current = players; }, [players]);
+    useEffect(() => { textRef.current = text; }, [text]);
 
     // 1. Initialize Socket
     useEffect(() => {
@@ -166,14 +178,24 @@ export default function Multiplayer() {
         });
 
         // raceStarted
-        socket.on('raceStarted', ({ text, countdown: serverCountdown, championGhost }) => {
+        socket.on('raceStarted', ({ text, countdown: serverCountdown, championGhost, mode: incomingMode, duration: incomingDuration, targetLines: incomingTargetLines }) => {
+            const effectiveMode = incomingMode === 'length' ? 'length' : 'time';
+            const effectiveDuration = [30, 60, 120].includes(incomingDuration) ? incomingDuration : 30;
+
             setText(text);
             setChampionGhost(championGhost || null);
             setGameState('countdown');
             setUserInput('');
             setIsGhostCaptured(false);
             setIsGlitching(false);
-            setTimeLeft(30);
+            setRaceMode(effectiveMode);
+            raceModeRef.current = effectiveMode;
+            raceDurationRef.current = effectiveDuration;
+            setTimeLeft(effectiveDuration);
+            setElapsedTime(0);
+            if (incomingMode) setMode(incomingMode);
+            if (incomingDuration) setDuration(incomingDuration);
+            if (incomingTargetLines) setTargetLines(incomingTargetLines);
             setProgress(0);
             setCurrentWpm(0);
             setGhostIndex(0);
@@ -215,20 +237,56 @@ export default function Multiplayer() {
             setIsGlitching(true);
             setTimeout(() => setIsGlitching(false), 1500);
 
-            // Update leaderboard if we won/finished
             const ourResult = data.results?.find(p => p.id === socket?.id);
             if (ourResult) {
                 playSuccessSound();
                 const safeWpm = ourResult.wpm || 0;
                 const safeAcc = ourResult.accuracy || 0;
-                syncToLeaderboard(safeWpm, safeAcc);
+                const recordedKeystrokes = [...keystrokesRef.current];
 
-                // Fix: Also persist result to localStorage so Dashboard graph updates
+                if (!ourResult.keystrokes?.length && recordedKeystrokes.length > 0 && socket && roomIdRef.current) {
+                    socket.emit('playerFinished', {
+                        roomId: roomIdRef.current,
+                        wpm: safeWpm,
+                        accuracy: safeAcc,
+                        keystrokes: recordedKeystrokes
+                    });
+                }
+
                 try {
                     const existing = JSON.parse(localStorage.getItem('raceHistory') || '[]');
                     existing.push({ wpm: safeWpm, accuracy: safeAcc, date: Date.now(), stream: category, mode: 'multiplayer' });
                     localStorage.setItem('raceHistory', JSON.stringify(existing.slice(-50)));
                 } catch (e) { console.warn('localStorage write failed', e); }
+
+                void (async () => {
+                    try {
+                        if (auth.currentUser) {
+                            await syncCrucialData(safeWpm, safeAcc);
+                        } else {
+                            await syncToLeaderboard(safeWpm, safeAcc);
+                        }
+                    } catch (e) {
+                        console.warn('Score sync failed (raceOver):', e);
+                    }
+                })();
+
+                try {
+                    const stats = buildStatsForAchievements();
+                    const newAchievements = checkAchievements(stats);
+                    if (newAchievements.length > 0) {
+                        saveAchievements(newAchievements);
+                        newAchievements.forEach(a => {
+                            addToast({ message: `${a.icon} ${a.title} — ${a.description}`, type: 'achievement' });
+                        });
+
+                        const hasLegendary = newAchievements.some(a => a.rarity === 'legendary');
+                        const hasRare = newAchievements.some(a => a.rarity === 'rare');
+
+                        if (hasLegendary) launchConfetti('legendary');
+                        else if (hasRare) launchConfetti('rare');
+                    }
+                } catch (e) { console.warn('Achievement check failed:', e); }
             }
 
             // Update last local update for sync icon
@@ -247,7 +305,11 @@ export default function Multiplayer() {
             setGameState('lobby');
             setWinnerData(null);
             setUserInput('');
-            setTimeLeft(30);
+            setTimeLeft(duration);
+            setElapsedTime(0);
+            setRaceMode('time');
+            raceModeRef.current = 'time';
+            raceDurationRef.current = duration;
             setProgress(0);
             setCurrentWpm(0);
             setIsGhostCaptured(false);
@@ -314,20 +376,31 @@ export default function Multiplayer() {
             if (!startTimeRef.current) return;
             const now = Date.now();
             const elapsed = (now - startTimeRef.current) / 1000;
-            const remaining = Math.max(0, Math.round(30 - elapsed));
+            const raceText = textRef.current;
+            const incomingDuration = raceDurationRef.current || 30;
+            const remaining = Math.max(0, Math.round(incomingDuration - elapsed));
             setTimeLeft(remaining);
 
             if (remaining <= 0) {
                 clearInterval(timerRef.current);
 
                 const currentVal = userInputRef.current;
-                const correct = currentVal.split('').filter((char, i) => char === text[i]).length;
-                const elapsedMins = 0.5; // 30 seconds
+                const correct = currentVal.split('').filter((char, i) => char === raceText[i]).length;
+                const elapsedSecs = Math.max(1, incomingDuration);
+                const elapsedMins = elapsedSecs / 60;
                 const finalWpm = Math.round((correct / 5) / elapsedMins) || 0;
-                // NaN fix: guard against zero-length input
                 const finalAcc = currentVal.length > 0 ? Math.round((correct / currentVal.length) * 100) || 0 : 0;
+                const recordedKeystrokes = [...keystrokesRef.current];
 
-                // Dashboard Stats fix: persist race result to localStorage
+                if (socket && roomIdRef.current && currentVal.length > 0) {
+                    socket.emit('playerFinished', {
+                        roomId: roomIdRef.current,
+                        wpm: finalWpm,
+                        accuracy: finalAcc,
+                        keystrokes: recordedKeystrokes
+                    });
+                }
+
                 try {
                     const existing = JSON.parse(localStorage.getItem('raceHistory') || '[]');
                     existing.push({ wpm: finalWpm, accuracy: finalAcc, date: Date.now(), stream: category, mode: 'multiplayer' });
@@ -359,19 +432,24 @@ export default function Multiplayer() {
 
                 setGameState('finished');
 
-                // Cloud Data Flow Fix
-                if (auth.currentUser) {
-                    pushStatsToCloud(finalWpm, finalAcc, 'multiplayer');
-                } else {
-                    syncToLeaderboard(finalWpm, finalAcc);
-                }
+                void (async () => {
+                    try {
+                        if (auth.currentUser) {
+                            await syncCrucialData(finalWpm, finalAcc);
+                        } else {
+                            await syncToLeaderboard(finalWpm, finalAcc);
+                        }
+                    } catch (e) {
+                        console.warn('Score sync failed (timer expiry):', e);
+                    }
+                })();
             }
         }, 100);
 
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
         };
-    }, [gameState]);
+    }, [gameState, socket, category]);
 
     // Keep input focused during race
     useEffect(() => {
@@ -413,7 +491,7 @@ export default function Multiplayer() {
 
     const handleStartRace = () => {
         if (isHost && roomIdRef.current) {
-            socket.emit('startRace', { roomId: roomIdRef.current, difficulty, category });
+            socket.emit('startRace', { roomId: roomIdRef.current, difficulty, category, mode, duration, targetLines });
         }
     };
 
@@ -493,7 +571,7 @@ export default function Multiplayer() {
                     roomId: roomIdRef.current,
                     wpm: calculatedWpm,
                     accuracy: isNaN(finalAccuracy) ? 0 : finalAccuracy,
-                    keystrokes: keystrokesRef.current
+                    keystrokes: [...keystrokesRef.current]
                 });
             }
         }
@@ -533,9 +611,12 @@ export default function Multiplayer() {
 
 
     const handleArchiveGhost = async (playerData) => {
-        // Ensure winnerData has the race text before archiving
         const raceText = winnerData?.text || text;
-        if (!raceText || !playerData.keystrokes) return;
+        const isUs = playerData.id === socket?.id;
+        const keystrokes = playerData.keystrokes?.length > 0
+            ? playerData.keystrokes
+            : (isUs ? keystrokesRef.current : null);
+        if (!raceText || !keystrokes?.length) return;
 
         const ghostId = `ghost_${Date.now()}`;
         const newGhost = {
@@ -543,7 +624,7 @@ export default function Multiplayer() {
             operatorName: playerData.name,
             wpm: playerData.wpm,
             accuracy: playerData.accuracy || 100,
-            keystrokes: playerData.keystrokes,
+            keystrokes,
             text: raceText,
             timestamp: new Date().toISOString()
         };
@@ -665,44 +746,102 @@ export default function Multiplayer() {
 
                 <div className="flex flex-col items-center gap-6 px-4">
                     {isHost && (
-                        <div className="flex flex-col items-center gap-3 w-full max-w-sm">
-                            <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Select Difficulty</span>
-                            <div className="flex gap-1 bg-slate-800/30 p-1 rounded-xl border border-slate-700/30 w-full">
-                                {['easy', 'medium', 'hard'].map((d) => (
+                        <div className="flex flex-col items-center gap-4 w-full max-w-md bg-slate-900/40 border border-white/10 rounded-2xl p-6">
+                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Match Configuration</span>
+
+                            <div className="w-full">
+                                <span className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2 block">Select Difficulty</span>
+                                <div className="flex gap-1 bg-slate-800/30 p-1 rounded-xl border border-slate-700/30 w-full">
+                                    {['easy', 'medium', 'hard'].map((d) => (
+                                        <button
+                                            key={d}
+                                            onClick={() => setDifficulty(d)}
+                                            className={`flex-1 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${difficulty === d
+                                                    ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(0,245,212,0.1)]'
+                                                    : 'text-slate-500 hover:text-slate-300'
+                                                }`}
+                                        >
+                                            {d}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="w-full">
+                                <span className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2 block">Data Stream</span>
+                                <div className="flex gap-1 bg-slate-800/30 p-1 rounded-xl border border-slate-700/30 w-full">
                                     <button
-                                        key={d}
-                                        onClick={() => setDifficulty(d)}
-                                        className={`flex-1 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${difficulty === d
+                                        onClick={() => setCategory('prose')}
+                                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${category === 'prose'
                                                 ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(0,245,212,0.1)]'
                                                 : 'text-slate-500 hover:text-slate-300'
                                             }`}
                                     >
-                                        {d}
+                                        <FileText className="w-3.5 h-3.5" /> Prose
                                     </button>
-                                ))}
+                                    <button
+                                        onClick={() => setCategory('code')}
+                                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${category === 'code'
+                                                ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(0,245,212,0.1)]'
+                                                : 'text-slate-500 hover:text-slate-300'
+                                            }`}
+                                    >
+                                        <Code className="w-3.5 h-3.5" /> Code
+                                    </button>
+                                </div>
                             </div>
 
-                            <span className="text-xs font-bold uppercase tracking-widest text-slate-500 mt-4">Data Stream</span>
-                            <div className="flex gap-1 bg-slate-800/30 p-1 rounded-xl border border-slate-700/30 w-full">
-                                <button
-                                    onClick={() => setCategory('prose')}
-                                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${category === 'prose'
-                                            ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(0,245,212,0.1)]'
-                                            : 'text-slate-500 hover:text-slate-300'
-                                        }`}
-                                >
-                                    <FileText className="w-3.5 h-3.5" /> Prose
-                                </button>
-                                <button
-                                    onClick={() => setCategory('code')}
-                                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${category === 'code'
-                                            ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(0,245,212,0.1)]'
-                                            : 'text-slate-500 hover:text-slate-300'
-                                        }`}
-                                >
-                                    <Code className="w-3.5 h-3.5" /> Code
-                                </button>
+                            <div className="w-full">
+                                <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-3 block">Practice Mode</span>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => setMode('time')}
+                                        className={`flex-1 py-3 rounded-xl border-2 font-black text-xs uppercase transition-all ${mode === 'time' ? 'bg-primary text-background-dark border-primary shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-white/5 border-transparent text-slate-500 hover:border-white/20'}`}
+                                    >
+                                        <Timer className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" /> Time
+                                    </button>
+                                    <button
+                                        onClick={() => setMode('length')}
+                                        className={`flex-1 py-3 rounded-xl border-2 font-black text-xs uppercase transition-all ${mode === 'length' ? 'bg-primary text-background-dark border-primary shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-white/5 border-transparent text-slate-500 hover:border-white/20'}`}
+                                    >
+                                        <Target className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" /> Length
+                                    </button>
+                                </div>
                             </div>
+
+                            {mode === 'time' && (
+                                <div className="w-full">
+                                    <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-3 block">Duration (Seconds)</span>
+                                    <div className="flex gap-2">
+                                        {[30, 60, 120].map((d) => (
+                                            <button
+                                                key={d}
+                                                onClick={() => setDuration(d)}
+                                                className={`flex-1 py-3 rounded-xl border-2 font-black text-lg transition-all ${duration === d ? 'bg-primary text-background-dark border-primary shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-white/5 border-transparent text-slate-500 hover:border-white/20'}`}
+                                            >
+                                                {d}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {mode === 'length' && (
+                                <div className="w-full">
+                                    <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-3 block">Target Lines</span>
+                                    <div className="flex gap-2">
+                                        {[5, 10, 15, 20].map((l) => (
+                                            <button
+                                                key={l}
+                                                onClick={() => setTargetLines(l)}
+                                                className={`flex-1 py-3 rounded-xl border-2 font-black text-lg transition-all ${targetLines === l ? 'bg-primary text-background-dark border-primary shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-white/5 border-transparent text-slate-500 hover:border-white/20'}`}
+                                            >
+                                                {l}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -733,7 +872,8 @@ export default function Multiplayer() {
                     <div className="flex justify-between items-end mb-2">
                         <span className="text-xs font-bold uppercase tracking-[0.2em] text-primary/40">Race Status</span>
                         <div className="text-4xl font-black text-primary drop-shadow-[0_0_15px_rgba(0,245,212,0.3)] font-mono">
-                            {gameState === 'finished' ? '0' : timeLeft}<span className="text-sm font-medium opacity-50 ml-1">s</span>
+                            {gameState === 'finished' ? '0' : timeLeft}
+                            <span className="text-sm font-medium opacity-50 ml-1">s</span>
                         </div>
                     </div>
 
@@ -879,7 +1019,7 @@ export default function Multiplayer() {
                                             </div>
                                         </div>
                                     </div>
-                                    {!isUs && p.keystrokes?.length > 0 && (
+                                    {((p.keystrokes?.length > 0) || (p.wpm > 0) || (p.progress > 0)) && (
                                         <button
                                             onClick={() => handleArchiveGhost(p)}
                                             className="p-2 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:text-primary hover:border-primary/40 hover:bg-primary/10 transition-all group"

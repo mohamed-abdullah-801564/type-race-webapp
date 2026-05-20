@@ -87,7 +87,8 @@ export default function DailyChallenge() {
                         if (response.success) {
                             setChallengeText(response.text);
                             setChallengeDate(response.date);
-                            
+                            setTimeLeft(150);
+
                             // Check if user has played
                             if (auth.currentUser) {
                                 const scoreDoc = await getDoc(doc(db, 'daily_scores', response.date, 'scores', auth.currentUser.uid));

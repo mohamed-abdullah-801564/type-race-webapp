@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ChevronsRight, Save, Gauge, Crown, Cloud, CloudOff, RefreshCw, AlertTriangle, Menu, X } from 'lucide-react';
+import { ChevronsRight, Save, Gauge, Crown, Cloud, CloudOff, RefreshCw, AlertTriangle, Menu, X, Download } from 'lucide-react';
 import { doc, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { sanitizeName } from '../utils/sanitizeUtils';
@@ -186,6 +186,17 @@ export default function Navbar({ isFaded = false }) {
                                 </p>
                             </div>
                         </div>
+                    )}
+                    {!window.navigator.userAgent.includes('Electron') && (
+                        <a 
+                            href="https://github.com/mohamed-abdullah-801564/type-race-webapp/releases/latest"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="faded-ui flex items-center justify-center p-2 rounded-lg text-slate-500 hover:text-primary hover:bg-primary/5 transition-all duration-300"
+                            title="Download Desktop App"
+                        >
+                            <Download className="w-5 h-5" />
+                        </a>
                     )}
                     <div onClick={() => setIsProfileOpen(true)} className="h-10 w-10 rounded-full border-2 border-primary/30 p-0.5 overflow-hidden cursor-pointer hover:border-primary transition-colors">
                         <img

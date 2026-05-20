@@ -406,11 +406,18 @@ export default function SoloMode() {
                     const progress = JSON.parse(localStorage.getItem('academyProgress') || '["mod_1"]');
                     const currentIndex = ACADEMY_MODULES.findIndex(m => m.id === location.state.moduleId);
                     
-                    if (currentIndex !== -1 && currentIndex < ACADEMY_MODULES.length - 1) {
-                        const nextId = ACADEMY_MODULES[currentIndex + 1].id;
-                        if (!progress.includes(nextId)) {
-                            progress.push(nextId);
-                            localStorage.setItem('academyProgress', JSON.stringify(progress));
+                    if (currentIndex !== -1) {
+                        if (currentIndex < ACADEMY_MODULES.length - 1) {
+                            const nextId = ACADEMY_MODULES[currentIndex + 1].id;
+                            if (!progress.includes(nextId)) {
+                                progress.push(nextId);
+                                localStorage.setItem('academyProgress', JSON.stringify(progress));
+                            }
+                        } else if (currentIndex === ACADEMY_MODULES.length - 1) {
+                            if (!progress.includes('academy_completed')) {
+                                progress.push('academy_completed');
+                                localStorage.setItem('academyProgress', JSON.stringify(progress));
+                            }
                         }
                     }
                 } else {

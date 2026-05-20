@@ -7,6 +7,7 @@ import { auth, db } from '../firebase';
 import { doc, onSnapshot, collection, query, orderBy, limit, getDoc } from 'firebase/firestore';
 import { loadData, saveData } from '../utils/storageUtils';
 import { generateSmartDrill } from '../utils/typingUtils';
+import { calculateStreak } from '../utils/achievementUtils';
 import { io } from 'socket.io-client';
 
 const SOCKET_SERVER = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001';
@@ -27,6 +28,10 @@ export default function Dashboard() {
     const [rankData, setRankData] = useState(null);
     const [leaderboard, setLeaderboard] = useState([]);
     const [leaderboardError, setLeaderboardError] = useState(null);
+    const [streakDays, setStreakDays] = useState(() => {
+        const history = loadData('raceHistory', []);
+        return calculateStreak(history);
+    });
 
     const [onlineUsers, setOnlineUsers] = useState([]);
     const [incomingChallenge, setIncomingChallenge] = useState(null);
@@ -58,6 +63,8 @@ export default function Dashboard() {
             setPerformances({});
 
             const history = loadData('raceHistory', []);
+            const currentStreak = calculateStreak(history);
+            setStreakDays(currentStreak);
             const sortedHistory = history
                 .filter((h) => !h.isDrill)
                 .sort((a, b) => (a.date || a.timestamp || 0) - (b.date || b.timestamp || 0));
@@ -407,6 +414,10 @@ export default function Dashboard() {
                                 <span className="text-primary/80">+{Math.round(rankData.avgAcc * 0.2)} Acc Bonus</span>
                                 <span className="w-1 h-1 rounded-full bg-slate-600"></span>
                                 <span className="text-primary/60">+{Math.round((rankData.drillsCompleted || 0) * 0.5)} Drill Multiplier</span>
+                                <span className="w-1 h-1 rounded-full bg-slate-600"></span>
+                                <span className="text-amber-400 font-bold flex items-center gap-1 animate-pulse">
+                                    🔥 STREAK: <strong className="text-white">{streakDays || 0}</strong> DAYS ACTIVE
+                                </span>
                             </div>
                         </div>
 

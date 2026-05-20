@@ -195,7 +195,7 @@ io.on('connection', (socket) => {
     });
 
     // Start the race
-    socket.on('startRace', ({ roomId, difficulty, category }, callback) => {
+    socket.on('startRace', ({ roomId, difficulty, category, mode, duration, targetLines }, callback) => {
         const room = rooms[roomId];
         if (!room) return;
 
@@ -204,22 +204,48 @@ io.on('connection', (socket) => {
             return;
         }
 
-        // Pick a random quote based on difficulty and category
+        const raceMode = mode === 'length' ? 'length' : 'time';
+        const raceDuration = [30, 60, 120].includes(duration) ? duration : 30;
+        const raceTargetLines = [5, 10, 15, 20].includes(targetLines) ? targetLines : 5;
+
+        room.mode = raceMode;
+        room.duration = raceDuration;
+        room.targetLines = raceTargetLines;
+
         const diff = difficulty || 'medium';
         const cat = category || 'prose';
         const source = cat === 'code' ? CODE_SNIPPETS : QUOTES;
         const pool = source.filter(q => q.difficulty === diff);
-        const selectedQuote = pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)].text : source[0].text;
+        const poolTexts = pool.length > 0 ? pool.map((q) => q.text) : source.map((q) => q.text);
 
+        let selectedText;
+        if (raceMode === 'length') {
+            const targetWordCount = raceTargetLines * 12;
+            let combined = '';
+            while (combined.split(/\s+/).filter((w) => w.length > 0).length < targetWordCount) {
+                const pick = poolTexts[Math.floor(Math.random() * poolTexts.length)];
+                combined += (combined ? ' ' : '') + pick;
+            }
+            const words = combined.split(/\s+/).filter((w) => w.length > 0);
+            selectedText = words.slice(0, targetWordCount).join(' ');
+        } else {
+            selectedText = poolTexts[Math.floor(Math.random() * poolTexts.length)] || source[0].text;
+        }
+
+        room.text = selectedText;
         room.status = 'playing';
-        console.log(`[${roomId}] Race started with difficulty: ${diff}, category: ${cat}`);
+        console.log(`[${roomId}] Race started — diff: ${diff}, cat: ${cat}, mode: ${raceMode}, duration: ${raceDuration}s, lines: ${raceTargetLines}`);
 
-        // Broadcast to EVERYONE in the room including the host
         io.to(roomId).emit('raceStarted', {
-            text: selectedQuote,
-            countdown: 3, // Give frontend ~3s to count down
-            championGhost: globalChampionGhost
+            text: selectedText,
+            countdown: 3,
+            championGhost: globalChampionGhost,
+            mode: raceMode,
+            duration: raceDuration,
+            targetLines: raceTargetLines
         });
+
+        if (callback) callback({ success: true });
     });
 
     // Update typing progress
