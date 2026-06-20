@@ -38,7 +38,7 @@ export default function Landing() {
     }, []);
 
     return (
-        <div className="min-h-screen bg-background-dark text-slate-300 font-sans selection:bg-primary/30 relative overflow-hidden flex flex-col">
+        <div className="min-h-screen bg-slate-50 dark:bg-background-dark text-slate-900 dark:text-slate-100 font-sans selection:bg-primary/30 relative overflow-hidden flex flex-col">
             {/* Background elements */}
             <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
                 <div className="absolute top-0 left-0 w-full h-full bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-size-[100%_2px,3px_100%] animate-scanlines" />

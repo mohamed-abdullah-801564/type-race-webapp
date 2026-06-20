@@ -97,7 +97,6 @@ export const syncCrucialData = async (finalWpm, finalAcc) => {
 
         // 2. Prepare atomic update
         const updatePayload = {
-            totalRaces: increment(1),
             "rank.totalRaces": increment(1),
             lastActive: serverTimestamp(),
             operatorName: operatorName,

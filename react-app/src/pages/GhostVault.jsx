@@ -122,16 +122,16 @@ export default function GhostVault() {
                         </div>
                         <button
                             onClick={onClose}
-                            className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white border border-white/10 hover:border-primary/40 rounded-lg transition-all"
+                            className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-white/10 hover:border-slate-400 dark:hover:border-primary/40 rounded-lg transition-all"
                         >
                             Terminate
                         </button>
                     </div>
-                    <div className="bg-black border border-primary/20 p-8 rounded-2xl font-mono text-xl min-h-[200px] max-h-[60vh] overflow-y-auto shadow-[0_0_60px_rgba(0,245,212,0.08)]">
-                        <span className="text-slate-200 whitespace-pre-wrap wrap-break-word">{text}</span>
+                    <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-primary/20 p-8 rounded-2xl font-mono text-xl min-h-[200px] max-h-[60vh] overflow-y-auto shadow-2xl">
+                        <span className="text-slate-800 dark:text-slate-200 whitespace-pre-wrap wrap-break-word">{text}</span>
                         <span className="w-2 h-5 bg-primary animate-pulse inline-block align-middle ml-0.5" />
                     </div>
-                    <div className="mt-3 flex justify-between text-[9px] font-black uppercase tracking-widest text-slate-600 px-2">
+                    <div className="mt-3 flex justify-between text-[9px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 px-2">
                         <span>{ghost.wpm} WPM · {ghost.accuracy || '98'}% accuracy</span>
                         <span className="text-primary/50 animate-pulse">Live neural playback</span>
                     </div>
@@ -151,13 +151,12 @@ export default function GhostVault() {
             'EXPERT': 'text-yellow-500 border-yellow-500',
             'ADVANCED': 'text-green-500 border-green-500'
         };
-
         return (
-            <div className="group bg-black/60 border-2 border-white/5 hover:border-primary/40 rounded-3xl p-6 flex flex-col gap-5 transition-all duration-300 hover:shadow-[0_0_30px_rgba(0,245,212,0.1)]">
+            <div className="group bg-white dark:bg-black/20 border-2 border-slate-200 dark:border-white/5 shadow-sm hover:border-primary/40 rounded-3xl p-6 flex flex-col gap-5 transition-all duration-300 dark:hover:shadow-[0_0_30px_rgba(0,245,212,0.1)] hover:border-slate-400">
                 {/* Card Header: Name/Badge Left, WPM Hero Right */}
                 <div className="flex justify-between items-start">
                     <div className="flex flex-col gap-2">
-                        <h3 className="text-2xl font-black text-white leading-tight">
+                        <h3 className="text-2xl font-black text-slate-900 dark:text-white leading-tight">
                             {name}
                         </h3>
                         <div className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border w-fit ${diffColors[difficulty.label] || 'text-primary border-primary'}`}>
@@ -173,23 +172,23 @@ export default function GhostVault() {
                         </div>
                     </div>
                 </div>
-
+ 
                 {/* Stats Row */}
                 <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-black/40 border border-white/5 rounded-xl p-3">
-                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">Accuracy</span>
-                        <div className="text-sm font-bold text-slate-200">
+                    <div className="bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/5 rounded-xl p-3">
+                        <span className="text-[9px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest block mb-1">Accuracy</span>
+                        <div className="text-sm font-bold text-slate-800 dark:text-slate-200">
                             {ghost.accuracy || '98'}%
                         </div>
                     </div>
-                    <div className="bg-black/40 border border-white/5 rounded-xl p-3">
-                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">Captured</span>
-                        <div className="text-sm font-bold text-slate-200">
+                    <div className="bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/5 rounded-xl p-3">
+                        <span className="text-[9px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest block mb-1">Captured</span>
+                        <div className="text-sm font-bold text-slate-800 dark:text-slate-200">
                             {date}
                         </div>
                     </div>
                 </div>
-
+ 
                 {/* Action Buttons */}
                 <div className="flex flex-col gap-2">
                     <button 
@@ -202,7 +201,7 @@ export default function GhostVault() {
                     <button
                         onClick={() => onWatchReplay(ghost)}
                         disabled={!ghost.keystrokes?.length}
-                        className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-primary/30 text-slate-300 hover:text-primary font-black uppercase tracking-[0.2em] text-[10px] rounded-xl transition-all active:scale-95 disabled:opacity-30 disabled:pointer-events-none"
+                        className="w-full py-3 bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 hover:border-slate-400 dark:hover:border-primary/30 text-slate-700 dark:text-slate-300 hover:text-primary font-black uppercase tracking-[0.2em] text-[10px] rounded-xl transition-all active:scale-95 disabled:opacity-30 disabled:pointer-events-none"
                     >
                         📺 Watch Replay
                     </button>
@@ -212,12 +211,12 @@ export default function GhostVault() {
     };
 
     return (
-        <div className="layout-container flex h-full grow flex-col bg-background-dark selecting:bg-primary/20">
+        <div className="layout-container flex h-full grow flex-col bg-slate-50 dark:bg-background-dark text-slate-700 dark:text-slate-300 selecting:bg-primary/20">
             <Navbar />
             
             {/* Terminal Background Effect */}
             <div className="fixed inset-0 pointer-events-none opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-size-[100%_2px,3px_100%] z-0" />
-
+ 
             <main className="flex-1 px-4 md:px-8 lg:px-24 py-12 z-10 relative">
                 {/* Header Section */}
                 <div className="flex flex-col md:flex-row items-start justify-between gap-6 md:gap-8 mb-12 overflow-hidden">
@@ -228,20 +227,20 @@ export default function GhostVault() {
                             </div>
                             <span className="text-xs font-black text-primary uppercase tracking-[0.4em]">Subsystem: GHOST_VAULT v4.1</span>
                         </div>
-                        <h1 className="text-3xl md:text-5xl font-black text-white italic tracking-tighter uppercase whitespace-nowrap">Neural Capture <span className="text-primary tracking-normal not-italic underline decoration-primary/30 decoration-8 underline-offset-4">Archive</span></h1>
-                        <p className="text-slate-500 font-medium max-w-xl uppercase text-[8px] md:text-[10px] tracking-[0.2em] wrap-break-word">Established link with the distributed ghost network. Browsing encrypted keystroke recordings from the local grid and global nexus.</p>
+                        <h1 className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white italic tracking-tighter uppercase whitespace-nowrap">Neural Capture <span className="text-primary tracking-normal not-italic underline decoration-primary/30 decoration-8 underline-offset-4">Archive</span></h1>
+                        <p className="text-slate-600 dark:text-slate-400 font-medium max-w-xl uppercase text-[8px] md:text-[10px] tracking-[0.2em] wrap-break-word">Established link with the distributed ghost network. Browsing encrypted keystroke recordings from the local grid and global nexus.</p>
                     </div>
-
-                    <div className="flex bg-slate-900/80 backdrop-blur-xl p-1.5 rounded-2xl border border-white/5 shadow-2xl shrink-0">
+ 
+                    <div className="w-auto flex items-center gap-2 bg-slate-100 dark:bg-black/20 p-1.5 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm shrink-0">
                         <button 
                             onClick={() => setActiveTab('private')}
-                            className={`flex items-center gap-3 px-8 py-4 rounded-xl transition-all duration-500 font-black text-[10px] uppercase tracking-widest ${activeTab === 'private' ? 'bg-primary text-background-dark shadow-[0_0_20px_rgba(0,245,212,0.3)]' : 'text-slate-500 hover:text-slate-300'}`}
+                            className={`flex items-center gap-3 px-8 py-4 rounded-xl transition-all duration-500 font-black text-[10px] uppercase tracking-widest ${activeTab === 'private' ? 'bg-primary text-background-dark border border-slate-900 dark:border-transparent dark:shadow-[0_0_20px_rgba(0,245,212,0.3)]' : 'text-slate-600 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-300'}`}
                         >
                             <Lock className="w-4 h-4" /> Private Archive
                         </button>
                         <button 
                             onClick={() => setActiveTab('global')}
-                            className={`flex items-center gap-3 px-8 py-4 rounded-xl transition-all duration-500 font-black text-[10px] uppercase tracking-widest ${activeTab === 'global' ? 'bg-primary text-background-dark shadow-[0_0_20px_rgba(0,245,212,0.3)]' : 'text-slate-500 hover:text-slate-300'}`}
+                            className={`flex items-center gap-3 px-8 py-4 rounded-xl transition-all duration-500 font-black text-[10px] uppercase tracking-widest ${activeTab === 'global' ? 'bg-primary text-background-dark border border-slate-900 dark:border-transparent dark:shadow-[0_0_20px_rgba(0,245,212,0.3)]' : 'text-slate-600 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-300'}`}
                         >
                             <Globe className="w-4 h-4" /> Global Nexus
                         </button>
@@ -250,21 +249,21 @@ export default function GhostVault() {
 
                 {/* Dashboard Stats Row */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-                    <div className="bg-white/2 border border-white/5 p-4 rounded-xl flex items-center gap-4">
+                    <div className="bg-white dark:bg-black/20 border border-slate-200 dark:border-white/5 p-4 rounded-xl flex items-center gap-4">
                         <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
                             <Activity className="w-5 h-5" />
                         </div>
                         <div>
-                            <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest block">Active Links</span>
-                            <span className="text-lg font-bold text-white font-mono">{privateGhosts.length + globalGhosts.length}</span>
+                            <span className="text-[8px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest block">Active Links</span>
+                            <span className="text-lg font-bold text-slate-900 dark:text-white font-mono">{privateGhosts.length + globalGhosts.length}</span>
                         </div>
                     </div>
-                    <div className="bg-white/2 border border-white/5 p-4 rounded-xl flex items-center gap-4">
+                    <div className="bg-white dark:bg-black/20 border border-slate-200 dark:border-white/5 p-4 rounded-xl flex items-center gap-4">
                         <div className="w-10 h-10 rounded-lg bg-cyan-500/10 flex items-center justify-center text-cyan-400 border border-cyan-500/20">
                             <Cpu className="w-5 h-5" />
                         </div>
                         <div>
-                            <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest block">Neural Sync</span>
+                            <span className="text-[8px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest block">Neural Sync</span>
                             <span className="text-lg font-bold text-cyan-400 font-mono">READY</span>
                         </div>
                     </div>
@@ -294,10 +293,10 @@ export default function GhostVault() {
                         </div>
 
                         {(activeTab === 'private' ? privateGhosts : globalGhosts).length === 0 && (
-                            <div className="min-h-[400px] flex flex-col items-center justify-center bg-black/20 rounded-3xl border border-dashed border-white/10 p-12">
-                                <Search className="w-16 h-16 text-slate-700 mb-6" />
-                                <h3 className="text-xl font-bold text-slate-500 uppercase tracking-widest mb-2">No Neural Signatures Detected</h3>
-                                <p className="text-sm text-slate-600 uppercase font-black text-center max-w-sm tracking-tight italic">Initiate more races in Solo or Multiplayer mode to capture new ghosts for the archive.</p>
+                            <div className="min-h-[400px] flex flex-col items-center justify-center bg-white dark:bg-black/20 rounded-3xl border border-dashed border-slate-200 dark:border-white/10 p-12">
+                                <Search className="w-16 h-16 text-slate-400 dark:text-slate-700 mb-6" />
+                                <h3 className="text-xl font-bold text-slate-600 dark:text-slate-500 uppercase tracking-widest mb-2">No Neural Signatures Detected</h3>
+                                <p className="text-sm text-slate-600 dark:text-slate-400 uppercase font-black text-center max-w-sm tracking-tight italic">Initiate more races in Solo or Multiplayer mode to capture new ghosts for the archive.</p>
                             </div>
                         )}
                     </>

@@ -36,7 +36,7 @@ export default function FingerMap({ activeKeys = [] }) {
     const isActive = (key) => activeKeys.includes(key.toLowerCase());
 
     return (
-        <div className="bg-black/40 border border-white/5 rounded-3xl p-8">
+        <div className="bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/5 rounded-3xl p-8">
             <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-6">
                 Finger Mapping Guide
             </h3>
@@ -72,7 +72,7 @@ export default function FingerMap({ activeKeys = [] }) {
                                         w-10 h-10 rounded-lg border flex items-center justify-center text-xs font-black uppercase transition-all duration-300
                                         ${active 
                                             ? 'opacity-100' 
-                                            : 'bg-slate-800 border-slate-700 text-slate-600 opacity-40'
+                                            : 'bg-slate-200/60 border-slate-300 text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-600 opacity-40'
                                         }
                                     `}
                                 >
@@ -94,7 +94,7 @@ function LegendItem({ color, label }) {
                 className="w-2 h-2 rounded-full" 
                 style={{ backgroundColor: color }}
             />
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+            <span className="text-[10px] font-bold text-slate-700 dark:text-slate-400 uppercase tracking-widest">
                 {label}
             </span>
         </div>

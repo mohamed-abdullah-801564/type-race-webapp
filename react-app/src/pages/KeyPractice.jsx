@@ -21,15 +21,15 @@ const KEYBOARD_ROWS = [
     ['z','x','c','v','b','n','m'],
 ];
 
-function getTierConfig(score) {
-    if (score < 25) return { name: 'ROOKIE', speed: 0.3, spawnCount: 1, interval: 2000 };
-    if (score < 50) return { name: 'SKILLED', speed: 0.5, spawnCount: 1, interval: 1600 };
-    if (score < 75) return { name: 'EXPERT', speed: 0.7, spawnCount: 2, interval: 1400 };
+function getTierConfig(score, speedStep = 25) {
+    if (score < speedStep) return { name: 'ROOKIE', speed: 0.3, spawnCount: 1, interval: 2000 };
+    if (score < speedStep * 2) return { name: 'SKILLED', speed: 0.5, spawnCount: 1, interval: 1600 };
+    if (score < speedStep * 3) return { name: 'EXPERT', speed: 0.7, spawnCount: 2, interval: 1400 };
     return { name: 'LEGENDARY', speed: 1.0, spawnCount: 3, interval: 1000 };
 }
 
-function makeBalloon(selectedKeys, score, caseMode) {
-    const config = getTierConfig(score);
+function makeBalloon(selectedKeys, score, caseMode, speedStep = 25) {
+    const config = getTierConfig(score, speedStep);
     const randomKey = selectedKeys[Math.floor(Math.random() * selectedKeys.length)];
     
     let key = randomKey;
@@ -64,6 +64,7 @@ export default function KeyPractice() {
     const [caseMode, setCaseMode]         = useState('lower'); // lower | upper | mixed
     const [showWrongKey, setShowWrongKey] = useState(false);
     const [tierUpMsg, setTierUpMsg]       = useState('');
+    const [speedStep, setSpeedStep]       = useState(25);
 
     const scoreRef        = useRef(0);
     const livesRef        = useRef(3);
@@ -91,7 +92,7 @@ export default function KeyPractice() {
         setScore(newS);
 
         // Tier check
-        const newTier = getTierConfig(newS).name;
+        const newTier = getTierConfig(newS, speedStep).name;
         if (newTier !== lastTierRef.current) {
             lastTierRef.current = newTier;
             setTierUpMsg(`TIER UP! — ${newTier}`);
@@ -164,12 +165,12 @@ export default function KeyPractice() {
             return;
         }
 
-        const config = getTierConfig(scoreRef.current);
+        const config = getTierConfig(scoreRef.current, speedStep);
         
         const spawnBalloons = () => {
             const newBalloons = [];
             for (let i = 0; i < config.spawnCount; i++) {
-                newBalloons.push(makeBalloon(selectedKeysRef.current, scoreRef.current, caseModeRef.current));
+                newBalloons.push(makeBalloon(selectedKeysRef.current, scoreRef.current, caseModeRef.current, speedStep));
             }
             updateBalloons([...balloonsRef.current, ...newBalloons]);
         };
@@ -180,7 +181,7 @@ export default function KeyPractice() {
         return () => {
             if (spawnIntervalRef.current) clearInterval(spawnIntervalRef.current);
         };
-    }, [gameState, score]);
+    }, [gameState, score, speedStep]);
 
     // ── Keyboard handler ───────────────────────────────────────────────────
     const handleKeyDown = useCallback((e) => {
@@ -241,7 +242,7 @@ export default function KeyPractice() {
         setCombo(0); 
         setMaxCombo(0);
         
-        const firstBalloon = makeBalloon(k, 0, caseMode);
+        const firstBalloon = makeBalloon(k, 0, caseMode, speedStep);
         updateBalloons([firstBalloon]);
         setGameState('playing');
     };
@@ -280,24 +281,24 @@ export default function KeyPractice() {
     // ── Render: Config ─────────────────────────────────────────────────────
     if (gameState === 'config') {
         return (
-            <div className="min-h-screen bg-background-dark text-slate-300 font-sans selection:bg-primary/30 selection:text-primary flex flex-col overflow-hidden relative">
+            <div className="min-h-screen bg-slate-50 dark:bg-background-dark text-slate-700 dark:text-slate-300 font-sans selection:bg-primary/30 selection:text-primary flex flex-col overflow-hidden relative">
                 <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-size-[100%_2px,3px_100%] z-50" />
                 <Navbar />
                 <MobileBanner />
 
                 <main className="flex-1 flex items-center justify-center p-6">
-                    <div className="max-w-2xl w-full bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-10 shadow-2xl overflow-y-auto max-h-[85vh] [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                    <div className="max-w-2xl w-full bg-white dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-3xl p-10 shadow-xl overflow-y-auto max-h-[85vh] [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                         <div className="text-center mb-10">
                             <div className="text-6xl mb-4 animate-bounce">🎈</div>
-                            <h1 className="text-4xl font-black text-white uppercase tracking-tighter mb-2">Key Practice</h1>
-                            <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">
+                            <h1 className="text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tighter mb-2">Key Practice</h1>
+                            <p className="text-slate-600 dark:text-slate-400 font-bold uppercase tracking-widest text-[10px]">
                                 Pop the balloons before they escape — train your weakest keys
                             </p>
                         </div>
 
                         <div className="space-y-8">
                             <div>
-                                <label className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-4 block">Quick Launch</label>
+                                <label className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-[0.3em] mb-4 block">Quick Launch</label>
                                 <div className="grid grid-cols-2 gap-3">
                                     {PRESETS.map(p => (
                                         <button
@@ -306,14 +307,14 @@ export default function KeyPractice() {
                                                 setSelectedKeys(p.keys); 
                                                 setSelectedPreset(p.label); 
                                             }}
-                                            className={`py-4 px-5 rounded-xl border-2 transition-all text-left ${
+                                            className={`py-4 px-5 rounded-xl border transition-all text-left ${
                                                 selectedPreset === p.label 
-                                                ? 'bg-primary/20 border-primary text-primary' 
-                                                : 'bg-white/5 border-transparent text-slate-300 hover:border-white/20'
+                                                ? 'bg-slate-200 border-slate-400 text-slate-900 dark:bg-primary/20 dark:border-primary dark:text-primary dark:shadow-[0_0_15px_rgba(0,245,212,0.3)]' 
+                                                : 'bg-slate-100 dark:bg-white/5 border-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'
                                             }`}
                                         >
-                                            <div className="uppercase tracking-tight font-black text-sm">{p.label}</div>
-                                            <div className={`text-[10px] font-mono mt-1 ${selectedPreset === p.label ? 'text-primary/70' : 'text-slate-500'}`}>
+                                            <div className="font-bold text-base text-slate-900 dark:text-slate-100">{p.label}</div>
+                                            <div className={`text-xs font-mono mt-1 ${selectedPreset === p.label ? 'text-slate-800 dark:text-primary/70' : 'text-slate-500'}`}>
                                                 {p.keys.join(' ')}
                                             </div>
                                         </button>
@@ -322,7 +323,7 @@ export default function KeyPractice() {
                             </div>
 
                             <div>
-                                <label className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-4 block">Case Mode</label>
+                                <label className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-[0.3em] mb-4 block">Case Mode</label>
                                 <div className="grid grid-cols-3 gap-3">
                                     {[
                                         { id: 'lower', label: 'Lowercase Only' },
@@ -332,10 +333,10 @@ export default function KeyPractice() {
                                         <button
                                             key={mode.id}
                                             onClick={() => setCaseMode(mode.id)}
-                                            className={`py-3 px-4 rounded-xl border-2 transition-all text-center text-[10px] font-black uppercase tracking-widest ${
+                                            className={`py-3 px-4 rounded-xl border transition-all text-center text-sm font-semibold ${
                                                 caseMode === mode.id
-                                                ? 'bg-primary/20 border-primary text-primary'
-                                                : 'bg-white/5 border-transparent text-slate-500 hover:border-white/10'
+                                                ? 'bg-slate-200 border-slate-400 text-slate-900 dark:bg-primary/20 dark:border-primary dark:text-primary dark:shadow-[0_0_15px_rgba(0,245,212,0.3)]'
+                                                : 'bg-slate-100 dark:bg-white/5 border-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'
                                             }`}
                                         >
                                             {mode.label}
@@ -345,7 +346,30 @@ export default function KeyPractice() {
                             </div>
 
                             <div>
-                                <label className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-4 block">Custom Key Set</label>
+                                <label className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-[0.3em] mb-4 block">Speed Scaling Interval</label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {[
+                                        { val: 25, label: 'Standard (25 Pts)' },
+                                        { val: 15, label: 'Accelerated (15 Pts)' }
+                                    ].map(opt => (
+                                        <button
+                                            key={opt.val}
+                                            type="button"
+                                            onClick={() => setSpeedStep(opt.val)}
+                                            className={`py-3 px-4 rounded-xl border transition-all text-center text-sm font-semibold ${
+                                                speedStep === opt.val
+                                                ? 'bg-slate-200 border-slate-400 text-slate-900 dark:bg-primary/20 dark:border-primary dark:text-primary dark:shadow-[0_0_15px_rgba(0,245,212,0.3)]'
+                                                : 'bg-slate-100 dark:bg-white/5 border-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'
+                                            }`}
+                                        >
+                                            {opt.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-[0.3em] mb-4 block">Custom Key Set</label>
                                 <div className="flex flex-col gap-2 items-center">
                                     {KEYBOARD_ROWS.map((row, ri) => (
                                         <div key={ri} className={`flex gap-2 ${ri === 1 ? 'ml-8' : ri === 2 ? 'ml-16' : ''}`}>
@@ -353,10 +377,10 @@ export default function KeyPractice() {
                                                 <button
                                                     key={k}
                                                     onClick={() => toggleKey(k)}
-                                                    className={`w-10 h-10 rounded-lg border-2 font-black text-sm uppercase transition-all ${
+                                                    className={`w-10 h-10 rounded-lg border font-semibold text-sm uppercase transition-all ${
                                                         selectedKeys.includes(k)
-                                                            ? 'bg-primary text-black border-primary shadow-[0_0_10px_rgba(0,245,212,0.4)]'
-                                                            : 'bg-white/5 text-slate-500 border-transparent hover:border-white/20'
+                                                            ? 'bg-slate-300 border-slate-500 text-slate-950 dark:bg-primary dark:text-black dark:border-primary dark:shadow-[0_0_10px_rgba(0,245,212,0.4)]'
+                                                            : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 border-transparent hover:bg-slate-200 dark:hover:bg-white/10'
                                                     }`}
                                                 >
                                                     {k}
@@ -365,7 +389,7 @@ export default function KeyPractice() {
                                         </div>
                                     ))}
                                 </div>
-                                <p className="text-center text-[10px] text-slate-600 mt-3 uppercase tracking-widest font-bold">
+                                <p className="text-center text-[10px] text-slate-600 dark:text-slate-400 mt-3 uppercase tracking-widest font-bold">
                                     {selectedKeys.length} keys selected
                                 </p>
                             </div>
@@ -373,7 +397,7 @@ export default function KeyPractice() {
                             <button
                                 onClick={() => startGame()}
                                 disabled={selectedKeys.length === 0}
-                                className={`w-full py-5 bg-primary text-black rounded-2xl font-black uppercase tracking-[0.3em] transition-all shadow-[0_0_30px_rgba(0,245,212,0.4)] flex items-center justify-center gap-3 text-sm ${
+                                className={`w-full py-5 bg-primary text-black rounded-2xl font-black uppercase tracking-[0.3em] transition-all border border-primary shadow-md dark:shadow-[0_0_30px_rgba(0,245,212,0.4)] flex items-center justify-center gap-3 text-sm ${
                                     selectedKeys.length === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-95'
                                 }`}
                             >
@@ -389,12 +413,12 @@ export default function KeyPractice() {
     if (gameState === 'gameover') {
         const finalHS = Math.max(score, parseInt(localStorage.getItem('keyPracticeHighScore') || '0'));
         return (
-            <div className="min-h-screen bg-background-dark text-slate-300 font-sans flex items-center justify-center p-6 relative overflow-hidden">
+            <div className="min-h-screen bg-slate-50 dark:bg-background-dark text-slate-700 dark:text-slate-300 font-sans flex items-center justify-center p-6 relative overflow-hidden">
                 <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-size-[100%_2px,3px_100%] z-50" />
 
-                <div className="max-w-md w-full bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-3xl p-10 shadow-2xl animate-in zoom-in fade-in duration-500 text-center">
+                <div className="max-w-md w-full bg-white dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-3xl p-10 shadow-xl animate-in zoom-in fade-in duration-500 text-center">
                     <div className="text-5xl mb-4">💀</div>
-                    <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-1">Game Over</h2>
+                    <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter mb-1">Game Over</h2>
                     <p className="text-slate-500 text-[10px] uppercase tracking-widest font-bold mb-8">All lives lost</p>
 
                     {isNewHighScore && (
@@ -404,34 +428,34 @@ export default function KeyPractice() {
                     )}
 
                     <div className="grid grid-cols-3 gap-4 mb-8">
-                        <div className="bg-black/40 border border-white/5 rounded-2xl p-5 flex flex-col items-center gap-1">
-                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Score</span>
-                            <span className="text-3xl font-black font-mono text-primary">{score}</span>
+                        <div className="bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/5 rounded-2xl p-5 flex flex-col items-center gap-1">
+                            <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Score</span>
+                            <span className="text-3xl font-black font-mono text-slate-900 dark:text-primary">{score}</span>
                         </div>
-                        <div className="bg-black/40 border border-white/5 rounded-2xl p-5 flex flex-col items-center gap-1">
-                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Max Combo</span>
-                            <span className="text-3xl font-black font-mono text-white">{maxCombo}x</span>
+                        <div className="bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/5 rounded-2xl p-5 flex flex-col items-center gap-1">
+                            <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Max Combo</span>
+                            <span className="text-3xl font-black font-mono text-slate-900 dark:text-white">{maxCombo}x</span>
                         </div>
-                        <div className="bg-black/40 border border-white/5 rounded-2xl p-5 flex flex-col items-center gap-1">
-                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Tier</span>
-                            <span className="text-sm font-black text-white uppercase mt-2">{getTierConfig(score).name}</span>
+                        <div className="bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/5 rounded-2xl p-5 flex flex-col items-center gap-1">
+                            <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Tier</span>
+                            <span className="text-sm font-black text-slate-900 dark:text-white uppercase mt-2">{getTierConfig(score).name}</span>
                         </div>
                     </div>
 
-                    <div className="mb-6 text-[10px] text-slate-500 uppercase tracking-widest font-bold">
+                    <div className="mb-6 text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest font-bold">
                         High Score: <span className="text-primary">{finalHS}</span>
                     </div>
 
                     <div className="flex gap-4">
                         <button
                             onClick={() => startGame()}
-                            className="flex-1 py-4 bg-primary text-black rounded-2xl font-black uppercase tracking-widest text-xs hover:scale-105 transition-all shadow-[0_0_20px_rgba(0,245,212,0.3)]"
+                            className="flex-1 py-4 bg-primary text-black rounded-2xl font-black uppercase tracking-widest text-xs hover:scale-105 transition-all border-2 border-slate-900 dark:border-primary shadow-md dark:shadow-[0_0_20px_rgba(0,245,212,0.3)]"
                         >
                             Play Again
                         </button>
                         <button
                             onClick={() => navigate('/achievements')}
-                            className="flex-1 py-4 bg-white/5 border border-white/10 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-white/10 transition-all"
+                            className="flex-1 py-4 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-200 dark:hover:bg-white/10 transition-all"
                         >
                             Achievements
                         </button>
@@ -439,7 +463,7 @@ export default function KeyPractice() {
 
                     <button
                         onClick={resetToConfig}
-                        className="mt-4 w-full py-3 text-slate-500 font-bold uppercase tracking-widest text-[10px] hover:text-white transition-colors"
+                        className="mt-4 w-full py-3 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest text-[10px] hover:text-slate-900 dark:hover:text-white transition-colors"
                     >
                         ← Back to Config
                     </button>
@@ -451,7 +475,7 @@ export default function KeyPractice() {
     const currentTier = getTierConfig(score);
 
     return (
-        <div className="min-h-screen bg-background-dark text-slate-300 font-sans overflow-hidden relative select-none" style={{ userSelect: 'none' }}>
+        <div className="min-h-screen bg-slate-50 dark:bg-background-dark text-slate-700 dark:text-slate-300 font-sans overflow-hidden relative select-none" style={{ userSelect: 'none' }}>
             <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-size-[100%_2px,3px_100%] z-50" />
 
             {/* Notifications */}
@@ -466,14 +490,14 @@ export default function KeyPractice() {
                 </div>
             )}
 
-            <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-8 py-4 bg-black/40 backdrop-blur-md border-b border-white/5">
+            <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-8 py-4 bg-white/80 dark:bg-black/40 backdrop-blur-md border-b border-slate-200 dark:border-white/5">
                 <div className="flex flex-col">
-                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Score</span>
-                    <span className="text-2xl font-black font-mono text-primary">{score}</span>
+                    <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Score</span>
+                    <span className="text-2xl font-black font-mono text-slate-900 dark:text-primary">{score}</span>
                 </div>
 
                 <div className="flex flex-col items-center">
-                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Lives</span>
+                    <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">Lives</span>
                     <div className="text-2xl tracking-widest">
                         {'❤️'.repeat(lives)}{'🖤'.repeat(Math.max(0, 3 - lives))}
                     </div>
@@ -482,8 +506,8 @@ export default function KeyPractice() {
                 <div className="flex flex-col items-end gap-1">
                     <div className="flex items-center gap-3">
                         <div className="flex flex-col items-end">
-                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Tier</span>
-                            <span className="text-2xl font-black font-mono text-white">{currentTier.name}</span>
+                            <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Tier</span>
+                            <span className="text-2xl font-black font-mono text-slate-900 dark:text-white">{currentTier.name}</span>
                         </div>
                     </div>
                     {combo >= 3 && (
@@ -494,7 +518,7 @@ export default function KeyPractice() {
                 </div>
             </div>
 
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 text-[9px] font-black text-slate-700 uppercase tracking-[0.3em] text-center">
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 text-[9px] font-black text-slate-700 dark:text-slate-400 uppercase tracking-[0.3em] text-center">
                 Match the case: {caseMode.toUpperCase()} mode · ESC to exit
             </div>
 

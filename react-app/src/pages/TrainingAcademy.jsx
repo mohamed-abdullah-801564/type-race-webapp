@@ -294,35 +294,35 @@ export default function TrainingAcademy() {
     };
 
     return (
-        <div className="min-h-screen bg-background-dark text-slate-300 font-sans selection:bg-primary/30 selection:text-primary flex flex-col relative overflow-hidden">
+        <div className="min-h-screen bg-slate-50 dark:bg-background-dark text-slate-700 dark:text-slate-300 font-sans selection:bg-primary/30 selection:text-primary flex flex-col relative overflow-hidden">
             {/* Cyber Scanline Effect */}
             <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-size-[100%_2px,3px_100%] z-50" />
             
             <Navbar />
-
+ 
             <main className="flex-1 flex flex-col md:flex-row overflow-hidden relative z-10">
                 {/* Sidebar: Progressive Curriculum */}
-                <div className="md:w-[380px] w-full border-r border-white/5 bg-black/20 flex flex-col pt-12">
+                <div className="md:w-[380px] w-full bg-slate-100 dark:bg-black/20 border-r border-slate-200 dark:border-white/5 flex flex-col pt-12">
                     <div className="px-8 mb-8 text-left">
                         <div className="flex items-center gap-2 mb-2">
                              <GraduationCap className="w-4 h-4 text-primary" />
                              <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Training Curriculum</span>
                         </div>
-                        <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">Neural Path</h2>
+                        <h2 className="text-2xl font-black text-slate-900 dark:text-white italic uppercase tracking-tighter">Neural Path</h2>
                         <div className="mt-8">
                             <div className="flex justify-between items-center mb-3">
-                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Overall Progress</span>
+                                <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">Overall Progress</span>
                                 <span className="text-[10px] font-black text-primary uppercase">
                                     {unlockedIds.length} of {ACADEMY_MODULES.length} Modules
                                 </span>
                             </div>
-                            <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                            <div className="h-1.5 bg-slate-200 dark:bg-white/5 rounded-full overflow-hidden">
                                 <div 
                                     className="h-full bg-primary shadow-[0_0_10px_#00f5d4] transition-all duration-1000"
                                     style={{ width: `${Math.round((unlockedIds.length / ACADEMY_MODULES.length) * 100)}%` }}
                                 />
                             </div>
-                            <div className="text-[10px] text-slate-600 font-bold mt-2 italic uppercase tracking-widest">
+                            <div className="text-[10px] text-slate-600 dark:text-slate-400 font-bold mt-2 italic uppercase tracking-widest">
                                 {Math.round((unlockedIds.length / ACADEMY_MODULES.length) * 100)}% Complete
                             </div>
                         </div>
@@ -348,7 +348,7 @@ export default function TrainingAcademy() {
                                         isSelected 
                                         ? 'bg-primary/10 border-primary/30 shadow-[0_0_20px_rgba(0,245,212,0.1)]' 
                                         : isUnlocked 
-                                            ? 'bg-transparent border-transparent hover:bg-white/5' 
+                                            ? 'bg-transparent border-transparent hover:bg-slate-200 dark:hover:bg-white/5' 
                                             : 'opacity-40 cursor-not-allowed'
                                     }`}
                                 >
@@ -357,7 +357,7 @@ export default function TrainingAcademy() {
                                         ? 'bg-primary text-background-dark border-primary' 
                                         : module.isTest
                                             ? 'bg-amber-500/10 text-amber-500 border-amber-500/30'
-                                            : 'bg-white/5 text-slate-500 border-white/10'
+                                            : 'bg-slate-200 dark:bg-white/5 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-white/10'
                                     }`}>
                                         {isUnlocked ? (
                                             module.isTest ? <ShieldAlert className="w-5 h-5" /> : String(index + 1).padStart(2, '0')
@@ -370,11 +370,11 @@ export default function TrainingAcademy() {
                                     </div>
                                     
                                     <div className="flex-1 text-left">
-                                        <div className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest ${isSelected ? 'text-primary' : module.isTest ? 'text-amber-500' : 'text-slate-600'}`}>
+                                        <div className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest ${isSelected ? 'text-primary' : module.isTest ? 'text-amber-500' : 'text-slate-600 dark:text-slate-400'}`}>
                                             {module.isTest && <Zap className="w-2.5 h-2.5" />}
                                             {module.isTest ? 'Assessment' : module.difficulty}
                                         </div>
-                                        <div className={`text-md font-bold truncate max-w-[200px] ${isSelected ? 'text-white' : 'text-slate-400'}`}>
+                                        <div className={`text-md font-bold truncate max-w-[200px] ${isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-400'}`}>
                                             {module.title}
                                         </div>
                                         {suggestedKeys.some(sk => module.keys?.map(k => k.toLowerCase()).includes(sk.toLowerCase())) && !isSelected && (
@@ -395,7 +395,7 @@ export default function TrainingAcademy() {
                 </div>
 
                 {/* Dashboard: Module Detail */}
-                <div className="flex-1 bg-black/40 flex flex-col p-12 lg:p-24 overflow-y-auto">
+                <div className="flex-1 bg-white dark:bg-black/20 border-l border-slate-200 dark:border-white/5 flex flex-col p-12 lg:p-24 overflow-y-auto">
                     <div className="max-w-4xl w-full mx-auto animate-in fade-in slide-in-from-right-12 duration-700">
                         {isCompletedAll && (
                             <div className="mb-12 bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-primary/10 border border-primary/20 rounded-3xl p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-[0_0_30px_rgba(0,245,212,0.05)] relative overflow-hidden group">
@@ -406,8 +406,8 @@ export default function TrainingAcademy() {
                                     </div>
                                     <div className="text-left">
                                         <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] block mb-1">UNIFIED STATUS: ACTIVE SENIOR OPERATOR</span>
-                                        <h3 className="text-2xl font-black text-white uppercase italic tracking-tighter">SYNCHRONIZATION COMPLETE</h3>
-                                        <p className="text-slate-400 text-xs mt-1 max-w-md font-medium">All 13 modules completed with optimal throughput. Your neural profile certificate is ready.</p>
+                                        <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter">SYNCHRONIZATION COMPLETE</h3>
+                                        <p className="text-slate-600 dark:text-slate-400 text-xs mt-1 max-w-md font-medium">All 13 modules completed with optimal throughput. Your neural profile certificate is ready.</p>
                                     </div>
                                 </div>
                                 <button 
@@ -422,7 +422,7 @@ export default function TrainingAcademy() {
                         {selectedModule && (
                             <button
                                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                                className="md:hidden mb-6 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-300 font-bold uppercase tracking-widest text-[10px] hover:text-primary hover:border-primary/30 transition-all"
+                                className="md:hidden mb-6 px-4 py-2 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 font-bold uppercase tracking-widest text-[10px] hover:text-primary hover:border-primary/30 transition-all"
                             >
                                 Back to Curriculum
                             </button>
@@ -451,57 +451,57 @@ export default function TrainingAcademy() {
                         {/* Heading */}
                         <div className="relative mb-16">
                             <div className="absolute -left-12 top-0 bottom-0 w-1 bg-linear-to-b from-primary to-transparent" />
-                            <h1 className="text-6xl lg:text-7xl font-black text-white uppercase tracking-tighter italic mb-6">
+                            <h1 className="text-6xl lg:text-7xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic mb-6">
                                 {selectedModule.title}
                             </h1>
-                            <p className="text-xl text-slate-400 font-medium leading-relaxed max-w-2xl">
+                            <p className="text-xl text-slate-600 dark:text-slate-400 font-medium leading-relaxed max-w-2xl">
                                 {selectedModule.description}
                             </p>
                         </div>
-
+ 
                         {/* Specs Grid */}
                         <div className="grid grid-cols-2 gap-8 mb-16">
-                            <div className="bg-white/2 border border-white/5 rounded-[32px] p-10 group hover:border-primary/20 transition-all">
+                            <div className="bg-white dark:bg-black/20 border border-slate-200 dark:border-white/5 shadow-sm rounded-[32px] p-10 group hover:border-primary/20 transition-all">
                                 <div className="flex items-center gap-3 mb-8">
                                     <Target className="w-5 h-5 text-primary opacity-40" />
-                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Protocol Targets</span>
+                                    <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">Protocol Targets</span>
                                 </div>
                                 <div className="flex flex-wrap gap-3 mb-8">
                                     {selectedModule.keys.map(key => (
-                                        <div key={key} className="w-12 h-12 flex items-center justify-center bg-black/60 border border-white/10 rounded-2xl text-lg font-mono font-bold text-slate-300 group-hover:border-primary/40 group-hover:text-primary transition-all group-hover:-translate-y-1 shadow-[0_4px_0_rgba(255,255,255,0.05)]">
+                                        <div key={key} className="w-12 h-12 flex items-center justify-center bg-slate-100 dark:bg-black/60 border border-slate-300 dark:border-white/10 rounded-2xl text-lg font-mono font-bold text-slate-700 dark:text-slate-300 group-hover:border-primary/40 group-hover:text-primary transition-all group-hover:-translate-y-1 shadow-[0_4px_0_rgba(255,255,255,0.05)]">
                                             {key}
                                         </div>
                                     ))}
                                 </div>
-                                <div className="space-y-4 pt-6 border-t border-white/5">
-                                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-500">
+                                <div className="space-y-4 pt-6 border-t border-slate-200 dark:border-white/5">
+                                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400">
                                         <span>Target Velocity</span>
                                         <span className="text-primary">{selectedModule.minWPM} WPM</span>
                                     </div>
-                                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-500">
+                                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400">
                                         <span>Accuracy Req</span>
                                         <span className="text-primary">{selectedModule.minAccuracy}%</span>
                                     </div>
-                                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-500">
+                                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400">
                                         <span>Error Allowance</span>
                                         <span className="text-primary">{selectedModule.maxErrors} MAX</span>
                                     </div>
                                 </div>
                             </div>
-
-                            <div className="bg-white/2 border border-white/5 rounded-[32px] p-10 group hover:border-primary/20 transition-all">
+ 
+                            <div className="bg-white dark:bg-black/20 border border-slate-200 dark:border-white/5 shadow-sm rounded-[32px] p-10 group hover:border-primary/20 transition-all">
                                 <div className="flex items-center gap-3 mb-8">
                                     <Shield className="w-5 h-5 text-primary opacity-40" />
-                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Complexity Level</span>
+                                    <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">Complexity Level</span>
                                 </div>
                                 <div className="space-y-6">
                                     <div className="flex justify-between items-end">
-                                        <span className="text-[10px] font-bold text-slate-600 uppercase">Integrity Requirements</span>
+                                        <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase">Integrity Requirements</span>
                                         <span className={`text-md font-black uppercase ${getDifficultyColor(selectedModule)}`}>
                                             {selectedModule.isTest ? 'Assessment' : selectedModule.difficulty}
                                         </span>
                                     </div>
-                                    <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                    <div className="w-full h-1.5 bg-slate-200 dark:bg-white/5 rounded-full overflow-hidden">
                                         <div 
                                             className={`h-full shadow-[0_0_15px] transition-all duration-1000 ${
                                                 selectedModule.isTest ? 'bg-amber-500 shadow-amber-500/50' : 'bg-primary shadow-primary/50'
@@ -512,14 +512,14 @@ export default function TrainingAcademy() {
                                 </div>
                             </div>
                         </div>
-
+ 
                         {/* Preview */}
-                        <div className="bg-white/3 border border-white/5 rounded-[32px] p-10 mb-12 relative overflow-hidden group">
+                        <div className="bg-white dark:bg-black/20 border border-slate-200 dark:border-white/5 shadow-sm rounded-[32px] p-10 mb-12 relative overflow-hidden group">
                             <div className="absolute top-0 right-0 p-6">
                                 <Terminal className="w-5 h-5 text-white/5 group-hover:text-primary/20 transition-colors" />
                             </div>
-                            <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest block mb-4">Neural Packet Preview</span>
-                            <div className="text-xl font-mono text-slate-400 bg-black/20 p-8 rounded-2xl border border-white/5 italic select-none line-clamp-3">
+                            <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest block mb-4">Neural Packet Preview</span>
+                            <div className="text-xl font-mono text-slate-700 dark:text-slate-400 bg-slate-50 dark:bg-black/20 p-8 rounded-2xl border border-slate-200 dark:border-white/5 italic select-none line-clamp-3">
                                 {selectedModule.texts[0]}...
                             </div>
                         </div>
@@ -560,48 +560,48 @@ export default function TrainingAcademy() {
                     {/* Protocol Modal Overlay */}
                     {showProtocol && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-background-dark/80 backdrop-blur-md animate-in fade-in duration-300">
-                            <div className="bg-slate-900 border border-primary/20 rounded-3xl p-10 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-[0_0_60px_rgba(0,245,212,0.15)] relative custom-scrollbar animate-in fade-in zoom-in duration-500">
+                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-primary/20 rounded-3xl p-10 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative custom-scrollbar animate-in fade-in zoom-in duration-500">
                                 <div className="text-center mb-10">
                                     <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] block mb-2">INITIAL PROTOCOL</span>
-                                    <h2 className="text-4xl font-black text-white uppercase italic tracking-tighter">{selectedModule.title}</h2>
+                                    <h2 className="text-4xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter">{selectedModule.title}</h2>
                                 </div>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-                                    <div className="bg-black/40 border border-white/5 rounded-2xl p-6 flex flex-col items-center gap-3">
+                                    <div className="bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/5 shadow-sm rounded-2xl p-6 flex flex-col items-center gap-3">
                                         <Gauge className="w-6 h-6 text-primary" />
-                                        <div className="text-3xl font-black text-white font-mono">{selectedModule.minWPM}</div>
-                                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Minimum Speed</div>
+                                        <div className="text-3xl font-black text-slate-900 dark:text-white font-mono">{selectedModule.minWPM}</div>
+                                        <div className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest text-center">Minimum Speed</div>
                                     </div>
-                                    <div className="bg-black/40 border border-white/5 rounded-2xl p-6 flex flex-col items-center gap-3">
+                                    <div className="bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/5 shadow-sm rounded-2xl p-6 flex flex-col items-center gap-3">
                                         <Target className="w-6 h-6 text-primary" />
-                                        <div className="text-3xl font-black text-white font-mono">{selectedModule.minAccuracy}%</div>
-                                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Minimum Accuracy</div>
+                                        <div className="text-3xl font-black text-slate-900 dark:text-white font-mono">{selectedModule.minAccuracy}%</div>
+                                        <div className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest text-center">Minimum Accuracy</div>
                                     </div>
-                                    <div className="bg-black/40 border border-white/5 rounded-2xl p-6 flex flex-col items-center gap-3">
+                                    <div className="bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/5 shadow-sm rounded-2xl p-6 flex flex-col items-center gap-3">
                                         <Timer className="w-6 h-6 text-primary" />
-                                        <div className="text-3xl font-black text-white font-mono">
+                                        <div className="text-3xl font-black text-slate-900 dark:text-white font-mono">
                                             {Math.max(30, Math.ceil(selectedModule.texts[0].split(' ').length / (selectedModule.minWPM / 60)))}s
                                         </div>
-                                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Time Limit</div>
+                                        <div className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest text-center">Time Limit</div>
                                     </div>
                                 </div>
 
                                 {selectedModule.isTest && (
-                                    <div className="bg-black/40 border border-white/5 rounded-2xl p-6 flex flex-col items-center gap-3 mb-8">
+                                    <div className="bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/5 shadow-sm rounded-2xl p-6 flex flex-col items-center gap-3 mb-8">
                                         <AlertTriangle className="w-6 h-6 text-amber-500" />
-                                        <div className="text-3xl font-black text-white font-mono">{selectedModule.maxErrors}</div>
-                                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Max Errors</div>
+                                        <div className="text-3xl font-black text-slate-900 dark:text-white font-mono">{selectedModule.maxErrors}</div>
+                                        <div className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest text-center">Max Errors</div>
                                     </div>
                                 )}
                                 
-                                <div className="bg-white/5 border border-white/10 rounded-xl p-3 flex items-center gap-3">
+                                <div className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl p-3 flex items-center gap-3">
                                     <Info className="text-slate-400 w-4 h-4 shrink-0" />
-                                    <p className="text-[11px] text-slate-400 leading-relaxed">
+                                    <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
                                         Every incorrect keypress counts as an error, even if corrected with backspace. Type carefully and deliberately.
                                     </p>
                                 </div>
 
-                                <p className="text-slate-400 text-center leading-relaxed mt-6 mb-10">
+                                <p className="text-slate-600 dark:text-slate-400 text-center leading-relaxed mt-6 mb-10">
                                     {selectedModule.description}
                                 </p>
 
@@ -618,7 +618,7 @@ export default function TrainingAcademy() {
                                 <div className="flex flex-col sm:flex-row gap-4">
                                     <button 
                                         onClick={() => setShowProtocol(false)}
-                                        className="flex-1 bg-white/5 border border-white/10 text-slate-400 hover:text-white px-8 py-5 rounded-2xl font-bold uppercase tracking-widest transition-all"
+                                        className="flex-1 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-200 dark:hover:text-white px-8 py-5 rounded-2xl font-bold uppercase tracking-widest transition-all"
                                     >
                                         Back to Curriculum
                                     </button>
@@ -641,70 +641,70 @@ export default function TrainingAcademy() {
                     )}
                 </div>
 
-                {/* Graduation Modal Overlay */}
-                {showGraduationModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-background-dark/80 backdrop-blur-md animate-in fade-in duration-300">
-                        <div className="bg-slate-900 border border-primary/20 rounded-3xl p-10 max-w-5xl w-full max-h-[90vh] overflow-y-auto shadow-[0_0_60px_rgba(0,245,212,0.15)] relative custom-scrollbar animate-in fade-in zoom-in duration-500">
-                            
-                            <button 
-                                onClick={() => setShowGraduationModal(false)}
-                                className="absolute top-6 right-6 text-slate-400 hover:text-white transition-colors text-xl font-bold"
-                            >
-                                ✕
-                            </button>
-
-                            <div className="text-center mb-8">
-                                <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] block mb-2">NEURAL NETWORK TELEMETRY</span>
-                                <h2 className="text-4xl font-black text-white uppercase italic tracking-tighter">GRADUATION PROFILE</h2>
-                            </div>
-
-                            {/* Custom Profile input box */}
-                            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-8 max-w-md mx-auto">
-                                <label className="block text-[10px] font-black text-primary uppercase tracking-widest mb-3 text-center">
-                                    Operator Identity Signature
-                                </label>
-                                <input 
-                                    type="text" 
-                                    value={playerName} 
-                                    onChange={(e) => {
-                                        setPlayerName(e.target.value);
-                                        localStorage.setItem('playerName', e.target.value);
-                                    }}
-                                    placeholder="Enter Identity..."
-                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-center text-white text-lg font-bold font-mono focus:outline-none focus:border-primary/50 transition-all uppercase"
-                                />
-                            </div>
-
-                            {/* Scaled visual preview of Canvas */}
-                            <div className="bg-black/60 border border-white/5 rounded-2xl p-4 flex items-center justify-center mb-8 overflow-hidden">
-                                <canvas 
-                                    ref={canvasRef} 
-                                    width="1920" 
-                                    height="1080" 
-                                    className="w-full max-w-3xl rounded-xl border border-white/10 shadow-2xl"
-                                />
-                            </div>
-
-                            <div className="flex flex-col sm:flex-row gap-4 max-w-xl mx-auto">
-                                <button 
-                                    onClick={() => setShowGraduationModal(false)}
-                                    className="flex-1 bg-white/5 border border-white/10 text-slate-400 hover:text-white px-8 py-5 rounded-2xl font-bold uppercase tracking-widest transition-all"
-                                >
-                                    Dismiss
-                                </button>
-                                <button 
-                                    onClick={handleDownloadCertificate}
-                                    className="flex-1 group relative flex items-center justify-center gap-4 px-8 py-5 rounded-2xl overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98] shadow-2xl bg-primary shadow-primary/25 text-background-dark font-black"
-                                >
-                                    <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.15)_50%,transparent_75%)] bg-size-[250%_250%] animate-[shimmer_3s_infinite]" />
-                                    <span className="text-xl font-black uppercase italic tracking-tighter relative z-10 flex items-center gap-2">
-                                        📥 EXPORT TELEMETRY PROFILE
-                                    </span>
-                                </button>
-                            </div>
-                        </div>
+        {/* Graduation Modal Overlay */}
+        {showGraduationModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-background-dark/80 backdrop-blur-md animate-in fade-in duration-300">
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-primary/20 rounded-3xl p-10 max-w-5xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative custom-scrollbar animate-in fade-in zoom-in duration-500">
+                    
+                    <button 
+                        onClick={() => setShowGraduationModal(false)}
+                        className="absolute top-6 right-6 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors text-xl font-bold"
+                    >
+                        ✕
+                    </button>
+ 
+                    <div className="text-center mb-8">
+                        <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] block mb-2">NEURAL NETWORK TELEMETRY</span>
+                        <h2 className="text-4xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter">GRADUATION PROFILE</h2>
                     </div>
-                )}
+ 
+                    {/* Custom Profile input box */}
+                    <div className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-6 mb-8 max-w-md mx-auto">
+                        <label className="block text-[10px] font-black text-primary uppercase tracking-widest mb-3 text-center">
+                            Operator Identity Signature
+                        </label>
+                        <input 
+                            type="text" 
+                            value={playerName} 
+                            onChange={(e) => {
+                                setPlayerName(e.target.value);
+                                localStorage.setItem('playerName', e.target.value);
+                            }}
+                            placeholder="Enter Identity..."
+                            className="w-full bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-center text-slate-900 dark:text-white text-lg font-bold font-mono focus:outline-none focus:border-primary/50 transition-all uppercase"
+                        />
+                    </div>
+ 
+                    {/* Scaled visual preview of Canvas */}
+                    <div className="bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex items-center justify-center mb-8 overflow-hidden">
+                        <canvas 
+                            ref={canvasRef} 
+                            width="1920" 
+                            height="1080" 
+                            className="w-full max-w-3xl rounded-xl border border-slate-200 dark:border-white/10 shadow-2xl"
+                        />
+                    </div>
+ 
+                    <div className="flex flex-col sm:flex-row gap-4 max-w-xl mx-auto">
+                        <button 
+                            onClick={() => setShowGraduationModal(false)}
+                            className="flex-1 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-200 dark:hover:text-white px-8 py-5 rounded-2xl font-bold uppercase tracking-widest transition-all"
+                        >
+                            Dismiss
+                        </button>
+                        <button 
+                            onClick={handleDownloadCertificate}
+                            className="flex-1 group relative flex items-center justify-center gap-4 px-8 py-5 rounded-2xl overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98] shadow-2xl bg-primary shadow-primary/25 text-background-dark font-black"
+                        >
+                            <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.15)_50%,transparent_75%)] bg-size-[250%_250%] animate-[shimmer_3s_infinite]" />
+                            <span className="text-xl font-black uppercase italic tracking-tighter relative z-10 flex items-center gap-2">
+                                📥 EXPORT TELEMETRY PROFILE
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
 
             </main>
         </div>

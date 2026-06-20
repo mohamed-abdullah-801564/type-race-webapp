@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import StatCard from '../components/StatCard';
-import { Gauge, Target, Trophy, Zap, AlertTriangle, AtSign, Network, Globe, Keyboard, Shield, Crown, Star, Medal } from 'lucide-react';
+import { Gauge, Target, Trophy, Zap, AlertTriangle, AtSign, Network, Globe, Keyboard, Shield, Crown, Star, Medal, Play } from 'lucide-react';
 import { auth, db } from '../firebase';
 import { doc, onSnapshot, collection, query, orderBy, limit, getDoc } from 'firebase/firestore';
 import { loadData, saveData } from '../utils/storageUtils';
@@ -237,7 +237,7 @@ export default function Dashboard() {
     }, []);
 
     const getKeyColor = (latency) => {
-        if (!latency) return 'bg-slate-800/40 text-slate-600 border-slate-700/50';
+        if (!latency) return 'bg-slate-200 text-slate-800 border-slate-300 dark:bg-slate-800/40 dark:text-slate-400 dark:border-slate-700/50';
         if (latency < 200) return 'bg-primary/10 text-primary border-primary/40 shadow-[0_0_10px_rgba(0,245,212,0.1)]';
         if (latency < 400) return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/40';
         return 'bg-red-500/10 text-red-500 border-red-500/40 shadow-[0_0_10px_rgba(239,68,68,0.1)]';
@@ -338,32 +338,45 @@ export default function Dashboard() {
     const displayHistory = recentHistory;
     const maxRecentWPM = Math.max(...displayHistory.map(h => h.wpm), 100);
 
-    const soloHistory = displayHistory.filter(h => h.mode === 'solo' || !h.mode);
-    const multiHistory = displayHistory.filter(h => h.mode === 'multiplayer');
-    const dailyHistory = displayHistory.filter(h => h.mode === 'daily');
+    const allPoints = displayHistory.map((h, index) => {
+        const x = displayHistory.length > 1 ? (index / (displayHistory.length - 1)) * 1000 : 500;
+        const y = 250 - (h.wpm / maxRecentWPM) * 200 - 25;
+        const mode = h.mode === 'multiplayer' ? 'multiplayer' : (h.mode === 'daily' ? 'daily' : 'solo');
+        return {
+            x,
+            y,
+            wpm: h.wpm,
+            acc: h.accuracy ? parseFloat(h.accuracy).toFixed(1) : '0',
+            mode,
+            originalIndex: index,
+            index: index + 1
+        };
+    });
 
-    const getPoints = (history) => {
-        const wpms = history.map(h => h.wpm);
-        return wpms.map((wpm, i) => ({
-            x: wpms.length > 1 ? (i / (wpms.length - 1)) * 1000 : 500,
-            y: 250 - (wpm / maxRecentWPM) * 200 - 25,
-            wpm: wpm,
-            acc: history[i] ? parseFloat(history[i].accuracy).toFixed(1) : 0,
-            mode: history[i]?.mode || 'solo'
-        }));
+    const getModePathD = (mode) => {
+        const points = allPoints.filter(p => p.mode === mode);
+        if (points.length === 0) return '';
+        let pathD = '';
+        for (let i = 0; i < points.length; i++) {
+            const p = points[i];
+            const prev = points[i - 1];
+            const isConsecutive = prev && (p.originalIndex === prev.originalIndex + 1);
+            if (!isConsecutive) {
+                pathD += ` M${p.x},${p.y}`;
+            } else {
+                pathD += ` L${p.x},${p.y}`;
+            }
+        }
+        return pathD.trim();
     };
 
-    const soloPoints = getPoints(soloHistory);
-    const multiPoints = getPoints(multiHistory);
-    const dailyPoints = getPoints(dailyHistory);
+    const soloPath = getModePathD('solo');
+    const multiPath = getModePathD('multiplayer');
+    const dailyPath = getModePathD('daily');
 
-    const getPathD = (pts) => pts.length >= 2 
-        ? `M${pts[0].x},${pts[0].y} ${pts.slice(1).map(p => `L${p.x},${p.y}`).join(' ')}`
-        : "";
-
-    const soloPathD = getPathD(soloPoints);
-    const multiPathD = getPathD(multiPoints);
-    const dailyPathD = getPathD(dailyPoints);
+    const soloPoints = allPoints.filter(p => p.mode === 'solo');
+    const multiPoints = allPoints.filter(p => p.mode === 'multiplayer');
+    const dailyPoints = allPoints.filter(p => p.mode === 'daily');
     return (
         <div className="layout-container flex h-full grow flex-col">
             <Navbar />
@@ -378,13 +391,13 @@ export default function Dashboard() {
                                 <AlertTriangle className="w-6 h-6" />
                             </div>
                             <div>
-                                <h2 className="text-lg font-black text-white uppercase tracking-tighter">Guest Mode Active</h2>
+                                <h2 className="text-lg font-black text-white">Guest Mode Active</h2>
                                 <p className="text-sm text-amber-500/80 font-medium">Neural Sync Required to Track Global Progress. Local sessions will be terminated on tab close.</p>
                             </div>
                         </div>
                         <button 
                             onClick={() => document.querySelector('img[alt="User Avatar"]').click()}
-                            className="relative z-10 px-8 py-3 bg-amber-500 text-background-dark font-black uppercase tracking-[0.2em] rounded-xl hover:shadow-[0_0_30px_rgba(245,158,11,0.4)] hover:scale-105 transition-all active:scale-95 text-xs"
+                            className="relative z-10 px-8 py-3 bg-amber-500 text-background-dark font-black rounded-xl hover:shadow-[0_0_30px_rgba(245,158,11,0.4)] hover:scale-105 transition-all active:scale-95 text-sm"
                         >
                             Establish Sync
                         </button>
@@ -392,7 +405,7 @@ export default function Dashboard() {
                 )}
                 {/* Rank Banner */}
                 {rankData && (
-                    <div className="bg-slate-900 border border-primary/20 p-6 rounded-2xl flex flex-col md:flex-row gap-4 items-center relative overflow-hidden shadow-[0_0_15px_rgba(0,245,212,0.1)] hover:shadow-[0_0_25px_rgba(0,245,212,0.2)] transition-shadow duration-300">
+                    <div className="bg-slate-100 dark:bg-primary/5 border border-slate-200 dark:border-primary/10 p-6 rounded-2xl flex flex-col md:flex-row gap-4 items-center relative overflow-hidden shadow-[0_0_15px_rgba(0,245,212,0.1)] hover:shadow-[0_0_25px_rgba(0,245,212,0.2)] transition-shadow duration-300">
                         {/* Glow effect background */}
                         <div className="absolute -right-20 -top-20 w-64 h-64 rounded-full blur-3xl opacity-20 bg-current pointer-events-none text-primary" />
                         
@@ -404,28 +417,28 @@ export default function Dashboard() {
                         </div>
                         
                         <div className="flex-1 text-center md:text-left z-10">
-                            <h2 className="text-sm font-bold uppercase tracking-[0.2em] mb-1 text-primary/70">Current Tier</h2>
-                            <div className="text-4xl font-black text-primary uppercase tracking-tighter drop-shadow-[0_0_10px_rgba(0,245,212,0.5)] mb-2">{rankData.tier}</div>
-                            <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-xs font-mono text-slate-400">
-                                <span>Score: <strong className="text-white">{rankData.score}</strong></span>
-                                <span className="w-1 h-1 rounded-full bg-slate-600"></span>
-                                <span>PB: <strong className="text-white">{rankData.highestWPM} WPM</strong></span>
-                                <span className="w-1 h-1 rounded-full bg-slate-600"></span>
-                                <span className="text-primary/80">+{Math.round(rankData.avgAcc * 0.2)} Acc Bonus</span>
-                                <span className="w-1 h-1 rounded-full bg-slate-600"></span>
-                                <span className="text-primary/60">+{Math.round((rankData.drillsCompleted || 0) * 0.5)} Drill Multiplier</span>
-                                <span className="w-1 h-1 rounded-full bg-slate-600"></span>
-                                <span className="text-amber-400 font-bold flex items-center gap-1 animate-pulse">
-                                    🔥 STREAK: <strong className="text-white">{streakDays || 0}</strong> DAYS ACTIVE
+                            <h2 className="text-base font-bold mb-1 text-primary/70">Current Tier</h2>
+                            <div className="text-4xl font-black text-primary tracking-tighter drop-shadow-[0_0_10px_rgba(0,245,212,0.5)] mb-2">{rankData.tier}</div>
+                            <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm font-mono text-slate-600 dark:text-slate-400">
+                                <span>Score: <strong className="text-slate-900 dark:text-white font-bold">{rankData.score}</strong></span>
+                                <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                                <span>Personal best: <strong className="text-slate-900 dark:text-white font-bold">{rankData.highestWPM} Wpm</strong></span>
+                                <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                                <span className="text-primary/80 font-bold">+{Math.round(rankData.avgAcc * 0.2)} Accuracy bonus</span>
+                                <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                                <span className="text-primary/60 font-bold">+{Math.round((rankData.drillsCompleted || 0) * 0.5)} Drill multiplier</span>
+                                <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                                <span className="text-slate-600 dark:text-slate-300 font-bold flex items-center gap-1 animate-pulse">
+                                    🔥 Streak: <strong className="text-slate-900 dark:text-white font-bold">{streakDays || 0}</strong> days active
                                 </span>
                             </div>
                         </div>
 
                         {rankData.nextTierMax && (
                             <div className="md:ml-auto flex flex-col items-center md:items-end z-10 w-full md:w-auto mt-4 md:mt-0">
-                                <span className="text-xs font-bold text-primary/70 uppercase tracking-widest mb-2">Distance to Next</span>
-                                <div className="text-2xl font-black text-white font-mono">{rankData.nextTierMax - rankData.score} <span className="text-sm text-slate-500">Points</span></div>
-                                <div className="w-full md:w-48 h-2 bg-black/50 rounded-full mt-2 overflow-hidden border border-primary/20 p-px">
+                                <span className="text-sm font-bold text-primary/70 mb-2">Distance to next</span>
+                                <div className="text-2xl font-black text-slate-900 dark:text-white font-mono">{rankData.nextTierMax - rankData.score} <span className="text-sm text-slate-500">Points</span></div>
+                                <div className="w-full md:w-48 h-2 bg-black/10 dark:bg-black/50 rounded-full mt-2 overflow-hidden border border-slate-200 dark:border-primary/20 p-px">
                                     <div 
                                         className="h-full bg-linear-to-r from-primary to-emerald-400 drop-shadow-[0_0_10px_rgba(0,245,212,0.8)] rounded-full w-full max-w-full" 
                                         style={{ width: `${Math.min(100, (rankData.score / rankData.nextTierMax) * 100)}%` }}
@@ -435,8 +448,8 @@ export default function Dashboard() {
                         )}
                         {!rankData.nextTierMax && (
                             <div className="md:ml-auto flex flex-col items-center md:items-end z-10 w-full md:w-auto mt-4 md:mt-0">
-                                <span className="text-xs font-bold text-primary uppercase tracking-widest mb-2 animate-pulse drop-shadow-[0_0_8px_rgba(0,245,212,0.5)]">Maximum Rank Achieved</span>
-                                <div className="text-2xl font-black text-white font-mono drop-shadow-[0_0_10px_rgba(0,245,212,0.8)]">SUPREME</div>
+                                <span className="text-sm font-bold text-primary mb-2 animate-pulse drop-shadow-[0_0_8px_rgba(0,245,212,0.5)]">Maximum rank achieved</span>
+                                <div className="text-2xl font-black text-slate-900 dark:text-white font-mono drop-shadow-[0_0_10px_rgba(0,245,212,0.8)]">Supreme</div>
                             </div>
                         )}
                     </div>
@@ -473,11 +486,11 @@ export default function Dashboard() {
                     <div className="lg:col-span-2 bg-white dark:bg-primary/5 p-8 rounded-xl border border-slate-200 dark:border-primary/10">
                         <div className="flex items-center justify-between mb-8 pb-6 border-b border-slate-200 dark:border-primary/10">
                             <div>
-                                <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Performance Trend</h3>
-                                <p className="text-sm text-slate-500">WPM over your last 10 practice tests</p>
+                                <h3 className="text-xl font-black text-slate-900 dark:text-white">Performance Trend</h3>
+                                <p className="text-sm text-slate-500">Wpm over your last 10 practice tests</p>
                             </div>
                             <div className="flex gap-2">
-                                <span className="flex items-center gap-1 text-xs font-medium text-primary">
+                                <span className="flex items-center gap-1 text-sm font-medium text-primary">
                                     <span className="h-2 w-2 rounded-full bg-primary"></span> Performance Graph
                                 </span>
                             </div>
@@ -486,46 +499,46 @@ export default function Dashboard() {
                             <div className="min-w-[700px] md:min-w-0 md:w-full">
                             <div className="h-[250px] w-full relative overflow-visible">
                                 {displayHistory.length < 2 ? (
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/40 rounded-xl border border-dashed border-white/10">
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-100/40 dark:bg-slate-900/40 rounded-xl border border-dashed border-slate-200 dark:border-white/10">
                                         <Zap className="w-8 h-8 text-primary/40 mb-2 animate-pulse" />
-                                        <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Play more games to see your trend</p>
+                                        <p className="text-sm font-bold text-slate-600 dark:text-slate-400">Play more games to see your trend</p>
                                     </div>
                                 ) : (
                                     <>
                                     <svg className="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 1000 250">
-                                        <path d={soloPathD} fill="none" stroke="#00f5d4" strokeWidth="3" strokeLinecap="round" />
-                                        <path d={multiPathD} fill="none" stroke="#a855f7" strokeWidth="3" strokeLinecap="round" />
-                                        <path d={dailyPathD} fill="none" stroke="#f59e0b" strokeWidth="3" strokeLinecap="round" />
+                                        <path d={soloPath} fill="none" stroke="#00f5d4" strokeWidth="3" strokeLinecap="round" />
+                                        <path d={multiPath} fill="none" stroke="#a855f7" strokeWidth="3" strokeLinecap="round" />
+                                        <path d={dailyPath} fill="none" stroke="#f59e0b" strokeWidth="3" strokeLinecap="round" />
                                         
                                         {/* Solo Points */}
-                                        {soloPoints.map((p, i) => (
+                                        {soloPoints.map((p) => (
                                             <circle 
-                                                key={`solo-${i}`} cx={p.x} cy={p.y} fill="#00f5d4" r="5" 
+                                                key={`solo-${p.index}`} cx={p.x} cy={p.y} fill="#00f5d4" r="5" 
                                                 className="drop-shadow-[0_0_8px_rgba(0,245,212,0.8)] cursor-pointer transition-all duration-300 transform-gpu hover:scale-150 origin-center"
                                                 style={{ transformOrigin: `${p.x}px ${p.y}px` }}
-                                                onMouseEnter={() => setHoveredDataPoint({ ...p, index: i + 1 })}
+                                                onMouseEnter={() => setHoveredDataPoint(p)}
                                                 onMouseLeave={() => setHoveredDataPoint(null)}
                                             />
                                         ))}
 
                                         {/* Multi Points */}
-                                        {multiPoints.map((p, i) => (
+                                        {multiPoints.map((p) => (
                                             <circle 
-                                                key={`multi-${i}`} cx={p.x} cy={p.y} fill="#a855f7" r="5" 
+                                                key={`multi-${p.index}`} cx={p.x} cy={p.y} fill="#a855f7" r="5" 
                                                 className="drop-shadow-[0_0_8px_rgba(168,85,247,0.8)] cursor-pointer transition-all duration-300 transform-gpu hover:scale-150 origin-center"
                                                 style={{ transformOrigin: `${p.x}px ${p.y}px` }}
-                                                onMouseEnter={() => setHoveredDataPoint({ ...p, index: i + 1 })}
+                                                onMouseEnter={() => setHoveredDataPoint(p)}
                                                 onMouseLeave={() => setHoveredDataPoint(null)}
                                             />
                                         ))}
 
                                         {/* Daily Points */}
-                                        {dailyPoints.map((p, i) => (
+                                        {dailyPoints.map((p) => (
                                             <circle 
-                                                key={`daily-${i}`} cx={p.x} cy={p.y} fill="#f59e0b" r="5" 
+                                                key={`daily-${p.index}`} cx={p.x} cy={p.y} fill="#f59e0b" r="5" 
                                                 className="drop-shadow-[0_0_8px_rgba(245,158,11,0.8)] cursor-pointer transition-all duration-300 transform-gpu hover:scale-150 origin-center"
                                                 style={{ transformOrigin: `${p.x}px ${p.y}px` }}
-                                                onMouseEnter={() => setHoveredDataPoint({ ...p, index: i + 1 })}
+                                                onMouseEnter={() => setHoveredDataPoint(p)}
                                                 onMouseLeave={() => setHoveredDataPoint(null)}
                                             />
                                         ))}
@@ -541,20 +554,20 @@ export default function Dashboard() {
                                                 top: `${(hoveredDataPoint.y / 250) * 100}%`
                                             }}
                                         >
-                                            <div className="bg-slate-900 border border-primary text-white text-[10px] font-mono font-bold px-4 py-2 rounded-lg shadow-2xl whitespace-nowrap">
-                                                <span className="text-primary">{hoveredDataPoint.mode.toUpperCase()}</span> | Run {hoveredDataPoint.index} | WPM: {hoveredDataPoint.wpm} | Acc: {hoveredDataPoint.acc}%
+                                            <div className="bg-white text-slate-900 border border-slate-200 dark:bg-slate-900 dark:text-white text-sm font-mono font-bold px-4 py-2 rounded-lg shadow-2xl whitespace-nowrap">
+                                                <span className="text-primary">{hoveredDataPoint.mode === 'multiplayer' ? 'Multiplayer' : hoveredDataPoint.mode === 'daily' ? 'Daily' : 'Solo'}</span> | Run {hoveredDataPoint.index} | Wpm: {hoveredDataPoint.wpm} | Accuracy: {hoveredDataPoint.acc}%
                                             </div>
                                         </div>
                                     )}
 
                                     <div className="absolute -bottom-10 left-0 w-full flex justify-center gap-6">
-                                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                                        <div className="flex items-center gap-2 text-sm font-bold text-slate-500">
                                             <div className="w-2 h-2 rounded-full bg-primary"></div> Solo Mode
                                         </div>
-                                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                                        <div className="flex items-center gap-2 text-sm font-bold text-slate-500">
                                             <div className="w-2 h-2 rounded-full bg-[#a855f7]"></div> Multiplayer
                                         </div>
-                                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                                        <div className="flex items-center gap-2 text-sm font-bold text-slate-500">
                                             <div className="w-2 h-2 rounded-full bg-[#f59e0b]"></div> Daily Challenge
                                         </div>
                                     </div>
@@ -574,7 +587,7 @@ export default function Dashboard() {
                                     <Keyboard className="w-6 h-6 text-primary" />
                                 </div>
                                 <div>
-                                    <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Neural Heatmap</h2>
+                                    <h2 className="text-2xl font-black text-slate-900 dark:text-white">Neural Heatmap</h2>
                                     <p className="text-sm text-slate-500">Visualizing character latency & motor response</p>
                                 </div>
                             </div>
@@ -582,29 +595,29 @@ export default function Dashboard() {
                                 onClick={handleStartDailyDrill}
                                 className="w-full md:w-auto px-6 py-3 rounded-xl bg-primary/15 border border-primary/30 hover:bg-primary/25 hover:border-primary/50 shadow-[0_0_25px_rgba(0,245,212,0.18)] transition-all active:scale-95 flex flex-col items-center"
                             >
-                                <span className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary">
+                                <span className="inline-flex items-center gap-2 text-sm font-black text-primary">
                                     <Zap className="w-4 h-4" />
                                     Daily Drill
                                 </span>
                                 {getWorstKeys(performances, safeParseJSON(localStorage.getItem('weakKeys'), {})).length > 0 && (
-                                    <span className="text-[8px] text-slate-500 mt-1 uppercase tracking-tighter">
+                                    <span className="text-sm text-slate-500 mt-1">
                                         Focus: {getWorstKeys(performances, safeParseJSON(localStorage.getItem('weakKeys'), {})).join(' ')}
                                     </span>
                                 )}
                             </button>
                             
-                            <div className="flex flex-wrap gap-2 items-center bg-black/20 p-3 rounded-xl border border-white/5">
+                            <div className="flex flex-wrap gap-2 items-center bg-white dark:bg-black/20 p-3 rounded-xl border border-slate-200 dark:border-white/5 shadow-sm">
                                 <div className="flex items-center gap-2">
                                     <div className="w-3 h-3 rounded-full bg-primary/40"></div>
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">&lt;200ms</span>
+                                    <span className="text-sm font-bold text-slate-600 dark:text-slate-400">&lt;200ms</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <div className="w-3 h-3 rounded-full bg-yellow-500/40"></div>
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">200-400ms</span>
+                                    <span className="text-sm font-bold text-slate-600 dark:text-slate-400">200-400ms</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <div className="w-3 h-3 rounded-full bg-red-500/40"></div>
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">&gt;400ms</span>
+                                    <span className="text-sm font-bold text-slate-600 dark:text-slate-400">&gt;400ms</span>
                                 </div>
                             </div>
                         </div>
@@ -626,23 +639,23 @@ export default function Dashboard() {
                                                 >
                                                     <span className="text-xs md:text-xl font-black uppercase">{key}</span>
                                                     {data && (
-                                                        <span className="text-[6px] md:text-[8px] font-bold opacity-60">{Math.round(data.avg)}ms</span>
+                                                        <span className="text-[10px] md:text-xs font-bold opacity-60">{Math.round(data.avg)}ms</span>
                                                     )}
                                                     
                                                     {/* Tooltip */}
-                                                    <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 w-32 bg-slate-900 text-white p-3 rounded-xl border border-white/10 opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-50 shadow-2xl scale-75 group-hover:scale-100 origin-bottom">
-                                                        <div className="text-[10px] font-black text-primary uppercase mb-1 border-b border-primary/20 pb-1">Key Profile: {key}</div>
-                                                        <div className="space-y-1">
-                                                            <div className="flex justify-between text-[10px]">
-                                                                <span className="text-slate-400">Avg Latency</span>
-                                                                <span className="font-bold">{data ? Math.round(data.avg) : '--'}ms</span>
-                                                            </div>
-                                                            <div className="flex justify-between text-[10px]">
-                                                                <span className="text-slate-400">Hits</span>
-                                                                <span className="font-bold">{data ? data.count : '0'}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-slate-900"></div>
+                                                    <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 w-32 bg-white text-slate-900 border border-slate-200 dark:bg-slate-900 dark:text-white dark:border-white/10 p-3 rounded-xl opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-50 shadow-2xl scale-75 group-hover:scale-100 origin-bottom">
+                                                         <div className="text-sm font-black text-primary mb-1 border-b border-slate-200 dark:border-primary/20 pb-1">Key profile: {key}</div>
+                                                         <div className="space-y-1">
+                                                             <div className="flex justify-between text-xs">
+                                                                 <span className="text-slate-500 dark:text-slate-400">Avg latency</span>
+                                                                 <span className="font-bold text-slate-800 dark:text-slate-200">{data ? Math.round(data.avg) : '--'}ms</span>
+                                                             </div>
+                                                             <div className="flex justify-between text-xs">
+                                                                 <span className="text-slate-500 dark:text-slate-400">Hits</span>
+                                                                 <span className="font-bold text-slate-800 dark:text-slate-200">{data ? data.count : '0'}</span>
+                                                             </div>
+                                                         </div>
+                                                         <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-white dark:border-t-slate-900"></div>
                                                     </div>
                                                 </div>
                                             );
@@ -653,12 +666,12 @@ export default function Dashboard() {
                         </div>
 
                         <div className="mt-10 flex justify-between items-center border-t border-white/5 pt-6">
-                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest italic">
+                            <p className="text-sm font-bold text-slate-500 italic">
                                 * Neural response data is calculated based on characters typed in prose and code streams.
                             </p>
                             <button
                                 onClick={() => { localStorage.removeItem('keyPerformances'); setPerformances({}); }}
-                                className="px-6 py-2 text-[10px] font-black uppercase tracking-widest text-red-500/60 border border-red-500/20 rounded-lg hover:bg-red-500 hover:text-white transition-all"
+                                className="px-6 py-2 text-sm font-black text-red-500/60 border border-red-500/20 rounded-lg hover:bg-red-500 hover:text-white transition-all"
                             >
                                 Reset Neural Profile
                             </button>
@@ -670,23 +683,23 @@ export default function Dashboard() {
                 <div className="bg-white dark:bg-primary/5 rounded-xl border border-slate-200 dark:border-primary/10 overflow-hidden">
                     <div className="p-6 border-b border-slate-200 dark:border-primary/10 flex justify-between items-center">
                         <div>
-                            <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Season 1: Neon Genesis</h2>
+                            <h2 className="text-xl font-black text-slate-900 dark:text-white">Season 1: Neon Genesis</h2>
                             <p className="text-sm text-slate-500">Top 10 typists this season</p>
                         </div>
                         <div className="flex bg-slate-100 dark:bg-primary/10 p-1 rounded-lg">
-                            <button className="px-4 py-1.5 text-xs font-bold rounded-md bg-white dark:bg-primary text-slate-900 dark:text-background-dark shadow-sm">Global</button>
-                            <button className="px-4 py-1.5 text-xs font-bold rounded-md text-slate-500 dark:text-primary/70">Friends</button>
+                            <button className="px-4 py-1.5 text-sm font-bold rounded-md bg-white dark:bg-primary text-slate-900 dark:text-background-dark shadow-sm">Global</button>
+                            <button className="px-4 py-1.5 text-sm font-bold rounded-md text-slate-500 dark:text-primary/70">Friends</button>
                         </div>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="bg-slate-50 dark:bg-primary/5">
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-primary/50 uppercase">Rank</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-primary/50 uppercase">Typist</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-primary/50 uppercase">Max WPM</th>
-                                    <th className="hidden md:table-cell px-6 py-4 text-xs font-bold text-slate-500 dark:text-primary/50 uppercase">Avg Accuracy</th>
-                                    <th className="hidden md:table-cell px-6 py-4 text-xs font-bold text-slate-500 dark:text-primary/50 uppercase">Status</th>
+                                    <th className="px-6 py-4 text-sm font-bold text-slate-500 dark:text-primary/50">Rank</th>
+                                    <th className="px-6 py-4 text-sm font-bold text-slate-500 dark:text-primary/50">Typist</th>
+                                    <th className="px-6 py-4 text-sm font-bold text-slate-500 dark:text-primary/50">Max Wpm</th>
+                                    <th className="hidden md:table-cell px-6 py-4 text-sm font-bold text-slate-500 dark:text-primary/50">Avg Accuracy</th>
+                                    <th className="hidden md:table-cell px-6 py-4 text-sm font-bold text-slate-500 dark:text-primary/50">Status</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-primary/5">
@@ -707,7 +720,7 @@ export default function Dashboard() {
                                             ${isPinned ? 'border-t-4 border-primary/40 bg-slate-900 shadow-[0_-10px_20px_rgba(0,0,0,0.5)]' : ''}
                                         `}>
                                             <td className={`px-6 py-4 font-bold ${index < 3 || isUser ? 'text-primary' : 'text-slate-400'}`}>
-                                                {isPinned ? <span className="text-[10px] uppercase">Your Rank</span> : index < 9 ? `0${index + 1}` : index + 1}
+                                                {isPinned ? <span className="text-sm font-bold">Your rank</span> : index < 9 ? `0${index + 1}` : index + 1}
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
@@ -726,15 +739,15 @@ export default function Dashboard() {
                                                                 className="font-semibold text-left text-slate-900 dark:text-slate-100 hover:text-primary dark:hover:text-primary transition-colors flex items-center gap-2 cursor-pointer"
                                                             >
                                                                 <span>{item.name}</span>
-                                                                <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-primary/20 text-primary border border-primary/30 text-[9px] px-1.5 py-0.5 rounded uppercase font-black tracking-wider animate-in fade-in slide-in-from-left-1 duration-200">
-                                                                    DUEL
+                                                                <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-primary/20 text-primary border border-primary/30 text-xs px-1.5 py-0.5 rounded font-black animate-in fade-in slide-in-from-left-1 duration-200">
+                                                                    Duel
                                                                 </span>
-                                                                {item.tier && <span className="text-[10px] text-primary/50">[{item.tier}]</span>}
+                                                                {item.tier && <span className="text-sm text-primary/50">[{item.tier}]</span>}
                                                             </button>
                                                         ) : (
                                                             <span className={`font-semibold ${isUser ? 'text-primary' : 'text-slate-900 dark:text-slate-100'}`}>
                                                                 {item.name}
-                                                                {item.tier && <span className="text-[10px] text-primary/50 ml-2">[{item.tier}]</span>}
+                                                                {item.tier && <span className="text-sm text-primary/50 ml-2">[{item.tier}]</span>}
                                                             </span>
                                                         )}
                                                     </div>
@@ -768,37 +781,34 @@ export default function Dashboard() {
                         </table>
                     </div>
                     <div className="p-4 bg-slate-50 dark:bg-primary/5 flex justify-center">
-                        <button className="text-xs font-bold text-slate-500 dark:text-primary/70 uppercase tracking-widest hover:text-primary transition-colors">Load More Ranking</button>
+                        <button className="text-sm font-bold text-slate-500 dark:text-primary/70 hover:text-primary transition-colors">Load More Rankings</button>
                     </div>
                 </div>
             </main>
             {incomingChallenge && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-in fade-in duration-300">
-                    <div className="relative w-full max-w-md bg-slate-900 border border-primary/30 p-8 rounded-2xl shadow-[0_0_50px_rgba(0,245,212,0.2)] text-center space-y-6">
+                    <div className="relative w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-primary/30 p-8 rounded-2xl shadow-2xl text-center space-y-6">
                         <div className="mx-auto w-16 h-16 rounded-2xl bg-primary/10 border-2 border-primary flex items-center justify-center text-primary shadow-[0_0_20px_rgba(0,245,212,0.3)] animate-pulse">
                             <Zap className="w-8 h-8" />
                         </div>
                         <div className="space-y-2">
-                            <h3 className="text-xl font-black text-white uppercase tracking-wider">Neural Duel Requested</h3>
-                            <p className="text-sm text-slate-400">
+                            <h3 className="text-xl font-black text-slate-900 dark:text-white">Neural Duel Requested</h3>
+                            <p className="text-sm text-slate-600 dark:text-slate-400">
                                 <strong className="text-primary">{incomingChallenge.challengerName}</strong> has challenged you to a typing duel!
                             </p>
                         </div>
                         <div className="flex gap-4">
                             <button
                                 onClick={() => setIncomingChallenge(null)}
-                                className="flex-1 py-3 border border-white/10 hover:border-white/20 text-slate-400 hover:text-white font-bold rounded-xl transition-all"
+                                className="flex-1 py-3 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white font-bold rounded-xl transition-all"
                             >
                                 Decline
                             </button>
                             <button
-                                onClick={() => {
-                                    const rId = incomingChallenge.roomId;
-                                    setIncomingChallenge(null);
-                                    navigate('/multiplayer', { state: { roomId: rId, isHost: false } });
-                                }}
-                                className="flex-1 py-3 bg-primary text-background-dark font-black rounded-xl hover:shadow-[0_0_20px_rgba(0,245,212,0.4)] hover:scale-105 transition-all active:scale-95"
+                                onClick={handleAcceptChallenge}
+                                className="flex-1 py-3 bg-primary text-background-dark font-black rounded-xl hover:shadow-lg dark:hover:shadow-[0_0_20px_rgba(0,245,212,0.4)] transition-all flex items-center justify-center gap-2"
                             >
+                                <Play className="w-4 h-4 fill-current" />
                                 Accept
                             </button>
                         </div>

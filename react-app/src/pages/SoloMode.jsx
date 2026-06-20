@@ -63,6 +63,13 @@ export default function SoloMode() {
     const [userInput, setUserInput] = useState('');
     const [status, setStatus] = useState('waiting'); // waiting, typing, finished
     
+    // Autofocus input on waiting
+    useEffect(() => {
+        if (status === 'waiting' && inputRef.current) {
+            inputRef.current.focus();
+        }
+    }, [status]);
+
     // Auth State Cleanup: Reset state on user switch
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -261,6 +268,12 @@ export default function SoloMode() {
             e.preventDefault();
             resetTest();
         }
+        if (status === 'waiting' && e.key === ' ') {
+            e.preventDefault();
+            setStatus('typing');
+            startTimeRef.current = Date.now();
+            lastKeystrokeTimeRef.current = Date.now();
+        }
     };
 
     const resetTest = () => {
@@ -435,7 +448,7 @@ export default function SoloMode() {
     const isFocusMode = status === 'typing';
 
     return (
-        <div className="min-h-screen bg-background-dark text-slate-300 font-sans selection:bg-primary/30 selection:text-primary flex flex-col overflow-hidden relative">
+        <div className="min-h-screen bg-slate-50 dark:bg-background-dark text-slate-700 dark:text-slate-300 font-sans selection:bg-primary/30 selection:text-primary flex flex-col overflow-hidden relative">
             <MobileBanner />
             {/* Scanline Effect */}
             <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-size-[100%_2px,3px_100%] z-50" />
@@ -445,50 +458,50 @@ export default function SoloMode() {
             <main className="flex-1 flex flex-col relative z-10 transition-all duration-500">
                 {showConfig ? (
                     <div className="flex-1 flex items-center justify-center p-6 animate-in fade-in zoom-in duration-500">
-                        <div className="max-w-2xl w-full bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-6 md:p-10 shadow-2xl relative overflow-hidden group">
+                        <div className="max-w-xl w-full bg-white dark:bg-black/20 border border-slate-200 dark:border-white/5 shadow-sm rounded-3xl p-6 md:p-10 relative overflow-hidden group">
                            <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
                                 <Terminal className="w-32 h-32 text-primary" />
                            </div>
                            
-                           <h1 className="text-4xl font-black text-white uppercase tracking-tighter mb-2 flex items-center gap-4">
+                           <h1 className="text-5xl font-black text-slate-900 dark:text-white uppercase tracking-tighter mb-2 flex items-center gap-4">
                                 <Cpu className="w-10 h-10 text-primary animate-pulse" />
                                 System Configuration
                            </h1>
-                           <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px] mb-10 border-b border-white/5 pb-6">
+                           <p className="text-slate-600 dark:text-slate-400 font-bold uppercase tracking-widest text-xs mb-10 border-b border-slate-200 dark:border-white/5 pb-6">
                                 Initializing Neural Pathway Protocol // Select Parameters
                            </p>
-
+ 
                            <div className="space-y-10">
                                 <div>
                                     <label className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-4 block">Data Stream Source</label>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <button 
                                             onClick={() => setStream('prose')}
-                                            className={`flex items-center gap-4 p-5 rounded-2xl border-2 transition-all ${stream === 'prose' ? 'bg-primary/20 border-primary shadow-[0_0_20px_rgba(0,245,212,0.2)] text-white' : 'bg-white/5 border-transparent text-slate-500 hover:border-white/20'}`}
+                                            className={`flex items-center gap-4 p-5 rounded-2xl border transition-all ${stream === 'prose' ? 'bg-slate-200 border-slate-400 text-slate-900 dark:bg-primary/20 dark:border-primary dark:text-white dark:shadow-[0_0_20px_rgba(0,245,212,0.2)]' : 'bg-slate-100 dark:bg-white/5 border-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'}`}
                                         >
-                                            <div className={`p-3 rounded-xl ${stream === 'prose' ? 'bg-primary text-black' : 'bg-white/5'}`}>
+                                            <div className={`p-3 rounded-xl ${stream === 'prose' ? 'bg-primary text-black' : 'bg-slate-200 dark:bg-white/5'}`}>
                                                 <FileText className="w-6 h-6" />
                                             </div>
                                             <div className="text-left">
-                                                <div className="font-black uppercase tracking-tight text-sm">Prose Matrix</div>
-                                                <div className="text-[10px] opacity-60 font-bold uppercase">Natural Language</div>
+                                                <div className="font-bold text-lg text-slate-900 dark:text-white">Prose Matrix</div>
+                                                <div className="text-sm opacity-60 font-semibold">Natural Language</div>
                                             </div>
                                         </button>
                                         <button 
                                             onClick={() => setStream('code')}
-                                            className={`flex items-center gap-4 p-5 rounded-2xl border-2 transition-all ${stream === 'code' ? 'bg-primary/20 border-primary shadow-[0_0_20px_rgba(0,245,212,0.2)] text-white' : 'bg-white/5 border-transparent text-slate-500 hover:border-white/20'}`}
+                                            className={`flex items-center gap-4 p-5 rounded-2xl border transition-all ${stream === 'code' ? 'bg-slate-200 border-slate-400 text-slate-900 dark:bg-primary/20 dark:border-primary dark:text-white dark:shadow-[0_0_20px_rgba(0,245,212,0.2)]' : 'bg-slate-100 dark:bg-white/5 border-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'}`}
                                         >
-                                            <div className={`p-3 rounded-xl ${stream === 'code' ? 'bg-primary text-black' : 'bg-white/5'}`}>
+                                            <div className={`p-3 rounded-xl ${stream === 'code' ? 'bg-primary text-black' : 'bg-slate-200 dark:bg-white/5'}`}>
                                                 <Code className="w-6 h-6" />
                                             </div>
                                             <div className="text-left">
-                                                <div className="font-black uppercase tracking-tight text-sm">Syntax Stream</div>
-                                                <div className="text-[10px] opacity-60 font-bold uppercase">React / JS Logic</div>
+                                                <div className="font-bold text-lg text-slate-900 dark:text-white">Syntax Stream</div>
+                                                <div className="text-sm opacity-60 font-semibold">React / JS Logic</div>
                                             </div>
                                         </button>
                                     </div>
                                 </div>
-
+ 
                                 {mode === 'time' && (
                                     <div>
                                         <label className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-4 block">Session Duration (Seconds)</label>
@@ -497,7 +510,7 @@ export default function SoloMode() {
                                                 <button 
                                                     key={d}
                                                     onClick={() => setDuration(d)}
-                                                    className={`flex-1 py-3 md:py-4 rounded-xl border-2 font-black text-lg transition-all ${duration === d ? 'bg-primary text-black border-primary shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-white/5 border-transparent text-slate-500 hover:border-white/20'}`}
+                                                    className={`flex-1 py-3 md:py-4 rounded-xl border font-semibold text-lg transition-all ${duration === d ? 'bg-slate-200 border-slate-400 text-slate-900 dark:bg-primary dark:text-black dark:border-primary dark:shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-slate-100 dark:bg-white/5 border-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'}`}
                                                 >
                                                     {d}
                                                 </button>
@@ -505,19 +518,19 @@ export default function SoloMode() {
                                         </div>
                                     </div>
                                 )}
-
+ 
                                 <div>
                                     <label className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-4 block">Practice Mode</label>
                                     <div className="flex gap-4">
                                         <button
                                             onClick={() => setMode('time')}
-                                            className={`flex-1 py-3 md:py-4 rounded-xl border-2 font-black text-sm transition-all ${mode === 'time' ? 'bg-primary text-black border-primary shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-white/5 border-transparent text-slate-500 hover:border-white/20'}`}
+                                            className={`flex-1 py-3 md:py-4 rounded-xl border font-semibold text-base transition-all ${mode === 'time' ? 'bg-slate-200 border-slate-400 text-slate-900 dark:bg-primary dark:text-black dark:border-primary dark:shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-slate-100 dark:bg-white/5 border-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'}`}
                                         >
                                             Time Based
                                         </button>
                                         <button
                                             onClick={() => setMode('length')}
-                                            className={`flex-1 py-3 md:py-4 rounded-xl border-2 font-black text-sm transition-all ${mode === 'length' ? 'bg-primary text-black border-primary shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-white/5 border-transparent text-slate-500 hover:border-white/20'}`}
+                                            className={`flex-1 py-3 md:py-4 rounded-xl border font-semibold text-base transition-all ${mode === 'length' ? 'bg-slate-200 border-slate-400 text-slate-900 dark:bg-primary dark:text-black dark:border-primary dark:shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-slate-100 dark:bg-white/5 border-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'}`}
                                         >
                                             Length Based
                                         </button>
@@ -528,7 +541,7 @@ export default function SoloMode() {
                                                 <button
                                                     key={l}
                                                     onClick={() => setTargetLines(l)}
-                                                    className={`flex-1 py-3 md:py-4 rounded-xl border-2 font-black text-lg transition-all ${targetLines === l ? 'bg-primary text-black border-primary shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-white/5 border-transparent text-slate-500 hover:border-white/20'}`}
+                                                    className={`flex-1 py-3 md:py-4 rounded-xl border font-semibold text-lg transition-all ${targetLines === l ? 'bg-slate-200 border-slate-400 text-slate-900 dark:bg-primary dark:text-black dark:border-primary dark:shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-slate-100 dark:bg-white/5 border-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'}`}
                                                 >
                                                     {l}
                                                 </button>
@@ -536,10 +549,10 @@ export default function SoloMode() {
                                         </div>
                                     )}
                                 </div>
-
+ 
                                 <button 
                                     onClick={handleStartRace}
-                                    className="w-full py-6 bg-primary text-black rounded-2xl font-black uppercase tracking-[0.3em] flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_30px_rgba(0,245,212,0.4)]"
+                                    className="w-full py-6 bg-primary text-black rounded-2xl font-black uppercase tracking-[0.3em] flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_30px_rgba(0,245,212,0.4)] text-base md:text-lg"
                                 >
                                     <Play className="w-6 h-6 fill-current" />
                                     Initialize Session
@@ -561,7 +574,7 @@ export default function SoloMode() {
                                 <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-1">
                                     {location.state?.isAcademy ? `TRAINING PROTOCOL: ${location.state.academyTitle}` : 'Temporal Node'}
                                 </span>
-                                <div className="text-4xl md:text-7xl font-black text-white font-mono leading-none flex items-baseline gap-2">
+                                <div className="text-4xl md:text-7xl font-black text-slate-900 dark:text-white font-mono leading-none flex items-baseline gap-2">
                                     {status === 'finished' ? finalWPM : (mode === 'length' ? elapsedTime : timeLeft)}
                                     <span className={`text-sm md:text-xl uppercase font-sans tracking-widest ${status === 'finished' ? 'text-primary/40' : mode === 'length' ? 'text-primary' : 'text-primary/40'}`}>
                                         {status === 'finished' ? 'WPM' : mode === 'length' ? 'Sec Elapsed' : 'Sec'}
@@ -570,8 +583,8 @@ export default function SoloMode() {
                             </div>
                             
                             <div className="flex flex-col items-end">
-                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-1">Neural Precision</span>
-                                <div className="text-3xl md:text-5xl font-bold text-slate-200 font-mono leading-none">
+                                <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-[0.4em] mb-1">Neural Precision</span>
+                                <div className="text-3xl md:text-5xl font-bold text-slate-700 dark:text-slate-200 font-mono leading-none">
                                     {calculateAccuracy()}<span className="text-xl opacity-30">%</span>
                                 </div>
                             </div>
@@ -580,7 +593,7 @@ export default function SoloMode() {
                         {/* Centered Typing Interface */}
                         <div className="flex-1 flex flex-col items-center justify-center mb-24 relative">
                             <div 
-                                className={`w-full max-w-4xl p-4 md:p-12 bg-white/2 border border-white/5 rounded-2xl md:rounded-[40px] shadow-2xl relative transition-all duration-500 ${status === 'typing' ? 'scale-[1.05] bg-white/5 border-primary/20 shadow-[0_0_50px_rgba(0,0,0,0.5)]' : ''}`}
+                                className={`w-full max-w-4xl p-4 md:p-12 bg-white dark:bg-white/2 border border-slate-200 dark:border-white/5 rounded-2xl md:rounded-[40px] shadow-2xl relative transition-all duration-500 ${status === 'typing' ? 'scale-[1.05] bg-slate-50 dark:bg-white/5 border-slate-300 dark:border-primary/20 shadow-[0_0_50px_rgba(0,0,0,0.5)]' : ''}`}
                                 onClick={() => inputRef.current?.focus()}
                             >
                                 <input
@@ -594,9 +607,9 @@ export default function SoloMode() {
 
                                 <div className="text-base md:text-2xl font-mono leading-relaxed select-none relative z-10 tracking-tight">
                                     {text.split('').map((char, index) => {
-                                        let colorClass = "text-slate-600";
+                                        let colorClass = "text-slate-400 dark:text-slate-600";
                                         if (index < userInput.length) {
-                                            colorClass = userInput[index] === char ? "text-primary drop-shadow-[0_0_8px_rgba(0,245,212,0.4)]" : "text-red-500 bg-red-500/10 rounded-sm";
+                                            colorClass = userInput[index] === char ? "text-slate-900 dark:text-primary" : "text-red-500 bg-red-500/10 rounded-sm";
                                         }
                                         const isCursor = index === userInput.length && status !== 'finished';
                                         const isGhost = ghostData.length > 0 && ghostData[ghostIndex] !== undefined && index === ghostIndex && status === 'typing';
@@ -629,6 +642,14 @@ export default function SoloMode() {
                                 )}
                             </div>
 
+                            {status === 'waiting' && (
+                                <div className="mt-4 text-center animate-pulse">
+                                    <span className="text-xs font-mono tracking-wider text-slate-500 dark:text-slate-400">
+                                        neural connection established — tap SPACE key to initialize terminal sync
+                                    </span>
+                                </div>
+                            )}
+
                             {academyUnlocked && (
                                 <div className="mt-8 p-6 bg-primary/10 border border-primary/30 rounded-3xl animate-in fade-in zoom-in duration-500">
                                     <div className="flex items-center gap-4 text-primary">
@@ -657,30 +678,30 @@ export default function SoloMode() {
                                     {/* Stats Comparison Grid */}
                                     <div className="grid grid-cols-3 gap-4 mb-8">
                                         {/* Speed Metric */}
-                                        <div className="bg-black/40 border border-white/5 rounded-2xl p-6 flex flex-col items-center gap-2">
-                                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Speed</span>
+                                        <div className="bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/5 rounded-2xl p-6 flex flex-col items-center gap-2">
+                                            <span className="text-[9px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">Speed</span>
                                             <div className={`text-3xl font-black font-mono ${finalWPM >= (location.state?.minWPM || 20) ? 'text-primary' : 'text-red-400'}`}>
                                                 {finalWPM}
                                             </div>
-                                            <span className="text-[10px] text-slate-500 uppercase font-bold tracking-tight">Required: {location.state?.minWPM || 20}</span>
+                                            <span className="text-[10px] text-slate-600 dark:text-slate-400 uppercase font-bold tracking-tight">Required: {location.state?.minWPM || 20}</span>
                                         </div>
 
                                         {/* Accuracy Metric */}
-                                        <div className="bg-black/40 border border-white/5 rounded-2xl p-6 flex flex-col items-center gap-2">
-                                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Accuracy</span>
+                                        <div className="bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/5 rounded-2xl p-6 flex flex-col items-center gap-2">
+                                            <span className="text-[9px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">Accuracy</span>
                                             <div className={`text-3xl font-black font-mono ${parseFloat(finalAcc) >= (location.state?.minAccuracy || 90) ? 'text-primary' : 'text-red-400'}`}>
                                                 {finalAcc}%
                                             </div>
-                                            <span className="text-[10px] text-slate-500 uppercase font-bold tracking-tight">Required: {location.state?.minAccuracy || 90}%</span>
+                                            <span className="text-[10px] text-slate-600 dark:text-slate-400 uppercase font-bold tracking-tight">Required: {location.state?.minAccuracy || 90}%</span>
                                         </div>
 
                                         {/* Errors Metric */}
-                                        <div className="bg-black/40 border border-white/5 rounded-2xl p-6 flex flex-col items-center gap-2">
-                                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Errors</span>
+                                        <div className="bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/5 rounded-2xl p-6 flex flex-col items-center gap-2">
+                                            <span className="text-[9px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">Errors</span>
                                             <div className={`text-3xl font-black font-mono ${Object.values(errorMapRef.current).reduce((sum, count) => sum + count, 0) <= (location.state?.maxErrors || 15) ? 'text-primary' : 'text-red-400'}`}>
                                                 {Object.values(errorMapRef.current).reduce((sum, count) => sum + count, 0)}
                                             </div>
-                                            <span className="text-[10px] text-slate-500 uppercase font-bold tracking-tight">Required: {location.state?.maxErrors || 15}</span>
+                                            <span className="text-[10px] text-slate-600 dark:text-slate-400 uppercase font-bold tracking-tight">Required: {location.state?.maxErrors || 15}</span>
                                         </div>
                                     </div>
 
@@ -699,7 +720,7 @@ export default function SoloMode() {
                                         </button>
                                         <button 
                                             onClick={() => navigate('/academy')}
-                                            className="flex-1 py-4 bg-white/5 border border-white/10 text-slate-400 hover:text-white font-black uppercase tracking-widest rounded-2xl transition-all flex items-center justify-center gap-2"
+                                            className="flex-1 py-4 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-black uppercase tracking-widest rounded-2xl transition-all flex items-center justify-center gap-2"
                                         >
                                             Return to Academy
                                             <ChevronRight className="w-5 h-5" />
@@ -728,7 +749,7 @@ export default function SoloMode() {
                                     ) : (
                                         <button 
                                             onClick={() => setShowConfig(true)}
-                                            className="w-full md:w-auto flex items-center gap-3 px-10 py-5 bg-white/5 border border-white/10 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-white/10 transition-all"
+                                            className="w-full md:w-auto flex items-center gap-3 px-10 py-5 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-200 dark:hover:bg-white/10 transition-all"
                                         >
                                             <Settings className="w-5 h-5" />
                                             Adjust Params
@@ -738,7 +759,7 @@ export default function SoloMode() {
                             )}
 
                             {!location.state?.isAcademy && status === 'finished' && getTopErrors().length > 0 && (
-                                <div className="mt-8 bg-white/3 border border-white/10 rounded-3xl p-8 w-full max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <div className="mt-8 bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 shadow-sm rounded-3xl p-8 w-full max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
                                     <div className="flex items-center gap-3 mb-6">
                                         <BarChart2 className="w-4 h-4 text-primary" />
                                         <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Neural Weak Point Analysis</span>
@@ -746,19 +767,19 @@ export default function SoloMode() {
                                     
                                     <div className="grid grid-cols-3 gap-4 mb-8">
                                         {getTopErrors().map(({ key, count }) => (
-                                            <div key={key} className="bg-black/40 border border-white/5 rounded-2xl p-4 flex flex-col items-center">
+                                            <div key={key} className="bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/5 shadow-sm rounded-2xl p-4 flex flex-col items-center">
                                                 <div className="w-10 h-10 flex items-center justify-center bg-red-500/10 border border-red-500/20 rounded-xl text-xl font-mono font-black text-red-500 mb-2">
                                                     {key.toUpperCase()}
                                                 </div>
-                                                <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Errors</div>
-                                                <div className="text-xl font-mono font-black text-white">{count}</div>
+                                                <div className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-1">Errors</div>
+                                                <div className="text-xl font-mono font-black text-slate-900 dark:text-white">{count}</div>
                                             </div>
                                         ))}
                                     </div>
-
+ 
                                     <button 
                                         onClick={() => navigate('/academy', { state: { suggestedKeys: getTopErrors().map(e => e.key) } })}
-                                        className="w-full py-4 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:bg-primary/10 hover:border-primary/30 hover:text-primary transition-all group flex items-center justify-center gap-2"
+                                        className="w-full py-4 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-[0.2em] hover:bg-primary/10 hover:border-primary/30 hover:text-primary transition-all group flex items-center justify-center gap-2"
                                     >
                                         Train These Keys in Academy
                                         <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
@@ -780,7 +801,7 @@ export default function SoloMode() {
                                 </div>
                             </div>
                             
-                            <div className="flex items-center gap-4 bg-black/40 px-8 py-3 rounded-full border border-white/5 shadow-2xl">
+                            <div className="flex items-center gap-4 bg-white dark:bg-black/20 border border-slate-200 dark:border-white/5 shadow-sm px-8 py-3 rounded-full">
                                 <Shield className="w-4 h-4 text-primary opacity-50" />
                                 <span className="text-[9px] font-black text-primary tracking-[0.3em] font-mono animate-pulse">SECURE ENCRYPTED SESSION // ACTIVE</span>
                             </div>

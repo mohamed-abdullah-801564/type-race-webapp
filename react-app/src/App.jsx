@@ -13,9 +13,20 @@ import KeyPractice from './pages/KeyPractice';
 import RouteGuard from './components/RouteGuard';
 
 function App() {
+  const [theme, setTheme] = React.useState('dark');
+
+  React.useEffect(() => {
+    window.toggleNeuralTheme = () => {
+      setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
+    };
+    return () => {
+      delete window.toggleNeuralTheme;
+    };
+  }, []);
+
   return (
     <BrowserRouter>
-      <div className="dark">
+      <div className={theme}>
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/dashboard" element={<Dashboard />} />

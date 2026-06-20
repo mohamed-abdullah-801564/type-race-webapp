@@ -73,47 +73,46 @@ export default function DailyChallenge() {
 
     // Initial Load
     useEffect(() => {
-        let socket;
-        const connectSocket = async (user) => {
-            try {
-                const token = await user.getIdToken(true);
-                socket = io(SOCKET_SERVER, {
-                    auth: { token }
-                });
-                socketRef.current = socket;
-
-                socket.on('connect', () => {
-                    socket.emit('getDailyChallenge', async (response) => {
-                        if (response.success) {
-                            setChallengeText(response.text);
-                            setChallengeDate(response.date);
-                            setTimeLeft(150);
-
-                            // Check if user has played
-                            if (auth.currentUser) {
-                                const scoreDoc = await getDoc(doc(db, 'daily_scores', response.date, 'scores', auth.currentUser.uid));
-                                if (scoreDoc.exists()) {
-                                    setHasPlayedToday(true);
-                                    setTodayScore(scoreDoc.data());
-                                }
-                            }
-
-                            // Fetch Leaderboard
-                            fetchLeaderboard(response.date);
-                            setStatus('waiting');
-                        }
-                    });
-                });
-            } catch (err) {
-                console.error("Socket authentication failed:", err);
-            }
-        };
-
-        const unsubscribe = auth.onAuthStateChanged((user) => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
             if (user) {
-                connectSocket(user);
+                const connectSocket = async () => {
+                    try {
+                        if (!auth.currentUser) return;
+                        const token = await auth.currentUser.getIdToken(true);
+                        const socket = io(SOCKET_SERVER, {
+                            auth: { token }
+                        });
+                        socketRef.current = socket;
+
+                        socket.on('connect', () => {
+                            socket.emit('getDailyChallenge', async (response) => {
+                                if (response.success) {
+                                    setChallengeText(response.text);
+                                    setChallengeDate(response.date);
+                                    setTimeLeft(150);
+
+                                    // Check if user has played
+                                    if (auth.currentUser) {
+                                        const scoreDoc = await getDoc(doc(db, 'daily_scores', response.date, 'scores', auth.currentUser.uid));
+                                        if (scoreDoc.exists()) {
+                                            setHasPlayedToday(true);
+                                            setTodayScore(scoreDoc.data());
+                                        }
+                                    }
+
+                                    // Fetch Leaderboard
+                                    fetchLeaderboard(response.date);
+                                    setStatus('waiting');
+                                }
+                            });
+                        });
+                    } catch (err) {
+                        console.error("Socket authentication failed:", err);
+                    }
+                };
+                connectSocket();
             } else {
-                if (socket) socket.disconnect();
+                if (socketRef.current) socketRef.current.disconnect();
                 socketRef.current = null;
                 setStatus('unauthenticated');
             }
@@ -121,7 +120,7 @@ export default function DailyChallenge() {
 
         return () => {
             unsubscribe();
-            if (socket) socket.disconnect();
+            if (socketRef.current) socketRef.current.disconnect();
             if (timerRef.current) clearInterval(timerRef.current);
         };
     }, []);
@@ -130,6 +129,22 @@ export default function DailyChallenge() {
         const unsubscribe = onAuthStateChanged(auth, (user) => setCurrentUser(user));
         return () => unsubscribe();
     }, []);
+
+    // Autofocus input on waiting
+    useEffect(() => {
+        if (status === 'waiting' && inputRef.current) {
+            inputRef.current.focus();
+        }
+    }, [status]);
+
+    const handleKeyDown = (e) => {
+        if (status === 'waiting' && e.key === ' ') {
+            e.preventDefault();
+            setStatus('typing');
+            startTimeRef.current = Date.now();
+            lastKeystrokeTimeRef.current = Date.now();
+        }
+    };
 
     const fetchLeaderboard = async (date) => {
         try {
@@ -309,7 +324,7 @@ export default function DailyChallenge() {
 
     if (status === 'loading') {
         return (
-            <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center relative overflow-hidden">
+            <div className="min-h-screen bg-slate-50 dark:bg-background-dark text-slate-900 dark:text-slate-100 flex flex-col items-center justify-center relative overflow-hidden">
                 <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-size-[100%_2px,3px_100%]" />
                 <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4" />
                 <p className="text-primary/60 font-mono animate-pulse uppercase tracking-widest text-xs">Syncing Daily Protocol...</p>
@@ -319,7 +334,7 @@ export default function DailyChallenge() {
 
     if (status === 'unauthenticated') {
         return (
-            <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center relative overflow-hidden">
+            <div className="min-h-screen bg-slate-50 dark:bg-background-dark text-slate-900 dark:text-slate-100 flex flex-col items-center justify-center relative overflow-hidden">
                 <MobileBanner />
                 <Navbar />
                 <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-size-[100%_2px,3px_100%]" />
@@ -338,7 +353,7 @@ export default function DailyChallenge() {
     }
 
     return (
-        <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-primary/30 relative">
+        <div className="min-h-screen bg-slate-50 dark:bg-background-dark text-slate-900 dark:text-slate-100 font-sans selection:bg-primary/30 relative">
             <MobileBanner />
             {/* Background Scanline Effect */}
             <div className="fixed inset-0 opacity-[0.03] pointer-events-none z-50 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-size-[100%_2px,3px_100%]" />
@@ -357,29 +372,29 @@ export default function DailyChallenge() {
                 )}
 
                 {hasPlayedToday ? (
-                    <div className="flex flex-col gap-12">
-                        <div className="bg-slate-900/50 border border-primary/20 rounded-3xl p-12 text-center max-w-2xl mx-auto backdrop-blur-xl animate-in zoom-in duration-500">
-                            <div className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                                <Calendar className="w-10 h-10 text-primary" />
-                            </div>
-                            <h1 className="text-4xl font-black text-white uppercase italic tracking-tighter mb-2">Challenge Complete</h1>
-                            <p className="text-slate-400 font-medium mb-8">You have already completed today's challenge. Come back tomorrow for a new one.</p>
-                            
-                            <div className="grid grid-cols-2 gap-4 mb-8">
-                                <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
-                                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Your Speed</div>
-                                    <div className="text-4xl font-black text-primary font-mono">{todayScore?.wpm} <span className="text-sm">WPM</span></div>
-                                </div>
-                                <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
-                                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Your Accuracy</div>
-                                    <div className="text-4xl font-black text-primary font-mono">{todayScore?.acc}%</div>
-                                </div>
-                            </div>
-                            
-                            <Link to="/" className="inline-flex items-center gap-2 text-primary hover:text-primary-light font-bold uppercase tracking-widest text-sm transition-colors">
-                                Return to Dashboard <RotateCcw className="w-4 h-4" />
-                            </Link>
+            <div className="flex flex-col gap-12">
+                <div className="bg-white dark:bg-black/20 border border-slate-200 dark:border-primary/20 shadow-sm rounded-3xl p-12 text-center max-w-2xl mx-auto backdrop-blur-xl animate-in zoom-in duration-500">
+                    <div className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                        <Calendar className="w-10 h-10 text-primary" />
+                    </div>
+                    <h1 className="text-4xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter mb-2">Challenge Complete</h1>
+                    <p className="text-slate-600 dark:text-slate-400 font-medium mb-8">You have already completed today's challenge. Come back tomorrow for a new one.</p>
+                    
+                    <div className="grid grid-cols-2 gap-4 mb-8">
+                        <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-6 border border-slate-200 dark:border-slate-700/50 shadow-sm">
+                            <div className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-1">Your Speed</div>
+                            <div className="text-4xl font-black text-slate-900 dark:text-primary font-mono">{todayScore?.wpm} <span className="text-sm text-slate-500 dark:text-slate-400">WPM</span></div>
                         </div>
+                        <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-6 border border-slate-200 dark:border-slate-700/50 shadow-sm">
+                            <div className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-1">Your Accuracy</div>
+                            <div className="text-4xl font-black text-slate-900 dark:text-primary font-mono">{todayScore?.acc}%</div>
+                        </div>
+                    </div>
+                    
+                    <Link to="/" className="inline-flex items-center gap-2 text-primary hover:text-primary-light font-bold uppercase tracking-widest text-sm transition-colors">
+                        Return to Dashboard <RotateCcw className="w-4 h-4" />
+                    </Link>
+                </div>
 
                         {/* Leaderboard below in finished state */}
                         <div className="max-w-4xl mx-auto w-full">
@@ -390,39 +405,39 @@ export default function DailyChallenge() {
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         {/* Left Column: Typing Area */}
                         <div className="lg:col-span-2 space-y-8">
-                            <div className="flex flex-col gap-2">
-                                <div className="flex items-center gap-3 text-primary">
-                                    <Calendar className="w-6 h-6" />
-                                    <span className="font-mono font-black uppercase tracking-widest text-sm">{formatDate(challengeDate)}</span>
-                                </div>
-                                <h1 className="text-6xl font-black text-white uppercase italic tracking-tighter leading-none">Daily Challenge</h1>
+                          <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-3 text-primary">
+                            <Calendar className="w-6 h-6" />
+                            <span className="font-mono font-black uppercase tracking-widest text-sm">{formatDate(challengeDate)}</span>
+                        </div>
+                        <h1 className="text-6xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter leading-none">Daily Challenge</h1>
+                    </div>
+ 
+                    {/* Stats Row */}
+                    <div className="flex gap-4">
+                        <div className="flex-1 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm backdrop-blur-sm">
+                            <div className="flex items-center gap-2 mb-1">
+                                <Timer className="w-4 h-4 text-primary" />
+                                <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">Time Remaining</span>
                             </div>
-
-                            {/* Stats Row */}
-                            <div className="flex gap-4">
-                                <div className="flex-1 bg-slate-900/50 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <Timer className="w-4 h-4 text-primary" />
-                                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Time Remaining</span>
-                                    </div>
-                                    <div className={`text-4xl font-black font-mono ${timeLeft < 10 ? 'text-red-500 animate-pulse' : 'text-white'}`}>
-                                        {timeLeft}s
-                                    </div>
-                                </div>
-                                <div className="flex-1 bg-slate-900/50 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <Zap className="w-4 h-4 text-primary" />
-                                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Neural Speed</span>
-                                    </div>
-                                    <div className="text-4xl font-black font-mono text-white">
-                                        {currentWPM} <span className="text-xs text-slate-500">WPM</span>
-                                    </div>
-                                </div>
+                            <div className={`text-4xl font-black font-mono ${timeLeft < 10 ? 'text-red-500 animate-pulse' : 'text-slate-900 dark:text-white'}`}>
+                                {timeLeft}s
                             </div>
+                        </div>
+                        <div className="flex-1 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm backdrop-blur-sm">
+                            <div className="flex items-center gap-2 mb-1">
+                                <Zap className="w-4 h-4 text-primary" />
+                                <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">Neural Speed</span>
+                            </div>
+                            <div className="text-4xl font-black font-mono text-slate-900 dark:text-white">
+                                {currentWPM} <span className="text-xs text-slate-600 dark:text-slate-400">WPM</span>
+                            </div>
+                        </div>
+                    </div>
 
                             {/* Typing Area */}
                             <div 
-                                className="relative bg-slate-900/40 border-2 border-slate-800 rounded-3xl p-10 min-h-[400px] group transition-all duration-500 hover:border-primary/20 cursor-text"
+                                className="relative bg-slate-100/70 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 shadow-sm rounded-3xl p-10 min-h-[400px] group transition-all duration-500 hover:border-primary/20 cursor-text"
                                 onClick={() => inputRef.current?.focus()}
                             >
                                 <input
@@ -431,6 +446,7 @@ export default function DailyChallenge() {
                                     className="absolute opacity-0 pointer-events-none"
                                     value={userInput}
                                     onChange={handleInputChange}
+                                    onKeyDown={handleKeyDown}
                                     autoFocus
                                     disabled={status === 'finished'}
                                 />
@@ -440,11 +456,11 @@ export default function DailyChallenge() {
                                     style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                                 >
                                     {challengeText.split('').map((char, index) => {
-                                        let color = "text-slate-600";
+                                        let color = "text-slate-500 dark:text-slate-600";
                                         let isCursor = index === userInput.length;
                                         
                                         if (index < userInput.length) {
-                                            color = userInput[index] === char ? "text-slate-100" : "text-red-500 bg-red-500/10";
+                                            color = userInput[index] === char ? "text-slate-900 dark:text-primary" : "text-red-500 bg-red-500/10";
                                         }
 
                                         return (
@@ -471,15 +487,15 @@ export default function DailyChallenge() {
                                     <div className="absolute inset-0 flex items-center justify-center bg-slate-950/80 backdrop-blur-md rounded-3xl animate-in fade-in">
                                         <div className="text-center p-8">
                                             <CheckCircle2 className="w-16 h-16 text-primary mx-auto mb-4" />
-                                            <h2 className="text-3xl font-black text-white uppercase italic tracking-tighter mb-2">Protocol Finalized</h2>
+                                            <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter mb-2">Protocol Finalized</h2>
                                             <div className="flex gap-8 justify-center mt-6">
                                                 <div>
-                                                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Final WPM</div>
-                                                    <div className="text-4xl font-black text-primary font-mono">{finalWPM}</div>
+                                                    <div className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-1">Final WPM</div>
+                                                    <div className="text-4xl font-black text-slate-900 dark:text-primary font-mono">{finalWPM}</div>
                                                 </div>
                                                 <div>
-                                                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Accuracy</div>
-                                                    <div className="text-4xl font-black text-primary font-mono">{finalAcc}%</div>
+                                                    <div className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-1">Accuracy</div>
+                                                    <div className="text-4xl font-black text-slate-900 dark:text-primary font-mono">{finalAcc}%</div>
                                                 </div>
                                             </div>
                                             <div className="mt-8">
@@ -522,6 +538,14 @@ export default function DailyChallenge() {
                                     </div>
                                 )}
                             </div>
+
+                            {status === 'waiting' && (
+                                <div className="mt-4 text-center animate-pulse">
+                                    <span className="text-xs font-mono tracking-wider text-slate-500 dark:text-slate-400">
+                                        neural connection established — tap SPACE key to initialize terminal sync
+                                    </span>
+                                </div>
+                            )}
                         </div>
 
                         {/* Right Column: Leaderboard */}
@@ -538,20 +562,20 @@ export default function DailyChallenge() {
 
 function Leaderboard({ date, scores, currentUserId }) {
     return (
-        <div className="bg-slate-900/50 border border-slate-800 rounded-3xl overflow-hidden backdrop-blur-sm h-fit">
-            <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 shadow-sm rounded-3xl overflow-hidden backdrop-blur-sm h-fit">
+            <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <Trophy className="w-5 h-5 text-primary" />
-                    <h2 className="text-sm font-black text-white uppercase tracking-widest">Today's Leaderboard</h2>
+                    <h2 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">Today's Leaderboard</h2>
                 </div>
             </div>
             
-            <div className="divide-y divide-slate-800/50">
+            <div className="divide-y divide-slate-200 dark:divide-slate-800/50">
                 {scores.length > 0 ? (
                     scores.map((score, index) => (
                         <div 
                             key={score.id}
-                            className={`p-4 flex items-center gap-4 transition-colors ${score.id === currentUserId ? 'bg-primary/5' : 'hover:bg-slate-800/30'}`}
+                            className={`p-4 flex items-center gap-4 transition-colors ${score.id === currentUserId ? 'bg-primary/5' : 'hover:bg-slate-50 dark:hover:bg-slate-800/30'}`}
                         >
                             <div className="w-6 text-center">
                                 {index === 0 ? <Crown className="w-4 h-4 text-yellow-500 mx-auto" /> : 
@@ -560,12 +584,12 @@ function Leaderboard({ date, scores, currentUserId }) {
                                  <div className="text-slate-600 font-mono text-xs">{index + 1}</div>}
                             </div>
                             <div className="flex-1 min-w-0">
-                                <div className={`text-sm font-bold truncate ${score.id === currentUserId ? 'text-primary' : 'text-slate-200'}`}>
+                                <div className={`text-sm font-bold truncate ${score.id === currentUserId ? 'text-primary' : 'text-slate-800 dark:text-slate-200'}`}>
                                     {score.name}
                                 </div>
                             </div>
                             <div className="text-right">
-                                <div className="text-sm font-black text-white font-mono">{score.wpm} <span className="text-[9px] text-slate-500">WPM</span></div>
+                                <div className="text-sm font-black text-slate-900 dark:text-white font-mono">{score.wpm} <span className="text-[9px] text-slate-500">WPM</span></div>
                                 <div className="text-[10px] text-slate-500 font-medium">{score.acc}% ACC</div>
                             </div>
                         </div>

@@ -4,8 +4,8 @@
     --color-primary: #00f5d4;
     --color-background-light: #f5f8f8;
     --color-background-dark: #0f2320;
-    --font-display: "Space Grotesk", sans-serif;
-    --font-mono: "JetBrains Mono", monospace;
+    --font-display: "Geist", sans-serif;
+    --font-mono: "Geist Mono", monospace;
     --radius: 0.25rem;
     --radius-lg: 0.5rem;
     --radius-xl: 0.75rem;
@@ -84,7 +84,7 @@
 
 body,
 #root {
-    @apply min-h-screen bg-background-light text-slate-900 selection:bg-primary/30;
+    @apply min-h-screen bg-slate-50 text-slate-900 selection:bg-primary/30;
     font-family: var(--font-display);
 }
 

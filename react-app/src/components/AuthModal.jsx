@@ -180,8 +180,8 @@ export default function AuthModal({ onClose, onLoginSuccess }) {
 
     return (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-background-dark/95 backdrop-blur-md animate-in fade-in duration-300">
-            <div className="bg-slate-900 border-2 border-primary/30 rounded-2xl p-8 max-w-sm w-full shadow-[0_0_40px_rgba(0,245,212,0.2)] relative animate-in zoom-in-95 duration-300">
-                <button onClick={onClose} className="absolute top-4 right-4 p-2 text-primary/50 hover:text-primary transition-colors">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-2xl p-8 max-w-sm w-full shadow-[0_0_40px_rgba(0,245,212,0.2)] relative animate-in zoom-in-95 duration-300">
+                <button onClick={onClose} className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-primary transition-colors">
                     <X className="w-5 h-5" />
                 </button>
                 <div className="flex justify-center mb-6">
@@ -189,8 +189,8 @@ export default function AuthModal({ onClose, onLoginSuccess }) {
                         <CloudLightning className="w-8 h-8 text-primary" />
                     </div>
                 </div>
-                <h2 className="text-2xl font-black text-white text-center uppercase tracking-tighter mb-2">Neural Sync</h2>
-                <p className="text-xs text-primary/70 text-center uppercase tracking-widest mb-8">Establish secure cloud link</p>
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white text-center uppercase tracking-tighter mb-2">Neural Sync</h2>
+                <p className="text-xs text-slate-600 dark:text-primary/70 text-center uppercase tracking-widest mb-8">Establish secure cloud link</p>
                 
                 {error && <div className="p-3 mb-6 bg-red-500/10 border border-red-500/30 text-red-400 text-xs rounded-lg text-center font-mono">{error}</div>}
                 
@@ -198,7 +198,7 @@ export default function AuthModal({ onClose, onLoginSuccess }) {
                     type="button" 
                     onClick={handleGoogleSignIn}
                     disabled={loading}
-                    className="w-full mb-6 py-4 bg-white/5 border-2 border-white/20 hover:bg-white/10 hover:border-white/40 text-white font-bold tracking-[0.1em] text-sm uppercase rounded-xl backdrop-blur-md transition-all flex items-center justify-center shadow-sm disabled:opacity-50"
+                    className="w-full mb-6 py-4 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/20 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-900 dark:text-white font-bold tracking-[0.1em] text-sm uppercase rounded-xl backdrop-blur-md transition-all flex items-center justify-center shadow-sm disabled:opacity-50"
                 >
                     <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
                         <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -210,9 +210,9 @@ export default function AuthModal({ onClose, onLoginSuccess }) {
                 </button>
 
                 <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 mb-6">
-                    <div className="h-px bg-slate-800"></div>
-                    <span className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">OR</span>
-                    <div className="h-px bg-slate-800"></div>
+                    <div className="h-px bg-slate-200 dark:bg-slate-800"></div>
+                    <span className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest text-[10px]">OR</span>
+                    <div className="h-px bg-slate-200 dark:bg-slate-800"></div>
                 </div>
 
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -222,7 +222,7 @@ export default function AuthModal({ onClose, onLoginSuccess }) {
                         required 
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="w-full bg-black/40 border border-primary/20 focus:border-primary text-white text-sm font-mono px-4 py-3 rounded-lg outline-none transition-all placeholder:text-slate-600"
+                        className="w-full bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-primary/20 focus:border-primary text-slate-900 dark:text-white text-sm font-mono px-4 py-3 rounded-lg outline-none transition-all placeholder:text-slate-500 dark:placeholder:text-slate-600"
                     />
                     {!isLogin && (
                         <input 
@@ -231,7 +231,7 @@ export default function AuthModal({ onClose, onLoginSuccess }) {
                             maxLength={15}
                             value={operatorName}
                             onChange={(e) => setOperatorName(e.target.value)}
-                            className="w-full bg-black/40 border border-primary/20 focus:border-primary text-white text-sm font-mono px-4 py-3 rounded-lg outline-none transition-all placeholder:text-slate-600 uppercase tracking-widest"
+                            className="w-full bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-primary/20 focus:border-primary text-slate-900 dark:text-white text-sm font-mono px-4 py-3 rounded-lg outline-none transition-all placeholder:text-slate-500 dark:placeholder:text-slate-600 uppercase tracking-widest"
                         />
                     )}
                     <input 
@@ -240,7 +240,7 @@ export default function AuthModal({ onClose, onLoginSuccess }) {
                         required 
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full bg-black/40 border border-primary/20 focus:border-primary text-white text-sm px-4 py-3 rounded-lg outline-none transition-all placeholder:text-slate-600 tracking-widest"
+                        className="w-full bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-primary/20 focus:border-primary text-slate-900 dark:text-white text-sm px-4 py-3 rounded-lg outline-none transition-all placeholder:text-slate-500 dark:placeholder:text-slate-600 tracking-widest"
                     />
                     <button 
                         type="submit" 
@@ -252,7 +252,7 @@ export default function AuthModal({ onClose, onLoginSuccess }) {
                 </form>
                 
                 <div className="mt-6 text-center">
-                    <button type="button" onClick={() => { setIsLogin(!isLogin); setOperatorName(''); }} className="text-xs font-bold text-slate-500 hover:text-primary transition-colors tracking-widest uppercase">
+                    <button type="button" onClick={() => { setIsLogin(!isLogin); setOperatorName(''); }} className="text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-primary transition-colors tracking-widest uppercase">
                         {isLogin ? 'Create new connection' : 'Use existing link'}
                     </button>
                 </div>

@@ -83,11 +83,16 @@ export default function Multiplayer() {
     const textRef = useRef('');
 
     // Keep playerNameRef in sync with state
+    const progressRef = useRef(0);
+    const currentWpmRef = useRef(0);
+
     useEffect(() => { playerNameRef.current = playerName; }, [playerName]);
     useEffect(() => { userInputRef.current = userInput; }, [userInput]);
     useEffect(() => { roomIdRef.current = roomId; }, [roomId]);
     useEffect(() => { playersRef.current = players; }, [players]);
     useEffect(() => { textRef.current = text; }, [text]);
+    useEffect(() => { progressRef.current = progress; }, [progress]);
+    useEffect(() => { currentWpmRef.current = currentWpm; }, [currentWpm]);
 
     // 1. Initialize Socket
     useEffect(() => {
@@ -333,14 +338,14 @@ export default function Multiplayer() {
         const emitProgress = () => {
             socket.emit('updateProgress', {
                 roomId: roomIdRef.current,
-                progressPercentage: progress,
-                wpm: currentWpm
+                progressPercentage: progressRef.current,
+                wpm: currentWpmRef.current
             });
         };
 
-        const timeout = setTimeout(emitProgress, 500); // 500ms throttle
-        return () => clearTimeout(timeout);
-    }, [progress, currentWpm, socket, gameState]);
+        const interval = setInterval(emitProgress, 500); // 500ms throttle
+        return () => clearInterval(interval);
+    }, [socket, gameState]);
 
     // Ghost Cursor Animation Loop
     useEffect(() => {
@@ -746,19 +751,19 @@ export default function Multiplayer() {
 
                 <div className="flex flex-col items-center gap-6 px-4">
                     {isHost && (
-                        <div className="flex flex-col items-center gap-4 w-full max-w-md bg-slate-900/40 border border-white/10 rounded-2xl p-6">
+                        <div className="flex flex-col items-center gap-4 w-full max-w-md bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-white/10 shadow-xl rounded-2xl p-6">
                             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Match Configuration</span>
-
+ 
                             <div className="w-full">
                                 <span className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2 block">Select Difficulty</span>
-                                <div className="flex gap-1 bg-slate-800/30 p-1 rounded-xl border border-slate-700/30 w-full">
+                                <div className="flex gap-1 bg-slate-100 dark:bg-slate-800/30 p-1 rounded-xl border border-slate-200 dark:border-slate-700/30 w-full">
                                     {['easy', 'medium', 'hard'].map((d) => (
                                         <button
                                             key={d}
                                             onClick={() => setDifficulty(d)}
-                                            className={`flex-1 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${difficulty === d
-                                                    ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(0,245,212,0.1)]'
-                                                    : 'text-slate-500 hover:text-slate-300'
+                                            className={`flex-1 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all border ${difficulty === d
+                                                    ? 'bg-primary/10 text-primary border-primary/20 shadow-[0_0_15px_rgba(0,245,212,0.1)]'
+                                                    : 'bg-slate-100 border-slate-200 text-slate-500 dark:bg-white/5 dark:border-transparent dark:text-slate-500'
                                                 }`}
                                         >
                                             {d}
@@ -766,49 +771,49 @@ export default function Multiplayer() {
                                     ))}
                                 </div>
                             </div>
-
+ 
                             <div className="w-full">
                                 <span className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2 block">Data Stream</span>
-                                <div className="flex gap-1 bg-slate-800/30 p-1 rounded-xl border border-slate-700/30 w-full">
+                                <div className="flex gap-1 bg-slate-100 dark:bg-slate-800/30 p-1 rounded-xl border border-slate-200 dark:border-slate-700/30 w-full">
                                     <button
                                         onClick={() => setCategory('prose')}
-                                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${category === 'prose'
-                                                ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(0,245,212,0.1)]'
-                                                : 'text-slate-500 hover:text-slate-300'
+                                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all border ${category === 'prose'
+                                                ? 'bg-primary/10 text-primary border-primary/20 shadow-[0_0_15px_rgba(0,245,212,0.1)]'
+                                                : 'bg-slate-100 border-slate-200 text-slate-500 dark:bg-white/5 dark:border-transparent dark:text-slate-500'
                                             }`}
                                     >
                                         <FileText className="w-3.5 h-3.5" /> Prose
                                     </button>
                                     <button
                                         onClick={() => setCategory('code')}
-                                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${category === 'code'
-                                                ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(0,245,212,0.1)]'
-                                                : 'text-slate-500 hover:text-slate-300'
+                                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all border ${category === 'code'
+                                                ? 'bg-primary/10 text-primary border-primary/20 shadow-[0_0_15px_rgba(0,245,212,0.1)]'
+                                                : 'bg-slate-100 border-slate-200 text-slate-500 dark:bg-white/5 dark:border-transparent dark:text-slate-500'
                                             }`}
                                     >
                                         <Code className="w-3.5 h-3.5" /> Code
                                     </button>
                                 </div>
                             </div>
-
+ 
                             <div className="w-full">
                                 <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-3 block">Practice Mode</span>
                                 <div className="flex gap-2">
                                     <button
                                         onClick={() => setMode('time')}
-                                        className={`flex-1 py-3 rounded-xl border-2 font-black text-xs uppercase transition-all ${mode === 'time' ? 'bg-primary text-background-dark border-primary shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-white/5 border-transparent text-slate-500 hover:border-white/20'}`}
+                                        className={`flex-1 py-3 rounded-xl border-2 font-black text-xs uppercase transition-all ${mode === 'time' ? 'bg-primary text-background-dark border-primary shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-slate-100 border-slate-200 text-slate-500 dark:bg-white/5 dark:border-transparent dark:text-slate-500'}`}
                                     >
                                         <Timer className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" /> Time
                                     </button>
                                     <button
                                         onClick={() => setMode('length')}
-                                        className={`flex-1 py-3 rounded-xl border-2 font-black text-xs uppercase transition-all ${mode === 'length' ? 'bg-primary text-background-dark border-primary shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-white/5 border-transparent text-slate-500 hover:border-white/20'}`}
+                                        className={`flex-1 py-3 rounded-xl border-2 font-black text-xs uppercase transition-all ${mode === 'length' ? 'bg-primary text-background-dark border-primary shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-slate-100 border-slate-200 text-slate-500 dark:bg-white/5 dark:border-transparent dark:text-slate-500'}`}
                                     >
                                         <Target className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" /> Length
                                     </button>
                                 </div>
                             </div>
-
+ 
                             {mode === 'time' && (
                                 <div className="w-full">
                                     <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-3 block">Duration (Seconds)</span>
@@ -817,7 +822,7 @@ export default function Multiplayer() {
                                             <button
                                                 key={d}
                                                 onClick={() => setDuration(d)}
-                                                className={`flex-1 py-3 rounded-xl border-2 font-black text-lg transition-all ${duration === d ? 'bg-primary text-background-dark border-primary shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-white/5 border-transparent text-slate-500 hover:border-white/20'}`}
+                                                className={`flex-1 py-3 rounded-xl border-2 font-black text-lg transition-all ${duration === d ? 'bg-primary text-background-dark border-primary shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-slate-100 border-slate-200 text-slate-500 dark:bg-white/5 dark:border-transparent dark:text-slate-500'}`}
                                             >
                                                 {d}
                                             </button>
@@ -825,7 +830,7 @@ export default function Multiplayer() {
                                     </div>
                                 </div>
                             )}
-
+ 
                             {mode === 'length' && (
                                 <div className="w-full">
                                     <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-3 block">Target Lines</span>
@@ -834,7 +839,7 @@ export default function Multiplayer() {
                                             <button
                                                 key={l}
                                                 onClick={() => setTargetLines(l)}
-                                                className={`flex-1 py-3 rounded-xl border-2 font-black text-lg transition-all ${targetLines === l ? 'bg-primary text-background-dark border-primary shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-white/5 border-transparent text-slate-500 hover:border-white/20'}`}
+                                                className={`flex-1 py-3 rounded-xl border-2 font-black text-lg transition-all ${targetLines === l ? 'bg-primary text-background-dark border-primary shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-slate-100 border-slate-200 text-slate-500 dark:bg-white/5 dark:border-transparent dark:text-slate-500'}`}
                                             >
                                                 {l}
                                             </button>
