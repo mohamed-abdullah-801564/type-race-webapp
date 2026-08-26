@@ -1,49 +1,49 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://typemaster.vercel.app/</loc>
+    <loc>https://type-race-webapp.vercel.app/</loc>
     <lastmod>2026-08-26</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://typemaster.vercel.app/dashboard</loc>
+    <loc>https://type-race-webapp.vercel.app/dashboard</loc>
     <lastmod>2026-08-26</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://typemaster.vercel.app/solo</loc>
+    <loc>https://type-race-webapp.vercel.app/solo</loc>
     <lastmod>2026-08-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://typemaster.vercel.app/multiplayer</loc>
+    <loc>https://type-race-webapp.vercel.app/multiplayer</loc>
     <lastmod>2026-08-26</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://typemaster.vercel.app/academy</loc>
+    <loc>https://type-race-webapp.vercel.app/academy</loc>
     <lastmod>2026-08-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://typemaster.vercel.app/daily</loc>
+    <loc>https://type-race-webapp.vercel.app/daily</loc>
     <lastmod>2026-08-26</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://typemaster.vercel.app/practice</loc>
+    <loc>https://type-race-webapp.vercel.app/practice</loc>
     <lastmod>2026-08-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://typemaster.vercel.app/achievements</loc>
+    <loc>https://type-race-webapp.vercel.app/achievements</loc>
     <lastmod>2026-08-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>

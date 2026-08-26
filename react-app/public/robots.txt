@@ -16,4 +16,4 @@ Allow: /
 User-agent: Google-Extended
 Allow: /
 
-Sitemap: https://typemaster.vercel.app/sitemap.xml
+Sitemap: https://type-race-webapp.vercel.app/sitemap.xml
