@@ -44,6 +44,17 @@ export default function Dashboard() {
         navigate('/multiplayer', { state: { roomId: freshRoomId, isHost: true } });
     };
 
+    const handleAcceptChallenge = () => {
+        if (!incomingChallenge) return;
+        navigate('/multiplayer', {
+            state: {
+                roomId: incomingChallenge.roomId,
+                isHost: false
+            }
+        });
+        setIncomingChallenge(null);
+    };
+
     const TIER_STYLES = {
         Novice: { Icon: Star },
         Cadet: { Icon: Shield },

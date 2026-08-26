@@ -61,6 +61,7 @@ export default function Multiplayer() {
     const inputRef = useRef(null);
     const timerRef = useRef(null);
     const keystrokesRef = useRef([]);
+    const isSubmittingRef = useRef(false);
 
     // Check localStorage for player name on mount
     useEffect(() => {
@@ -206,6 +207,7 @@ export default function Multiplayer() {
             setGhostIndex(0);
             keystrokesRef.current = [];
             lastKeystrokeTimeRef.current = null;
+            isSubmittingRef.current = false;
             
             // Simple interval-based countdown to ensure sync
             setCountdown(3);
@@ -319,6 +321,7 @@ export default function Multiplayer() {
             setCurrentWpm(0);
             setIsGhostCaptured(false);
             setGraceEndTime(null);
+            isSubmittingRef.current = false;
         });
 
         return () => {
@@ -388,6 +391,8 @@ export default function Multiplayer() {
 
             if (remaining <= 0) {
                 clearInterval(timerRef.current);
+                if (isSubmittingRef.current) return;
+                isSubmittingRef.current = true;
 
                 const currentVal = userInputRef.current;
                 const correct = currentVal.split('').filter((char, i) => char === raceText[i]).length;

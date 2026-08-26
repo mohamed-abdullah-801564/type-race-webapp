@@ -404,12 +404,10 @@ const endRace = (roomId) => {
                     delete rooms[roomId];
                     console.log(`[${roomId}] Room deleted (empty)`);
                 } else {
-                    // If the host drops, automatically reassign host to the next person
-                    if (room.host === socket.id) {
+                    if (room.host === socket.id && room.players.length > 0) {
                         room.host = room.players[0].id;
                         console.log(`[${roomId}] Host reassigned to ${room.host}`);
                     }
-                    // Notify the remaining players
                     io.to(roomId).emit('playerLeft', {
                         playerId: socket.id,
                         newHost: room.host,

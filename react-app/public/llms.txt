@@ -1,0 +1,21 @@
+# TypeMaster
+
+> TypeMaster is a modern, high-velocity real-time typing platform and touch-typing academy designed for typists, developers, and competitive racers.
+
+## Key Capabilities
+- **Real-Time Multiplayer Arena**: Sub-50ms WebSocket room races with live position tracking and ghost overlays.
+- **Interactive Training Academy**: Structured 16-module curriculum featuring animated anatomical hand guides, strict finger blocking, and progressive mastery from Home Row to Developer Syntax.
+- **Neural Heatmap Telemetry**: Per-key latency measurement, error tracking, and adaptive drill generation based on weak keys.
+- **Developer Mode**: Specialized code snippet streams in JavaScript, Python, SQL, and React syntax.
+- **Daily Challenge**: Synchronized daily quote races with competitive global leaderboards.
+- **Desktop Application**: Low-latency Electron-powered standalone client.
+
+## Public Routes
+- `/`: Landing page with live telemetry terminal preview.
+- `/dashboard`: Personal stats, rank tier progress, neural heatmap, and global season leaderboard.
+- `/solo`: Customizable practice mode supporting prose and syntax streams with time or line targets.
+- `/multiplayer`: Real-time room creation and matchmaking against live operators.
+- `/academy`: Step-by-step touch typing academy with animated hands.
+- `/daily`: Daily competition challenges.
+- `/practice`: Weak-key balloon pop game.
+- `/achievements`: Unlockable achievement archive.

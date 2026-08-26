@@ -416,7 +416,7 @@ export default function SoloMode() {
                 
                 if (wpm >= requiredWPM && parseFloat(acc) >= requiredAccuracy && totalErrors <= allowedErrors) {
                     setAcademyUnlocked(true);
-                    const progress = JSON.parse(localStorage.getItem('academyProgress') || '["mod_1"]');
+                    const progress = JSON.parse(localStorage.getItem('academyProgress') || '["mod_0_home"]');
                     const currentIndex = ACADEMY_MODULES.findIndex(m => m.id === location.state.moduleId);
                     
                     if (currentIndex !== -1) {

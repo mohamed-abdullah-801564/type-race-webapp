@@ -2,40 +2,66 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
     GraduationCap, 
-    Cpu, 
-    Shield, 
-    Zap, 
     ChevronRight, 
-    Target, 
     Lock, 
     Play, 
-    Activity, 
-    Terminal,
-    AlertTriangle,
+    Cpu,
     ShieldAlert,
-    Gauge,
-    Timer,
-    Info,
-    Award
+    CheckCircle2,
+    RotateCcw,
+    X,
+    Trophy,
+    Target,
+    Shield,
+    Terminal,
+    Award,
+    Activity
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
-import FingerMap from '../components/FingerMap';
+import EdClubHandsGuide from '../components/EdClubHandsGuide';
 import { ACADEMY_MODULES, getModuleText } from '../utils/typingUtils';
+import { playErrorSound, playSuccessSound } from '../utils/soundUtils';
+import { recordKeyLatency } from '../utils/heatmapUtils';
 import { auth } from '../firebase';
 
 export default function TrainingAcademy() {
     const navigate = useNavigate();
     const location = useLocation();
-    const suggestedKeys = location.state?.suggestedKeys || [];
-    const [selectedId, setSelectedId] = useState('mod_1');
-    const [unlockedIds, setUnlockedIds] = useState([]);
-    const [showProtocol, setShowProtocol] = useState(false);
+    const [selectedId, setSelectedId] = useState('mod_0_home');
+    const [unlockedIds, setUnlockedIds] = useState(['mod_0_home']);
     const [showGraduationModal, setShowGraduationModal] = useState(false);
     const [playerName, setPlayerName] = useState('Operator');
     const canvasRef = useRef(null);
+    const paragraphInputRef = useRef(null);
+    
+    // Dedicated Full-Screen Drill State
+    const [isDrillActive, setIsDrillActive] = useState(false);
+    const [isTokenDrillMode, setIsTokenDrillMode] = useState(true);
+    const [activeTokenIdx, setActiveTokenIdx] = useState(0);
+    const [tokens, setTokens] = useState([]);
+    const [isWrongKey, setIsWrongKey] = useState(false);
+    const [errorCount, setErrorCount] = useState(0);
+    const [drillCompleted, setDrillCompleted] = useState(false);
+    const [startTime, setStartTime] = useState(null);
+    const [stats, setStats] = useState({ wpm: 0, accuracy: 100 });
 
+    // Paragraph / Prose Drill States
+    const [paragraphText, setParagraphText] = useState('');
+    const [paragraphInput, setParagraphInput] = useState('');
+    const [paragraphCompleted, setParagraphCompleted] = useState(false);
+    const [paragraphPassed, setParagraphPassed] = useState(false);
+    const [paragraphBackspaceUsed, setParagraphBackspaceUsed] = useState(false);
+
+    const selectedModule = ACADEMY_MODULES.find(m => m.id === selectedId) || ACADEMY_MODULES[0];
+    const isCompletedAll = unlockedIds.includes('academy_completed') || unlockedIds.includes('mod_13');
+
+    // Strict Progression Load
     useEffect(() => {
-        const progress = JSON.parse(localStorage.getItem('academyProgress') || '["mod_1"]');
+        let progress = JSON.parse(localStorage.getItem('academyProgress') || '[]');
+        if (!Array.isArray(progress) || progress.length === 0 || !progress.includes('mod_0_home')) {
+            progress = ['mod_0_home'];
+            localStorage.setItem('academyProgress', JSON.stringify(progress));
+        }
         setUnlockedIds(progress);
 
         const savedName = localStorage.getItem('playerName');
@@ -49,6 +75,7 @@ export default function TrainingAcademy() {
         }
     }, []);
 
+    // Graduation Canvas Drawing
     useEffect(() => {
         if (!showGraduationModal || !canvasRef.current) return;
         const canvas = canvasRef.current;
@@ -59,12 +86,12 @@ export default function TrainingAcademy() {
         const academyRaces = history.filter(h => h.isAcademy);
         const avgWpm = academyRaces.length > 0
             ? Math.round(academyRaces.reduce((sum, r) => sum + r.wpm, 0) / academyRaces.length)
-            : 58; // Realistic default WPM if empty
+            : 58;
 
         const finalExamRace = history.find(h => h.moduleId === 'mod_13');
         const finalPrecision = finalExamRace
             ? parseFloat(finalExamRace.accuracy).toFixed(1) + '%'
-            : '98.5%'; // Realistic default accuracy if empty
+            : '98.5%';
 
         // Signature hash
         const getSignature = () => {
@@ -128,7 +155,7 @@ export default function TrainingAcademy() {
         // Secondary thin border inset
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
         ctx.lineWidth = 1;
-        ctx.shadowBlur = 0; // Turn off glow for inner border
+        ctx.shadowBlur = 0;
         ctx.beginPath();
         const innerInset = inset + 12;
         const innerCornerCut = cornerCut - 4;
@@ -143,7 +170,7 @@ export default function TrainingAcademy() {
         ctx.closePath();
         ctx.stroke();
 
-        // Corner tick markers (futuristic aesthetic)
+        // Corner tick markers
         ctx.strokeStyle = 'rgba(0, 245, 212, 0.4)';
         ctx.lineWidth = 2;
         const drawCornerBracket = (x, y, xDir, yDir) => {
@@ -162,20 +189,17 @@ export default function TrainingAcademy() {
         // 4. Center-aligned Text Rendering
         ctx.textAlign = 'center';
         
-        // Badge Subtitle
         ctx.font = '900 18px "JetBrains Mono", monospace';
         ctx.fillStyle = '#00f5d4';
         ctx.fillText('NEURAL NETWORK INTEGRITY CERTIFICATION', 960, 250);
 
-        // Main Title
         ctx.font = '900 68px "Space Grotesk", sans-serif';
         ctx.fillStyle = '#ffffff';
         ctx.shadowColor = 'rgba(255, 255, 255, 0.3)';
         ctx.shadowBlur = 10;
         ctx.fillText('NEURAL SYNCHRONIZATION GRADUATE', 960, 360);
-        ctx.shadowBlur = 0; // reset
+        ctx.shadowBlur = 0;
 
-        // Divider
         ctx.strokeStyle = 'rgba(0, 245, 212, 0.2)';
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -183,32 +207,27 @@ export default function TrainingAcademy() {
         ctx.lineTo(1160, 410);
         ctx.stroke();
 
-        // Small circle in the center of divider
         ctx.fillStyle = '#00f5d4';
         ctx.beginPath();
         ctx.arc(960, 410, 5, 0, Math.PI * 2);
         ctx.fill();
 
-        // Body Text
         ctx.font = 'bold 36px "Space Grotesk", sans-serif';
-        ctx.fillStyle = '#94a3b8'; // slate 400
+        ctx.fillStyle = '#94a3b8';
         ctx.fillText('This certifies that Operator', 960, 490);
 
-        // Operator Name
         ctx.font = '900 60px "Space Grotesk", sans-serif';
         ctx.fillStyle = '#00f5d4';
         ctx.shadowColor = 'rgba(0, 245, 212, 0.4)';
         ctx.shadowBlur = 15;
         ctx.fillText(playerName.toUpperCase(), 960, 580);
-        ctx.shadowBlur = 0; // reset
+        ctx.shadowBlur = 0;
 
-        // Certification Description
         ctx.font = 'normal 26px "Space Grotesk", sans-serif';
-        ctx.fillStyle = '#64748b'; // slate 500
-        ctx.fillText('has successfully synchronized with the 13-tier core typing grid curriculum,', 960, 670);
+        ctx.fillStyle = '#64748b';
+        ctx.fillText('has successfully synchronized with the core typing grid curriculum,', 960, 670);
         ctx.fillText('demonstrating optimal mechanical throughput and synapse alignment.', 960, 720);
 
-        // Decorative Tech Brackets at the bottom
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
         ctx.lineWidth = 1;
         ctx.beginPath();
@@ -216,7 +235,7 @@ export default function TrainingAcademy() {
         ctx.lineTo(1820, 830);
         ctx.stroke();
 
-        // 5. Verification Signature (Bottom Left)
+        // Verification Signature
         ctx.textAlign = 'left';
         ctx.font = 'bold 13px "JetBrains Mono", monospace';
         ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
@@ -225,7 +244,7 @@ export default function TrainingAcademy() {
         ctx.fillStyle = '#00f5d4';
         ctx.fillText(`SHA-256//${signature}`, 120, 960);
 
-        // 6. Telemetry Stats (Bottom Right)
+        // Telemetry Stats
         ctx.textAlign = 'right';
         ctx.font = 'bold 13px "JetBrains Mono", monospace';
         ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
@@ -249,32 +268,195 @@ export default function TrainingAcademy() {
         link.click();
     };
 
-    const selectedModule = ACADEMY_MODULES.find(m => m.id === selectedId) || ACADEMY_MODULES[0];
-    const isCompletedAll = unlockedIds.includes('academy_completed');
+    const startModule = () => {
+        const isUnlocked = unlockedIds.includes(selectedId);
+        if (!isUnlocked) return;
 
-    const handleStartModule = () => {
-        if (!unlockedIds.includes(selectedId)) return;
-        setShowProtocol(true);
+        if (selectedModule.isTokenDrill) {
+            setIsTokenDrillMode(true);
+            let moduleTokens = [];
+            if (selectedModule.tokens) {
+                moduleTokens = selectedModule.tokens;
+            } else if (selectedModule.texts && selectedModule.texts.length > 0) {
+                const text = getModuleText(selectedModule);
+                moduleTokens = text.split('');
+            }
+            setTokens(moduleTokens);
+            setActiveTokenIdx(0);
+            setErrorCount(0);
+            setIsWrongKey(false);
+            setDrillCompleted(false);
+            setStartTime(Date.now());
+            setIsDrillActive(true);
+        } else {
+            setIsTokenDrillMode(false);
+            const text = getModuleText(selectedModule);
+            setParagraphText(text);
+            setParagraphInput('');
+            setParagraphCompleted(false);
+            setParagraphPassed(false);
+            setParagraphBackspaceUsed(false);
+            setErrorCount(0);
+            setStartTime(Date.now());
+            setIsDrillActive(true);
+            setTimeout(() => {
+                if (paragraphInputRef.current) paragraphInputRef.current.focus();
+            }, 100);
+        }
     };
 
-    const handleBeginTraining = () => {
-        const text = getModuleText(selectedModule);
-        const duration = Math.max(30, Math.ceil(text.split(' ').length / (selectedModule.minWPM / 60)));
+    // Strict Key Engine for Token Drills
+    useEffect(() => {
+        if (!isDrillActive || !isTokenDrillMode || drillCompleted) return;
 
-        navigate('/solo', { 
-            state: { 
-                text, 
-                isAcademy: true, 
-                academyTitle: selectedModule.title,
-                moduleId: selectedModule.id,
-                minWPM: selectedModule.minWPM,
-                minAccuracy: selectedModule.minAccuracy,
-                maxErrors: selectedModule.maxErrors,
-                ...(selectedModule.isTest && { isTest: true }),
-                duration
-            } 
-        });
+        const handleKeyDown = (e) => {
+            if (activeTokenIdx >= tokens.length) return;
+
+            const expected = tokens[activeTokenIdx];
+            if (e.key === expected) {
+                playSuccessSound();
+                recordKeyLatency(expected.toLowerCase(), 200);
+                setIsWrongKey(false);
+                
+                const nextIdx = activeTokenIdx + 1;
+                setActiveTokenIdx(nextIdx);
+
+                if (nextIdx === tokens.length) {
+                    const elapsedMin = Math.max(0.1, (Date.now() - startTime) / 60000);
+                    const calcWpm = Math.round((tokens.length / 5) / elapsedMin);
+                    const totalAttempts = tokens.length + errorCount;
+                    const calcAcc = Math.round((tokens.length / totalAttempts) * 100);
+
+                    setStats({ wpm: calcWpm, accuracy: calcAcc });
+                    setDrillCompleted(true);
+
+                    // Sync & Unlock immediate next module strictly
+                    const progress = JSON.parse(localStorage.getItem('academyProgress') || '["mod_0_home"]');
+                    const cIdx = ACADEMY_MODULES.findIndex(m => m.id === selectedId);
+                    if (cIdx !== -1) {
+                        // Save current race record to history for average stats computation
+                        const history = JSON.parse(localStorage.getItem('raceHistory') || '[]');
+                        history.push({
+                            wpm: calcWpm,
+                            accuracy: calcAcc,
+                            date: Date.now(),
+                            isAcademy: true,
+                            moduleId: selectedId
+                        });
+                        localStorage.setItem('raceHistory', JSON.stringify(history.slice(-50)));
+
+                        if (cIdx < ACADEMY_MODULES.length - 1) {
+                            const nextId = ACADEMY_MODULES[cIdx + 1].id;
+                            if (!progress.includes(nextId)) {
+                                progress.push(nextId);
+                                localStorage.setItem('academyProgress', JSON.stringify(progress));
+                                setUnlockedIds(progress);
+                            }
+                        } else if (cIdx === ACADEMY_MODULES.length - 1) {
+                            if (!progress.includes('academy_completed')) {
+                                progress.push('academy_completed');
+                                localStorage.setItem('academyProgress', JSON.stringify(progress));
+                                setUnlockedIds(progress);
+                            }
+                        }
+                    }
+                }
+            } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                playErrorSound();
+                setIsWrongKey(true);
+                setErrorCount(prev => prev + 1);
+                setTimeout(() => setIsWrongKey(false), 300);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isDrillActive, isTokenDrillMode, activeTokenIdx, tokens, drillCompleted, startTime, errorCount, selectedId]);
+
+    // Paragraph Input Handler
+    const handleParagraphInputChange = (e) => {
+        if (paragraphCompleted) return;
+        const val = e.target.value;
+
+        if (val.length > paragraphText.length) return;
+
+        const prevLength = paragraphInput.length;
+        if (val.length > prevLength) {
+            const expectedChar = paragraphText[val.length - 1];
+            const typedChar = val[val.length - 1];
+            if (typedChar !== expectedChar) {
+                playErrorSound();
+                setErrorCount(prev => prev + 1);
+                setIsWrongKey(true);
+                setTimeout(() => setIsWrongKey(false), 200);
+            } else {
+                playSuccessSound();
+                recordKeyLatency(expectedChar.toLowerCase(), 200);
+            }
+        } else {
+            setParagraphBackspaceUsed(true);
+        }
+
+        setParagraphInput(val);
+
+        if (val.length === paragraphText.length) {
+            // Compute paragraph completion stats
+            const elapsedMin = Math.max(0.1, (Date.now() - startTime) / 60000);
+            const correctChars = val.split('').filter((c, i) => c === paragraphText[i]).length;
+            const calcWpm = Math.round((correctChars / 5) / elapsedMin);
+            const calcAcc = Math.round((correctChars / val.length) * 100);
+
+            setStats({ wpm: calcWpm, accuracy: calcAcc });
+            
+            const passed = calcWpm >= selectedModule.minWPM && calcAcc >= selectedModule.minAccuracy && errorCount <= selectedModule.maxErrors;
+            setParagraphPassed(passed);
+            setParagraphCompleted(true);
+
+            if (passed) {
+                // Save current race record to history for average stats computation
+                const history = JSON.parse(localStorage.getItem('raceHistory') || '[]');
+                history.push({
+                    wpm: calcWpm,
+                    accuracy: calcAcc,
+                    date: Date.now(),
+                    isAcademy: true,
+                    moduleId: selectedId
+                });
+                localStorage.setItem('raceHistory', JSON.stringify(history.slice(-50)));
+
+                const progress = JSON.parse(localStorage.getItem('academyProgress') || '["mod_0_home"]');
+                const cIdx = ACADEMY_MODULES.findIndex(m => m.id === selectedId);
+                
+                if (cIdx !== -1) {
+                    if (cIdx < ACADEMY_MODULES.length - 1) {
+                        const nextId = ACADEMY_MODULES[cIdx + 1].id;
+                        if (!progress.includes(nextId)) {
+                            progress.push(nextId);
+                            localStorage.setItem('academyProgress', JSON.stringify(progress));
+                            setUnlockedIds(progress);
+                        }
+                    } else if (cIdx === ACADEMY_MODULES.length - 1) {
+                        if (!progress.includes('academy_completed')) {
+                            progress.push('academy_completed');
+                            localStorage.setItem('academyProgress', JSON.stringify(progress));
+                            setUnlockedIds(progress);
+                        }
+                    }
+                }
+            }
+        }
     };
+
+    const handleParagraphKeyDown = (e) => {
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            startModule();
+        }
+    };
+
+    const targetChar = isTokenDrillMode 
+        ? (tokens[activeTokenIdx] || '') 
+        : (paragraphText[paragraphInput.length] || '');
 
     const getDifficultyColor = (module) => {
         if (module.isTest) return 'text-amber-400';
@@ -286,427 +468,498 @@ export default function TrainingAcademy() {
         }
     };
 
-    const getActiveKeys = (module) => {
-        const moduleIndex = ACADEMY_MODULES.findIndex(m => m.id === module.id);
-        const allPrevModules = ACADEMY_MODULES.slice(0, moduleIndex + 1);
-        const allKeys = allPrevModules.flatMap(m => m.keys || []);
-        return [...new Set(allKeys.map(k => k.toLowerCase()))];
-    };
-
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-background-dark text-slate-700 dark:text-slate-300 font-sans selection:bg-primary/30 selection:text-primary flex flex-col relative overflow-hidden">
-            {/* Cyber Scanline Effect */}
-            <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-size-[100%_2px,3px_100%] z-50" />
-            
-            <Navbar />
- 
-            <main className="flex-1 flex flex-col md:flex-row overflow-hidden relative z-10">
-                {/* Sidebar: Progressive Curriculum */}
-                <div className="md:w-[380px] w-full bg-slate-100 dark:bg-black/20 border-r border-slate-200 dark:border-white/5 flex flex-col pt-12">
-                    <div className="px-8 mb-8 text-left">
-                        <div className="flex items-center gap-2 mb-2">
-                             <GraduationCap className="w-4 h-4 text-primary" />
-                             <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Training Curriculum</span>
-                        </div>
-                        <h2 className="text-2xl font-black text-slate-900 dark:text-white italic uppercase tracking-tighter">Neural Path</h2>
-                        <div className="mt-8">
-                            <div className="flex justify-between items-center mb-3">
-                                <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">Overall Progress</span>
-                                <span className="text-[10px] font-black text-primary uppercase">
-                                    {unlockedIds.length} of {ACADEMY_MODULES.length} Modules
-                                </span>
-                            </div>
-                            <div className="h-1.5 bg-slate-200 dark:bg-white/5 rounded-full overflow-hidden">
-                                <div 
-                                    className="h-full bg-primary shadow-[0_0_10px_#00f5d4] transition-all duration-1000"
-                                    style={{ width: `${Math.round((unlockedIds.length / ACADEMY_MODULES.length) * 100)}%` }}
-                                />
-                            </div>
-                            <div className="text-[10px] text-slate-600 dark:text-slate-400 font-bold mt-2 italic uppercase tracking-widest">
-                                {Math.round((unlockedIds.length / ACADEMY_MODULES.length) * 100)}% Complete
-                            </div>
-                        </div>
-                        <div className="h-0.5 w-12 bg-primary/20 mt-6" />
-                    </div>
+        <div className="h-screen w-screen bg-slate-50 dark:bg-background-dark text-slate-700 dark:text-slate-300 font-sans flex flex-col overflow-hidden select-none">
+            <Navbar isFaded={isDrillActive}/>
 
-                    <div className="flex-1 overflow-y-auto px-4 space-y-2 pb-12 custom-scrollbar">
-                        {ACADEMY_MODULES.map((module, index) => {
-                            const isSelected = module.id === selectedId;
-                            const isUnlocked = unlockedIds.includes(module.id);
-                            
-                            return (
-                                <button
-                                    key={module.id}
-                                    onClick={() => {
-                                        if (isUnlocked) {
-                                            setSelectedId(module.id);
-                                            setShowProtocol(false);
-                                        }
-                                    }}
-                                    disabled={!isUnlocked}
-                                    className={`w-full group relative flex items-center gap-4 p-5 rounded-2xl transition-all duration-300 border ${
-                                        isSelected 
-                                        ? 'bg-primary/10 border-primary/30 shadow-[0_0_20px_rgba(0,245,212,0.1)]' 
-                                        : isUnlocked 
-                                            ? 'bg-transparent border-transparent hover:bg-slate-200 dark:hover:bg-white/5' 
-                                            : 'opacity-40 cursor-not-allowed'
-                                    }`}
-                                >
-                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-mono font-black text-xs border relative ${
-                                        isSelected 
-                                        ? 'bg-primary text-background-dark border-primary' 
-                                        : module.isTest
-                                            ? 'bg-amber-500/10 text-amber-500 border-amber-500/30'
-                                            : 'bg-slate-200 dark:bg-white/5 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-white/10'
-                                    }`}>
-                                        {isUnlocked ? (
-                                            module.isTest ? <ShieldAlert className="w-5 h-5" /> : String(index + 1).padStart(2, '0')
-                                        ) : (
-                                            <Lock className="w-4 h-4" />
-                                        )}
-                                        {module.isTest && isUnlocked && (
-                                            <div className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-amber-500 rounded-full border-2 border-background-dark animate-pulse" />
-                                        )}
-                                    </div>
-                                    
-                                    <div className="flex-1 text-left">
-                                        <div className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest ${isSelected ? 'text-primary' : module.isTest ? 'text-amber-500' : 'text-slate-600 dark:text-slate-400'}`}>
-                                            {module.isTest && <Zap className="w-2.5 h-2.5" />}
-                                            {module.isTest ? 'Assessment' : module.difficulty}
-                                        </div>
-                                        <div className={`text-md font-bold truncate max-w-[200px] ${isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-400'}`}>
-                                            {module.title}
-                                        </div>
-                                        {suggestedKeys.some(sk => module.keys?.map(k => k.toLowerCase()).includes(sk.toLowerCase())) && !isSelected && (
-                                            <div className="mt-1 flex items-center gap-1">
-                                                <Target className="w-2.5 h-2.5 text-primary" />
-                                                <span className="text-[8px] font-black text-primary uppercase tracking-widest">Suggested Focus</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                    
-                                    {isSelected && (
-                                        <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_#00f5d4] animate-pulse" />
-                                    )}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                {/* Dashboard: Module Detail */}
-                <div className="flex-1 bg-white dark:bg-black/20 border-l border-slate-200 dark:border-white/5 flex flex-col p-12 lg:p-24 overflow-y-auto">
-                    <div className="max-w-4xl w-full mx-auto animate-in fade-in slide-in-from-right-12 duration-700">
-                        {isCompletedAll && (
-                            <div className="mb-12 bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-primary/10 border border-primary/20 rounded-3xl p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-[0_0_30px_rgba(0,245,212,0.05)] relative overflow-hidden group">
-                                <div className="absolute inset-0 bg-radial-gradient from-primary/5 via-transparent to-transparent pointer-events-none" />
-                                <div className="flex items-center gap-5 relative z-10">
-                                    <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-center text-primary shadow-[0_0_15px_rgba(0,245,212,0.1)] group-hover:scale-105 transition-transform duration-300">
-                                        <Award className="w-8 h-8 animate-pulse" />
-                                    </div>
-                                    <div className="text-left">
-                                        <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] block mb-1">UNIFIED STATUS: ACTIVE SENIOR OPERATOR</span>
-                                        <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter">SYNCHRONIZATION COMPLETE</h3>
-                                        <p className="text-slate-600 dark:text-slate-400 text-xs mt-1 max-w-md font-medium">All 13 modules completed with optimal throughput. Your neural profile certificate is ready.</p>
-                                    </div>
-                                </div>
-                                <button 
-                                    onClick={() => setShowGraduationModal(true)}
-                                    className="relative z-10 px-6 py-4 bg-primary text-background-dark font-black uppercase tracking-widest text-xs rounded-xl shadow-lg shadow-primary/25 hover:shadow-primary/45 hover:scale-[1.03] active:scale-[0.98] transition-all cursor-pointer flex items-center gap-2 group/btn"
-                                >
-                                    <GraduationCap className="w-4 h-4" />
-                                    <span>CLAIM TELEMETRY PROFILE</span>
-                                </button>
-                            </div>
-                        )}
-                        {selectedModule && (
-                            <button
-                                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                                className="md:hidden mb-6 px-4 py-2 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 font-bold uppercase tracking-widest text-[10px] hover:text-primary hover:border-primary/30 transition-all"
-                            >
-                                Back to Curriculum
-                            </button>
-                        )}
-                        {/* Meta Info */}
-                        <div className="flex items-center gap-4 mb-14">
-                            <div className={`flex items-center gap-2 px-4 py-1.5 border rounded-full ${
-                                selectedModule.isTest 
-                                ? 'bg-amber-500/10 border-amber-500/30' 
-                                : 'bg-primary/5 border-primary/20'
-                            }`}>
-                                {selectedModule.isTest ? (
-                                    <ShieldAlert className="w-3.5 h-3.5 text-amber-500" />
-                                ) : (
-                                    <Activity className="w-3.5 h-3.5 text-primary" />
-                                )}
-                                <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${
-                                    selectedModule.isTest ? 'text-amber-500' : 'text-primary'
-                                }`}>
-                                    {selectedModule.isTest ? 'Priority Assessment: Required' : 'Neural Status: Optimal'}
-                                </span>
-                            </div>
-                            <div className="flex-1 h-px bg-white/5" />
+            {/* FULL-SCREEN DRILL STAGE (Zero Scrolling, Centered) */}
+            {isDrillActive ? (
+                <main className="flex-1 w-full h-[calc(100vh-80px)] flex flex-col items-center justify-between p-6 md:p-10 relative overflow-hidden animate-in fade-in zoom-in duration-300">
+                    {/* Top Header Controls */}
+                    <div className="w-full max-w-5xl flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <span className="text-xs font-black uppercase tracking-[0.2em] text-primary">{selectedModule.title}</span>
+                            {isTokenDrillMode ? (
+                                <span className="text-xs font-mono text-slate-400">({activeTokenIdx} / {tokens.length})</span>
+                            ) : (
+                                <span className="text-xs font-mono text-slate-400">({paragraphInput.length} / {paragraphText.length})</span>
+                            )}
                         </div>
-
-                        {/* Heading */}
-                        <div className="relative mb-16">
-                            <div className="absolute -left-12 top-0 bottom-0 w-1 bg-linear-to-b from-primary to-transparent" />
-                            <h1 className="text-6xl lg:text-7xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic mb-6">
-                                {selectedModule.title}
-                            </h1>
-                            <p className="text-xl text-slate-600 dark:text-slate-400 font-medium leading-relaxed max-w-2xl">
-                                {selectedModule.description}
-                            </p>
-                        </div>
- 
-                        {/* Specs Grid */}
-                        <div className="grid grid-cols-2 gap-8 mb-16">
-                            <div className="bg-white dark:bg-black/20 border border-slate-200 dark:border-white/5 shadow-sm rounded-[32px] p-10 group hover:border-primary/20 transition-all">
-                                <div className="flex items-center gap-3 mb-8">
-                                    <Target className="w-5 h-5 text-primary opacity-40" />
-                                    <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">Protocol Targets</span>
-                                </div>
-                                <div className="flex flex-wrap gap-3 mb-8">
-                                    {selectedModule.keys.map(key => (
-                                        <div key={key} className="w-12 h-12 flex items-center justify-center bg-slate-100 dark:bg-black/60 border border-slate-300 dark:border-white/10 rounded-2xl text-lg font-mono font-bold text-slate-700 dark:text-slate-300 group-hover:border-primary/40 group-hover:text-primary transition-all group-hover:-translate-y-1 shadow-[0_4px_0_rgba(255,255,255,0.05)]">
-                                            {key}
-                                        </div>
-                                    ))}
-                                </div>
-                                <div className="space-y-4 pt-6 border-t border-slate-200 dark:border-white/5">
-                                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400">
-                                        <span>Target Velocity</span>
-                                        <span className="text-primary">{selectedModule.minWPM} WPM</span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400">
-                                        <span>Accuracy Req</span>
-                                        <span className="text-primary">{selectedModule.minAccuracy}%</span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400">
-                                        <span>Error Allowance</span>
-                                        <span className="text-primary">{selectedModule.maxErrors} MAX</span>
-                                    </div>
-                                </div>
-                            </div>
- 
-                            <div className="bg-white dark:bg-black/20 border border-slate-200 dark:border-white/5 shadow-sm rounded-[32px] p-10 group hover:border-primary/20 transition-all">
-                                <div className="flex items-center gap-3 mb-8">
-                                    <Shield className="w-5 h-5 text-primary opacity-40" />
-                                    <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">Complexity Level</span>
-                                </div>
-                                <div className="space-y-6">
-                                    <div className="flex justify-between items-end">
-                                        <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase">Integrity Requirements</span>
-                                        <span className={`text-md font-black uppercase ${getDifficultyColor(selectedModule)}`}>
-                                            {selectedModule.isTest ? 'Assessment' : selectedModule.difficulty}
-                                        </span>
-                                    </div>
-                                    <div className="w-full h-1.5 bg-slate-200 dark:bg-white/5 rounded-full overflow-hidden">
-                                        <div 
-                                            className={`h-full shadow-[0_0_15px] transition-all duration-1000 ${
-                                                selectedModule.isTest ? 'bg-amber-500 shadow-amber-500/50' : 'bg-primary shadow-primary/50'
-                                            }`} 
-                                            style={{ width: selectedModule.isTest ? '100%' : (selectedModule.difficulty === 'easy' ? '33%' : (selectedModule.difficulty === 'medium' ? '66%' : '100%')) }}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
- 
-                        {/* Preview */}
-                        <div className="bg-white dark:bg-black/20 border border-slate-200 dark:border-white/5 shadow-sm rounded-[32px] p-10 mb-12 relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 p-6">
-                                <Terminal className="w-5 h-5 text-white/5 group-hover:text-primary/20 transition-colors" />
-                            </div>
-                            <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest block mb-4">Neural Packet Preview</span>
-                            <div className="text-xl font-mono text-slate-700 dark:text-slate-400 bg-slate-50 dark:bg-black/20 p-8 rounded-2xl border border-slate-200 dark:border-white/5 italic select-none line-clamp-3">
-                                {selectedModule.texts[0]}...
-                            </div>
-                        </div>
-
-                        {/* Execute Button */}
-                        <button 
-                            onClick={handleStartModule}
-                            className={`w-full group relative flex items-center justify-between p-10 rounded-[40px] overflow-hidden transition-all hover:scale-[1.01] active:scale-[0.99] shadow-2xl ${
-                                selectedModule.isTest 
-                                ? 'bg-amber-500 shadow-amber-500/25' 
-                                : 'bg-primary shadow-primary/25'
-                            }`}
+                        <button
+                            onClick={() => { setIsDrillActive(false); setDrillCompleted(false); setParagraphCompleted(false); }}
+                            className="px-4 py-2 rounded-xl bg-slate-200 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:text-red-400 transition-colors flex items-center gap-2 text-xs font-bold uppercase tracking-wider cursor-pointer"
                         >
-                            <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.15)_50%,transparent_75%)] bg-size-[250%_250%] animate-[shimmer_3s_infinite]" />
-                            <div className="relative z-10 flex items-center gap-8">
-                                <div className="w-16 h-16 rounded-2xl bg-background-dark flex items-center justify-center border border-white/10 group-hover:rotate-12 transition-transform duration-500">
-                                    {selectedModule.isTest ? (
-                                        <AlertTriangle className="w-7 h-7 text-amber-500 fill-amber-500/10" />
-                                    ) : (
-                                        <Play className="w-7 h-7 text-primary fill-current" />
-                                    )}
-                                </div>
-                                <div className="text-left">
-                                    <div className={`text-xs font-black uppercase tracking-widest mb-1 ${
-                                        selectedModule.isTest ? 'text-background-dark/70' : 'text-background-dark/50'
-                                    }`}>
-                                        {selectedModule.isTest ? 'Critical Assessment' : 'Execute Protocol'}
-                                    </div>
-                                    <div className="text-3xl lg:text-4xl font-black text-background-dark uppercase italic tracking-tighter">
-                                        {selectedModule.isTest ? 'Initiate Final Test' : 'Begin Module'}
-                                    </div>
-                                </div>
-                            </div>
-                            <ChevronRight className="w-12 h-12 text-background-dark relative z-10 group-hover:translate-x-3 transition-transform" />
+                            <X className="w-4 h-4"/> Exit Lesson
                         </button>
                     </div>
 
-                    {/* Protocol Modal Overlay */}
-                    {showProtocol && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-background-dark/80 backdrop-blur-md animate-in fade-in duration-300">
-                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-primary/20 rounded-3xl p-10 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative custom-scrollbar animate-in fade-in zoom-in duration-500">
-                                <div className="text-center mb-10">
-                                    <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] block mb-2">INITIAL PROTOCOL</span>
-                                    <h2 className="text-4xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter">{selectedModule.title}</h2>
+                    {isTokenDrillMode ? (
+                        /* Token Drill Subview */
+                        !drillCompleted ? (
+                            <div className="w-full flex flex-col items-center justify-center my-auto space-y-8">
+                                {/* Token Card Carousel */}
+                                <div className="flex items-center justify-center gap-3 md:gap-4 mb-8 py-2 overflow-visible">
+                                    {tokens.slice(Math.max(0, activeTokenIdx - 2), activeTokenIdx + 5).map((tok, i) => {
+                                        const actualIdx = Math.max(0, activeTokenIdx - 2) + i;
+                                        const isCurrent = actualIdx === activeTokenIdx;
+                                        const isPassed = actualIdx < activeTokenIdx;
+
+                                        return (
+                                            <div 
+                                                key={actualIdx}
+                                                className={`w-14 h-14 md:w-20 md:h-20 rounded-2xl flex items-center justify-center font-mono text-2xl md:text-3xl font-black relative transition-all duration-150 border-2 ${
+                                                    isCurrent
+                                                        ? isWrongKey
+                                                            ? 'bg-red-500/20 border-red-500 text-red-500 scale-110 shadow-[0_0_20px_rgba(239,68,68,0.5)]'
+                                                            : 'bg-white dark:bg-slate-900 border-primary text-slate-900 dark:text-primary scale-110 shadow-[0_0_25px_rgba(0,245,212,0.4)]'
+                                                        : isPassed
+                                                            ? 'bg-slate-200/50 dark:bg-white/5 border-transparent text-slate-400 opacity-25'
+                                                            : 'bg-white dark:bg-slate-900/60 border-slate-300 dark:border-white/10 text-slate-700 dark:text-slate-400'
+                                                }`}
+                                            >
+                                                {tok === ' ' ? '␣' : tok}
+                                                {isCurrent && (
+                                                    <div className="absolute -bottom-2 w-8 h-1 bg-primary rounded-full animate-pulse shadow-[0_0_10px_#00f5d4]" />
+                                                )}
+                                            </div>
+                                        );
+                                    })}
                                 </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-                                    <div className="bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/5 shadow-sm rounded-2xl p-6 flex flex-col items-center gap-3">
-                                        <Gauge className="w-6 h-6 text-primary" />
-                                        <div className="text-3xl font-black text-slate-900 dark:text-white font-mono">{selectedModule.minWPM}</div>
-                                        <div className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest text-center">Minimum Speed</div>
+                                {/* Animated Hands on Virtual Keyboard */}
+                                <div className="w-full flex flex-col items-center justify-center overflow-visible mb-4 pb-4">
+                                    <EdClubHandsGuide isWrong={isWrongKey} targetChar={targetChar}/>
+                                </div>
+                            </div>
+                        ) : (
+                            /* Token Drill Results */
+                            <div className="my-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-primary/20 rounded-3xl p-10 max-w-md w-full text-center shadow-2xl animate-in zoom-in duration-300">
+                                <CheckCircle2 className="w-16 h-16 text-primary mx-auto mb-4 animate-bounce"/>
+                                <h3 className="text-3xl font-black text-slate-900 dark:text-white uppercase italic tracking-tight mb-2">Lesson Complete!</h3>
+                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-8">Finger Mechanics Synchronized</p>
+                                
+                                <div className="grid grid-cols-2 gap-4 mb-8">
+                                    <div className="p-4 bg-slate-50 dark:bg-black/30 rounded-2xl border border-slate-200 dark:border-white/5">
+                                        <span className="text-[10px] uppercase font-black text-slate-500 block mb-1">Velocity</span>
+                                        <span className="text-3xl font-black font-mono text-primary">{stats.wpm} <span className="text-sm">WPM</span></span>
                                     </div>
-                                    <div className="bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/5 shadow-sm rounded-2xl p-6 flex flex-col items-center gap-3">
-                                        <Target className="w-6 h-6 text-primary" />
-                                        <div className="text-3xl font-black text-slate-900 dark:text-white font-mono">{selectedModule.minAccuracy}%</div>
-                                        <div className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest text-center">Minimum Accuracy</div>
-                                    </div>
-                                    <div className="bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/5 shadow-sm rounded-2xl p-6 flex flex-col items-center gap-3">
-                                        <Timer className="w-6 h-6 text-primary" />
-                                        <div className="text-3xl font-black text-slate-900 dark:text-white font-mono">
-                                            {Math.max(30, Math.ceil(selectedModule.texts[0].split(' ').length / (selectedModule.minWPM / 60)))}s
-                                        </div>
-                                        <div className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest text-center">Time Limit</div>
+                                    <div className="p-4 bg-slate-50 dark:bg-black/30 rounded-2xl border border-slate-200 dark:border-white/5">
+                                        <span className="text-[10px] uppercase font-black text-slate-500 block mb-1">Precision</span>
+                                        <span className="text-3xl font-black font-mono text-primary">{stats.accuracy}%</span>
                                     </div>
                                 </div>
 
-                                {selectedModule.isTest && (
-                                    <div className="bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/5 shadow-sm rounded-2xl p-6 flex flex-col items-center gap-3 mb-8">
-                                        <AlertTriangle className="w-6 h-6 text-amber-500" />
-                                        <div className="text-3xl font-black text-slate-900 dark:text-white font-mono">{selectedModule.maxErrors}</div>
-                                        <div className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest text-center">Max Errors</div>
+                                <div className="flex gap-4">
+                                    <button 
+                                        onClick={startModule}
+                                        className="flex-1 py-4 bg-slate-200 dark:bg-white/10 hover:bg-slate-300 text-slate-800 dark:text-white font-black rounded-2xl uppercase tracking-widest text-xs transition-all cursor-pointer"
+                                    >
+                                        Retry Lesson
+                                    </button>
+                                    <button 
+                                        onClick={() => {
+                                            setIsDrillActive(false);
+                                            setDrillCompleted(false);
+                                            const cIdx = ACADEMY_MODULES.findIndex(m => m.id === selectedId);
+                                            if (cIdx !== -1 && cIdx < ACADEMY_MODULES.length - 1) {
+                                                setSelectedId(ACADEMY_MODULES[cIdx + 1].id);
+                                            }
+                                        }}
+                                        className="flex-1 py-4 bg-primary text-slate-950 font-black rounded-2xl uppercase tracking-widest text-xs transition-all shadow-[0_0_20px_rgba(0,245,212,0.4)] cursor-pointer"
+                                    >
+                                        Continue
+                                    </button>
+                                </div>
+                            </div>
+                        )
+                    ) : (
+                        /* Paragraph / Prose Drill Subview */
+                        !paragraphCompleted ? (
+                            <div className="w-full flex flex-col items-center justify-center my-auto space-y-8">
+                                {/* Running Stats Row */}
+                                <div className="flex gap-8 mb-4">
+                                    <div className="text-center">
+                                        <span className="text-[9px] uppercase font-black text-slate-400 tracking-wider">Velocity Target</span>
+                                        <span className="text-xl font-bold font-mono text-slate-700 dark:text-slate-200 block">{selectedModule.minWPM} WPM</span>
                                     </div>
+                                    <div className="text-center">
+                                        <span className="text-[9px] uppercase font-black text-slate-400 tracking-wider">Errors allowance</span>
+                                        <span className="text-xl font-bold font-mono text-slate-700 dark:text-slate-200 block">{errorCount} / {selectedModule.maxErrors} max</span>
+                                    </div>
+                                </div>
+
+                                <div 
+                                    className="w-full max-w-4xl p-8 md:p-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-[32px] shadow-2xl relative cursor-text"
+                                    onClick={() => paragraphInputRef.current?.focus()}
+                                >
+                                    <input
+                                        ref={paragraphInputRef}
+                                        type="text"
+                                        value={paragraphInput}
+                                        onChange={handleParagraphInputChange}
+                                        onKeyDown={handleParagraphKeyDown}
+                                        className="absolute opacity-0 pointer-events-none"
+                                        autoFocus
+                                    />
+
+                                    <div className="text-lg md:text-2xl font-mono leading-relaxed select-none relative z-10 tracking-tight text-left">
+                                        {paragraphText.split('').map((char, index) => {
+                                            let colorClass = "text-slate-400 dark:text-slate-600";
+                                            if (index < paragraphInput.length) {
+                                                colorClass = paragraphInput[index] === char 
+                                                    ? "text-[#0d9488] dark:text-primary font-bold" 
+                                                    : "text-red-500 bg-red-500/10 rounded-sm";
+                                            }
+                                            const isCursor = index === paragraphInput.length;
+
+                                            return (
+                                                <span key={index} className="relative">
+                                                    {isCursor && (
+                                                        <span className="absolute left-0 h-full w-[2px] bg-[#0d9488] dark:bg-primary shadow-[0_0_15px_#00f5d4] animate-pulse" />
+                                                    )}
+                                                    <span className={`${colorClass} transition-colors duration-150`}>{char}</span>
+                                                </span>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Animated Hands on Virtual Keyboard */}
+                                <div className="w-full flex flex-col items-center justify-center overflow-visible mb-4 pb-4">
+                                    <EdClubHandsGuide isWrong={isWrongKey} targetChar={targetChar}/>
+                                </div>
+                            </div>
+                        ) : (
+                            /* Paragraph Drill Results */
+                            <div className="my-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-primary/20 rounded-3xl p-10 max-w-md w-full text-center shadow-2xl animate-in zoom-in duration-300">
+                                {paragraphPassed ? (
+                                    <>
+                                        <CheckCircle2 className="w-16 h-16 text-primary mx-auto mb-4 animate-bounce"/>
+                                        <h3 className="text-3xl font-black text-slate-900 dark:text-white uppercase italic tracking-tight mb-2">Lesson Complete!</h3>
+                                        <p className="text-xs font-bold text-[#0d9488] dark:text-primary uppercase tracking-widest mb-8">Verification Successful</p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <ShieldAlert className="w-16 h-16 text-red-500 mx-auto mb-4 animate-pulse"/>
+                                        <h3 className="text-3xl font-black text-slate-900 dark:text-white uppercase italic tracking-tight mb-2">Sync Failed</h3>
+                                        <p className="text-xs font-bold text-red-500 uppercase tracking-widest mb-8">Criteria Not Met</p>
+                                    </>
                                 )}
                                 
-                                <div className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl p-3 flex items-center gap-3">
-                                    <Info className="text-slate-400 w-4 h-4 shrink-0" />
-                                    <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
-                                        Every incorrect keypress counts as an error, even if corrected with backspace. Type carefully and deliberately.
-                                    </p>
-                                </div>
-
-                                <p className="text-slate-600 dark:text-slate-400 text-center leading-relaxed mt-6 mb-10">
-                                    {selectedModule.description}
-                                </p>
-
-                                {selectedModule.isTest && (
-                                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 text-amber-400 text-xs font-bold text-center uppercase tracking-widest mb-10">
-                                        Warning: This is a mandatory assessment. Failure to meet all requirements will prevent progression.
+                                <div className="grid grid-cols-2 gap-4 mb-8">
+                                    <div className="p-4 bg-slate-50 dark:bg-black/30 rounded-2xl border border-slate-200 dark:border-white/5">
+                                        <span className="text-[10px] uppercase font-black text-slate-500 block mb-1">Velocity</span>
+                                        <span className="text-3xl font-black font-mono text-[#0d9488] dark:text-primary">{stats.wpm} <span className="text-sm">WPM</span></span>
                                     </div>
-                                )}
-
-                                <div className="mt-8 mb-8">
-                                    <FingerMap activeKeys={getActiveKeys(selectedModule)} />
+                                    <div className="p-4 bg-slate-50 dark:bg-black/30 rounded-2xl border border-slate-200 dark:border-white/5">
+                                        <span className="text-[10px] uppercase font-black text-slate-500 block mb-1">Accuracy</span>
+                                        <span className="text-3xl font-black font-mono text-[#0d9488] dark:text-primary">{stats.accuracy}%</span>
+                                    </div>
                                 </div>
 
-                                <div className="flex flex-col sm:flex-row gap-4">
+                                <div className="flex gap-4">
                                     <button 
-                                        onClick={() => setShowProtocol(false)}
-                                        className="flex-1 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-200 dark:hover:text-white px-8 py-5 rounded-2xl font-bold uppercase tracking-widest transition-all"
+                                        onClick={startModule}
+                                        className="flex-1 py-4 bg-slate-200 dark:bg-white/10 hover:bg-slate-300 text-slate-800 dark:text-white font-black rounded-2xl uppercase tracking-widest text-xs transition-all cursor-pointer"
                                     >
-                                        Back to Curriculum
+                                        Retry Lesson
                                     </button>
-                                    <button 
-                                        onClick={handleBeginTraining}
-                                        className={`flex-1 group relative flex items-center justify-center gap-4 px-8 py-5 rounded-2xl overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98] shadow-2xl ${
-                                            selectedModule.isTest 
-                                            ? 'bg-amber-500 shadow-amber-500/25' 
-                                            : 'bg-primary shadow-primary/25'
-                                        }`}
-                                    >
-                                        <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.15)_50%,transparent_75%)] bg-size-[250%_250%] animate-[shimmer_3s_infinite]" />
-                                        <span className="text-xl font-black text-background-dark uppercase italic tracking-tighter relative z-10">
-                                            Begin Training
-                                        </span>
-                                    </button>
+                                    {paragraphPassed && (
+                                        <button 
+                                            onClick={() => {
+                                                setIsDrillActive(false);
+                                                setParagraphCompleted(false);
+                                                const cIdx = ACADEMY_MODULES.findIndex(m => m.id === selectedId);
+                                                if (cIdx !== -1 && cIdx < ACADEMY_MODULES.length - 1) {
+                                                    setSelectedId(ACADEMY_MODULES[cIdx + 1].id);
+                                                }
+                                            }}
+                                            className="flex-1 py-4 bg-primary text-slate-950 font-black rounded-2xl uppercase tracking-widest text-xs transition-all shadow-[0_0_20px_rgba(0,245,212,0.4)] cursor-pointer"
+                                        >
+                                            Continue
+                                        </button>
+                                    )}
                                 </div>
                             </div>
-                        </div>
+                        )
                     )}
-                </div>
-
-        {/* Graduation Modal Overlay */}
-        {showGraduationModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-background-dark/80 backdrop-blur-md animate-in fade-in duration-300">
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-primary/20 rounded-3xl p-10 max-w-5xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative custom-scrollbar animate-in fade-in zoom-in duration-500">
                     
-                    <button 
-                        onClick={() => setShowGraduationModal(false)}
-                        className="absolute top-6 right-6 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors text-xl font-bold"
+                    <div className="text-[10px] font-mono text-slate-500 tracking-widest uppercase pb-2">
+                        {isTokenDrillMode 
+                            ? "Press highlighted keys with the designated finger · Strict blocking mode"
+                            : "Standard typing mode · Backspace correction enabled"
+                        }
+                    </div>
+                </main>
+            ) : (
+                /* CURRICULUM OVERVIEW (Normal View - Restored Full Screens) */
+                <main className="flex-1 flex flex-col md:flex-row overflow-hidden relative z-10">
+                    {/* Left Sidebar: Curriculum list */}
+                    <div className="md:w-[360px] w-full bg-slate-100 dark:bg-black/20 border-r border-slate-200 dark:border-white/5 flex flex-col pt-8">
+                        <div className="px-6 mb-6">
+                            <div className="flex items-center gap-2 mb-1">
+                                <GraduationCap className="w-4 h-4 text-primary"/>
+                                <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Academy Curriculum</span>
+                            </div>
+                            <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter">Neural Path</h2>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto px-4 space-y-2 pb-12 custom-scrollbar">
+                            {ACADEMY_MODULES.map((module, index) => {
+                                const isSelected = module.id === selectedId;
+                                const isUnlocked = unlockedIds.includes(module.id);
+
+                                return (
+                                    <button
+                                        key={module.id}
+                                        onClick={() => {
+                                            if (isUnlocked) {
+                                                setSelectedId(module.id);
+                                                setIsDrillActive(false);
+                                                setDrillCompleted(false);
+                                                setParagraphCompleted(false);
+                                            }
+                                        }}
+                                        disabled={!isUnlocked}
+                                        className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all border cursor-pointer ${
+                                            isSelected 
+                                                ? 'bg-primary/10 border-primary/30 shadow-[0_0_15px_rgba(0,245,212,0.1)]' 
+                                                : isUnlocked 
+                                                    ? 'bg-transparent border-transparent hover:bg-slate-200 dark:hover:bg-white/5' 
+                                                    : 'opacity-40 cursor-not-allowed'
+                                        }`}
+                                    >
+                                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-mono font-black text-xs border ${
+                                            isSelected
+                                                ? 'bg-primary text-slate-950 border-primary'
+                                                : module.isTest
+                                                    ? 'bg-amber-500/10 text-amber-500 border-amber-500/30'
+                                                    : 'bg-slate-200 dark:bg-white/5 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-white/10'
+                                        }`}>
+                                            {isUnlocked ? (module.isTest ? <ShieldAlert className="w-4 h-4"/> : index + 1) : <Lock className="w-3.5 h-3.5"/>}
+                                        </div>
+                                        <div className="flex-1 text-left">
+                                            <div className="text-xs font-bold text-slate-900 dark:text-white truncate">{module.title}</div>
+                                            <div className="text-[10px] text-slate-500 uppercase tracking-widest">{module.isTokenDrill ? 'Interactive Drill' : module.difficulty}</div>
+                                        </div>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Restored Rich Main Content Area */}
+                    <div 
+                        className="flex-1 bg-white dark:bg-black/20 flex flex-col pt-12 md:pt-16 px-8 md:px-16 pb-20 overflow-y-auto [&::-webkit-scrollbar]:hidden items-center"
+                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                     >
-                        ✕
-                    </button>
- 
-                    <div className="text-center mb-8">
-                        <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] block mb-2">NEURAL NETWORK TELEMETRY</span>
-                        <h2 className="text-4xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter">GRADUATION PROFILE</h2>
+                        <div className="max-w-3xl w-full mx-auto">
+                            {isCompletedAll && (
+                                <div className="mb-8 bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-primary/10 border border-primary/20 rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-[0_0_30px_rgba(0,245,212,0.05)] relative overflow-hidden group">
+                                    <div className="absolute inset-0 bg-radial-gradient from-primary/5 via-transparent to-transparent pointer-events-none" />
+                                    <div className="flex items-center gap-4 relative z-10">
+                                        <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-center text-primary shadow-[0_0_15px_rgba(0,245,212,0.1)] group-hover:scale-105 transition-transform duration-300">
+                                            <Award className="w-8 h-8 animate-pulse" />
+                                        </div>
+                                        <div className="text-left">
+                                            <span className="text-[9px] font-black text-primary uppercase tracking-[0.3em] block mb-1">UNIFIED STATUS: ACTIVE SENIOR OPERATOR</span>
+                                            <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter">SYNCHRONIZATION COMPLETE</h3>
+                                            <p className="text-slate-600 dark:text-slate-400 text-xs mt-1 max-w-md font-medium">All modules completed with optimal throughput. Your neural profile certificate is ready.</p>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => setShowGraduationModal(true)}
+                                        className="relative z-10 px-5 py-3 bg-primary text-background-dark font-black uppercase tracking-widest text-xs rounded-xl shadow-lg shadow-primary/25 hover:shadow-primary/45 hover:scale-[1.03] active:scale-[0.98] transition-all cursor-pointer flex items-center gap-2 group/btn"
+                                    >
+                                        <GraduationCap className="w-4 h-4" />
+                                        <span>CLAIM TELEMETRY PROFILE</span>
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Badge */}
+                            <div className="flex items-center gap-4 mb-8">
+                                <div className={`flex items-center gap-2 px-4 py-1.5 border rounded-full ${
+                                    selectedModule.isTest 
+                                    ? 'bg-amber-500/10 border-amber-500/30' 
+                                    : 'bg-primary/5 border-primary/20'
+                                }`}>
+                                    {selectedModule.isTest ? (
+                                        <ShieldAlert className="w-3.5 h-3.5 text-amber-500" />
+                                    ) : (
+                                        <Activity className="w-3.5 h-3.5 text-primary" />
+                                    )}
+                                    <span className={`text-[9px] font-black uppercase tracking-[0.2em] ${
+                                        selectedModule.isTest ? 'text-amber-500' : 'text-primary'
+                                    }`}>
+                                        {selectedModule.isTest ? 'Priority Assessment: Required' : 'Neural Status: Optimal'}
+                                    </span>
+                                </div>
+                                <div className="flex-1 h-px bg-slate-200 dark:bg-white/5" />
+                            </div>
+
+                            {/* Heading */}
+                            <div className="relative mb-12 text-left">
+                                <div className="absolute -left-6 top-0 bottom-0 w-1 bg-gradient-to-b from-primary to-transparent" />
+                                <h1 className="text-4xl lg:text-5xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic mb-4">
+                                    {selectedModule.title}
+                                </h1>
+                                <p className="text-base text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
+                                    {selectedModule.description}
+                                </p>
+                            </div>
+
+                            {/* Specs Grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 text-left">
+                                <div className="bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/5 shadow-sm rounded-3xl p-6 group hover:border-primary/20 transition-all">
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <Target className="w-4 h-4 text-primary opacity-40" />
+                                        <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">Protocol Targets</span>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2 mb-6">
+                                        {selectedModule.keys.map(key => (
+                                            <div key={key} className="w-10 h-10 flex items-center justify-center bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-mono font-bold text-slate-700 dark:text-slate-300 transition-all shadow-[0_2px_0_rgba(255,255,255,0.05)]">
+                                                {key}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="space-y-3 pt-4 border-t border-slate-200 dark:border-white/5">
+                                        <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400">
+                                            <span>Target Velocity</span>
+                                            <span className="text-primary">{selectedModule.minWPM} WPM</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400">
+                                            <span>Accuracy Req</span>
+                                            <span className="text-primary">{selectedModule.minAccuracy}%</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400">
+                                            <span>Error Allowance</span>
+                                            <span className="text-primary">{selectedModule.maxErrors} MAX</span>
+                                        </div>
+                                    </div>
+                                </div>
+      
+                                <div className="bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/5 shadow-sm rounded-3xl p-6 group hover:border-primary/20 transition-all flex flex-col justify-between">
+                                    <div>
+                                        <div className="flex items-center gap-3 mb-6">
+                                            <Shield className="w-4 h-4 text-primary opacity-40" />
+                                            <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">Complexity Level</span>
+                                        </div>
+                                        <div className="space-y-4">
+                                            <div className="flex justify-between items-end">
+                                                <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase">Integrity Requirements</span>
+                                                <span className={`text-sm font-black uppercase ${getDifficultyColor(selectedModule)}`}>
+                                                    {selectedModule.isTest ? 'Assessment' : selectedModule.difficulty}
+                                                </span>
+                                            </div>
+                                            <div className="w-full h-1.5 bg-slate-200 dark:bg-white/5 rounded-full overflow-hidden">
+                                                <div 
+                                                    className={`h-full shadow-[0_0_15px] transition-all duration-1000 ${
+                                                        selectedModule.isTest ? 'bg-amber-500 shadow-amber-500/50' : 'bg-primary shadow-primary/50'
+                                                    }`} 
+                                                    style={{ width: selectedModule.isTest ? '100%' : (selectedModule.difficulty === 'easy' ? '33%' : (selectedModule.difficulty === 'medium' ? '66%' : '100%')) }}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Preview */}
+                            <div className="bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/5 shadow-sm rounded-3xl p-6 mb-8 relative overflow-hidden group text-left">
+                                <div className="absolute top-0 right-0 p-6">
+                                    <Terminal className="w-5 h-5 text-white/5 group-hover:text-primary/20 transition-colors" />
+                                </div>
+                                <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest block mb-3">Neural Packet Preview</span>
+                                <div className="text-base font-mono text-slate-700 dark:text-slate-400 bg-slate-100/50 dark:bg-black/20 p-4 rounded-xl border border-slate-200 dark:border-white/5 italic select-none line-clamp-2">
+                                    {selectedModule.isTokenDrill ? selectedModule.texts[0] : selectedModule.texts[0].slice(0, 120)}...
+                                </div>
+                            </div>
+
+                            {/* Start Action Button */}
+                            <button 
+                                type="button"
+                                onClick={startModule}
+                                disabled={!unlockedIds.includes(selectedId)}
+                                className="w-full py-5 bg-primary text-background-dark font-black uppercase tracking-[0.2em] rounded-2xl flex items-center justify-between px-10 hover:scale-[1.01] active:scale-98 transition-all cursor-pointer shadow-[0_0_30px_rgba(0,245,212,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <div className="flex items-center gap-4">
+                                    <Play className="w-5 h-5 fill-current"/>
+                                    <span className="text-sm font-bold">
+                                        {selectedModule.isTokenDrill ? 'Start Interactive Lesson' : (selectedModule.isTest ? 'Initiate Assessment' : 'Begin Practice Lesson')}
+                                    </span>
+                                </div>
+                                <ChevronRight className="w-6 h-6"/>
+                            </button>
+                        </div>
                     </div>
- 
-                    {/* Custom Profile input box */}
-                    <div className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-6 mb-8 max-w-md mx-auto">
-                        <label className="block text-[10px] font-black text-primary uppercase tracking-widest mb-3 text-center">
-                            Operator Identity Signature
-                        </label>
-                        <input 
-                            type="text" 
-                            value={playerName} 
-                            onChange={(e) => {
-                                setPlayerName(e.target.value);
-                                localStorage.setItem('playerName', e.target.value);
-                            }}
-                            placeholder="Enter Identity..."
-                            className="w-full bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-center text-slate-900 dark:text-white text-lg font-bold font-mono focus:outline-none focus:border-primary/50 transition-all uppercase"
-                        />
-                    </div>
- 
-                    {/* Scaled visual preview of Canvas */}
-                    <div className="bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex items-center justify-center mb-8 overflow-hidden">
-                        <canvas 
-                            ref={canvasRef} 
-                            width="1920" 
-                            height="1080" 
-                            className="w-full max-w-3xl rounded-xl border border-slate-200 dark:border-white/10 shadow-2xl"
-                        />
-                    </div>
- 
-                    <div className="flex flex-col sm:flex-row gap-4 max-w-xl mx-auto">
+                </main>
+            )}
+
+            {/* Graduation Modal Overlay */}
+            {showGraduationModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-background-dark/80 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-primary/20 rounded-3xl p-10 max-w-5xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative custom-scrollbar animate-in fade-in zoom-in duration-500">
+                        
                         <button 
                             onClick={() => setShowGraduationModal(false)}
-                            className="flex-1 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-200 dark:hover:text-white px-8 py-5 rounded-2xl font-bold uppercase tracking-widest transition-all"
+                            className="absolute top-6 right-6 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors text-xl font-bold cursor-pointer"
                         >
-                            Dismiss
+                            ✕
                         </button>
-                        <button 
-                            onClick={handleDownloadCertificate}
-                            className="flex-1 group relative flex items-center justify-center gap-4 px-8 py-5 rounded-2xl overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98] shadow-2xl bg-primary shadow-primary/25 text-background-dark font-black"
-                        >
-                            <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.15)_50%,transparent_75%)] bg-size-[250%_250%] animate-[shimmer_3s_infinite]" />
-                            <span className="text-xl font-black uppercase italic tracking-tighter relative z-10 flex items-center gap-2">
-                                📥 EXPORT TELEMETRY PROFILE
-                            </span>
-                        </button>
+     
+                        <div className="text-center mb-8">
+                            <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] block mb-2">NEURAL NETWORK TELEMETRY</span>
+                            <h2 className="text-4xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter">GRADUATION PROFILE</h2>
+                        </div>
+     
+                        {/* Custom Profile input box */}
+                        <div className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-6 mb-8 max-w-md mx-auto">
+                            <label className="block text-[10px] font-black text-primary uppercase tracking-widest mb-3 text-center">
+                                Operator Identity Signature
+                            </label>
+                            <input 
+                                type="text" 
+                                value={playerName} 
+                                onChange={(e) => {
+                                    setPlayerName(e.target.value);
+                                    localStorage.setItem('playerName', e.target.value);
+                                }}
+                                placeholder="Enter Identity..."
+                                className="w-full bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-center text-slate-900 dark:text-white text-lg font-bold font-mono focus:outline-none focus:border-primary/50 transition-all uppercase"
+                            />
+                        </div>
+     
+                        {/* Scaled visual preview of Canvas */}
+                        <div className="bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex items-center justify-center mb-8 overflow-hidden">
+                            <canvas 
+                                ref={canvasRef} 
+                                width="1920" 
+                                height="1080" 
+                                className="w-full max-w-3xl rounded-xl border border-slate-200 dark:border-white/10 shadow-2xl"
+                            />
+                        </div>
+     
+                        <div className="flex flex-col sm:flex-row gap-4 max-w-xl mx-auto">
+                            <button 
+                                onClick={() => setShowGraduationModal(false)}
+                                className="flex-1 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-200 dark:hover:text-white px-8 py-5 rounded-2xl font-bold uppercase tracking-widest transition-all cursor-pointer"
+                            >
+                                Dismiss
+                            </button>
+                            <button 
+                                onClick={handleDownloadCertificate}
+                                className="flex-1 group relative flex items-center justify-center gap-4 px-8 py-5 rounded-2xl overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98] shadow-2xl bg-primary shadow-primary/25 text-background-dark font-black cursor-pointer"
+                            >
+                                <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.15)_50%,transparent_75%)] bg-size-[250%_250%] animate-[shimmer_3s_infinite]" />
+                                <span className="text-xl font-black uppercase italic tracking-tighter relative z-10 flex items-center gap-2">
+                                    📥 EXPORT TELEMETRY PROFILE
+                                </span>
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        )}
-
-            </main>
+            )}
         </div>
     );
 }

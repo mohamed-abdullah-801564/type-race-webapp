@@ -38,6 +38,19 @@ const CHAR_TO_WORDS = {
 
 export const ACADEMY_MODULES = [
     {
+        id: "mod_0_home",
+        title: "Home Row Keys (F, J, D, K)",
+        description: "Practice foundational home-row finger placement. Press the indicated key with the highlighted finger.",
+        keys: ["F", "J", "D", "K", "S", "L", "A", ";"],
+        difficulty: "easy",
+        minWPM: 15,
+        minAccuracy: 95,
+        maxErrors: 8,
+        isTokenDrill: true,
+        tokens: ["f", "j", "d", "k", "f", "j", "d", "k", "s", "l", "a", ";", "f", "j", "d", "k", "f", "f", "j", "j", "d", "d", "k", "k", "f", "d", "j", "k", "s", "a", "l", ";", "f", "j", "d", "k", "f", "j", "d", "k", "d", "k", "f", "j", "s", "l", "a", ";", "f", "d", "k", "j", "a", "s", "d", "f", "j", "k", "l", ";"],
+        texts: ["f j j f j f j d k k d k d s l l s a ; a ; fd sa jk l;"]
+    },
+    {
         "id": "mod_1",
         "title": "Home Row Basics",
         "description": "Establish the core foundation.",
@@ -46,9 +59,10 @@ export const ACADEMY_MODULES = [
         "minWPM": 15,
         "minAccuracy": 90,
         "maxErrors": 15,
+        "isTokenDrill": true,
         "texts": [
             "ads as fall fads lad fall ask fad as lass dads alfalfa lass as falls sass as lass lass alas fads alas salad dad ask flask as salad falls salad lads as lads all fall flask add lass flask fads lads add alas as lass dads lass salad dad flask fads dad lad fad salsa fall sass fad lass as fall salad as add as ask alfalfa lads all ask falls ask all ask ads alfalfa lads lad sass as ads as dads salad sass alas salad lass salad add",
-            "lad fads dads dad salad fad dad lass flask ask add ads flask falls all fall lass lads add falls flask as lad fads flask ask ask fall ads lads add as fall ask as ask dads ask sass ask falls lads salad lad sass dads dads all fad lads as fads sass salad add all salad alfalfa add lad ads alfalfa falls dad alfalfa lass dad all as salad flask fall lad all flask fad dads fad ads ask ask alas dad falls fads all ads dad falls fall",
+            "lad fads dads dad salad fad dad lass flask ask add ads flask falls all fall lass lads add falls flask as lad fads flask ask ask fall ads lads add as fall ask as ask dads ask sass ask falls lads salad lad sass dads dads all fad lads as fads salsa salad add all salad alfalfa add lad ads alfalfa falls dad alfalfa lass dad all as salad flask fall lad all flask fad dads fad ads ask ask alas dad falls fads all ads dad falls fall",
             "fad ask as flask flask as sass ads lad alas alfalfa fall lads ask ads salad falls ask lads as fads fall dad fads ask fad flask fall ads add dad lad flask falls fall salsa lad flask fads as as dads lads dad ask dads sass flask flask sass flask dads lad ads falls salad add as all sass salad ask lad ask lad dads flask salad ask alas all fads fall lad fall sass add ads fad salsa sass as alfalfa dads falls fad lads ask ask sass",
             "lad alas lass flask as all fads falls lass add flask add alfalfa alas dad add fall dads ads as lass add as dad lads lads lass dads ads salad as sass dad dad salad lads flask dad dads salsa dads fad salad salad sass falls ads ask as ads all lad alas all lad dad salad dads lads dads flask ask ask salsa alfalfa as fad all alfalfa alas dad ask lass as salsa flask flask salsa alas add fall ask alfalfa as ask add lads sass flask alfalfa",
             "salsa fads add falls as lass dads fads fads dad lads lad salsa add lad flask alfalfa lads alfalfa ask dads flask flask flask fall falls dad as dads dad sass dads fad lass lad all salad dads flask lass alas flask add dad falls lad alas fad dads dad lad fads falls ads as add fall alas falls ads falls all flask falls ads salad sass fad fads salad fad flask alfalfa salad dad ads salsa alas alas sass falls flask as salsa dads add dad add ads alas"
@@ -88,6 +102,19 @@ export const ACADEMY_MODULES = [
         ]
     },
     {
+        id: "mod_0_top",
+        title: "Top Row Reach (R, U, E, I)",
+        description: "Master upward finger stretches while keeping your palm anchored on the home row.",
+        keys: ["R", "U", "E", "I", "W", "O", "Q", "P", "T", "Y"],
+        difficulty: "easy",
+        minWPM: 18,
+        minAccuracy: 95,
+        maxErrors: 10,
+        isTokenDrill: true,
+        tokens: ["r", "u", "e", "i", "r", "u", "e", "i", "w", "o", "q", "p", "t", "y", "r", "u", "e", "i", "r", "r", "u", "u", "e", "e", "i", "i", "w", "w", "o", "o", "q", "q", "p", "p", "t", "t", "y", "y", "r", "e", "u", "i", "w", "o", "q", "p", "t", "y", "r", "u", "e", "i", "w", "o", "t", "y", "q", "p", "r", "u"],
+        texts: ["r u u r u e i i e i w o w o q p q p t y t y"]
+    },
+    {
         "id": "mod_4",
         "title": "Top Row Introduction",
         "description": "The upper deck.",
@@ -96,12 +123,13 @@ export const ACADEMY_MODULES = [
         "minWPM": 25,
         "minAccuracy": 90,
         "maxErrors": 15,
+        "isTokenDrill": true,
         "texts": [
             "hall prior pour user had has flask fall gall fall pour alas read glad pure properly flags ash lad order rope flag power prior haggah ash glass ads wire flag glad hag fad fall flask flash pool pipe dads road has all pure salsa ash upper properly flag pour order shall hall prior salsa pipe had salad salsa fad haggah dad flask has fall hall salsa flag flag lass rope pipe queue had hag falls as glass glad flash upper dads flag pour fads flash salad rule prior plus upper",
             "ash power has pour had glad sad falls alas sad alfalfa flask haggah read pour pour queue ads power flask pour hall ash ash pool flags wire sad queue alfalfa shall pure fad hall salsa alfalfa salsa read falls as order flags add upper as pipe fall ads alas rope power dads query order ash pipe query haggah lads fads hall add ash gag user dad ads sad ask queue flags glad power lass pour shall wire prior lads salsa lass upper gall paper ask add ask all gash lass",
             "hag row lad sass pure flags salad glass read ads upper lad salad dad properly properly pure pool read read read gash alfalfa order has rope dash pool pure rule add lads hag fall flask as salsa rope pure haggah row slash plus alfalfa had gall query salad query gash hag hall flag haggah order flash alas haggah order glass fads rope ash shall road query order lad alfalfa rule paper read ask all lad ads flags query glass lass as flash pool glass prior ash gag sass dads flags",
             "user hag rule salsa as sass haggah sad gag queue salsa flag rope properly lass ask glass gag read flag hag slash flask add as properly falls dad sad power power slash has shall lass hag gag fads ads rule haggah glass rule as fall user lass ads read paper gag upper as upper order wire sad ash add alas salsa fad user road fads slash flask as gag wire power flash fads properly sass ash alfalfa sad flash salad queue had as pure slash lads rope road dads shall",
-            "road salad slash had prior lass read glass upper dads fall hall glass hall hall as upper power read dash hall wire road query flash road ask row add plus dad glad salad hag all slash slash dash row had dash sad ads order read had had slash falls gag row read flask lass dads add glass rope dads lad flask flag flash fad pipe had all gash all hag queue sass gag pure pipe rope pour lass gall flask flag fall paper plus dash flags flags user salad had"
+            "road salad slash had prior lass read glass upper dads fall hall glass hall hall as upper power read dash hall wire road query flash road ask row add plus dad glad salad hag all slash slash dash row had dash sad ads order read had had slash falls gag row read flask xlsx dads add glass rope dads lad flask flag flash fad pipe had all gash all hag queue sass gag pure pipe rope pour lass gall flask flag fall paper plus dash flags flags user salad had"
         ]
     },
     {
@@ -138,6 +166,19 @@ export const ACADEMY_MODULES = [
         ]
     },
     {
+        id: "mod_0_bottom",
+        title: "Bottom Row Reach (V, M, C, ,)",
+        description: "Develop downward precision and quick recovery to the home row resting point.",
+        keys: ["V", "M", "C", ",", "X", ".", "Z", "/", "B", "N"],
+        difficulty: "easy",
+        minWPM: 18,
+        minAccuracy: 95,
+        maxErrors: 10,
+        isTokenDrill: true,
+        tokens: ["v", "m", "c", ",", "v", "m", "c", ",", "x", ".", "z", "/", "b", "n", "v", "m", "c", ",", "v", "v", "m", "m", "c", "c", ",", ",", "x", "x", ".", ".", "z", "z", "/", "/", "b", "b", "n", "n", "v", "c", "m", ",", "x", ".", "z", "/", "b", "n", "v", "m", "c", ",", "x", ".", "b", "n", "z", "/", "v", "m"],
+        texts: ["v m m v m c , , c , x . x . z / z / b n b n"]
+    },
+    {
         "id": "mod_7",
         "title": "Bottom Row Basics",
         "description": "Descent into the lower grid.",
@@ -146,6 +187,7 @@ export const ACADEMY_MODULES = [
         "minWPM": 25,
         "minAccuracy": 90,
         "maxErrors": 15,
+        "isTokenDrill": true,
         "texts": [
             "properly row rope fall taught rule gall move pool rule vocal they ash road user rope read taught upper prior dads care glass their dash at flags dads dad dads case rule lads title pool those prior case these vivid fall pool volume those pool vivid truth at hall had road macro properly dad plus dads care flag pour paper prior thought vocal dads valve dads truth lass upper care properly has order pour care lad made vocal lad case fads alas ads these fall there flash plus track has",
             "rope tough flask these wire query gash prior treat quite rope flag made move through they as all ask glad pipe total fads case tough ads upper made sad total glad vivid case these tough had has macro hag cave fads they glad hall read all power hag fall alfalfa row order add as glass order at glass glass truth rope very pour user through flask properly total make they thought flask pool read lass vivid user at rule ads treat hall this there pipe ash fads flash this vivid",
@@ -251,7 +293,7 @@ export const ACADEMY_MODULES = [
             "class <tag> pure row glad id=1 Cyber alas carbon api/path Matrix gash begun trust var Sum pipe glad let treat that Rookie flex-col Legend make burn dads user row var zone macro paper these Secure Admin bank below shall 3000 Secure alfalfa 8080 //comment prior 3000 book System Identity false undefined pure these while() grid-cols-3 grid-cols-3 Elite their <tag> xenon care ads born Mainframe Mainframe Advanced Rookie 1000 paper hall Data build return salsa make begin power User bright 50/50 order setTimeout() else{ Network body alfalfa api/path undefined that vanish",
             "2024 volume vocal tough user export busy flag Advanced tough a-b=c Logic nav-item 8080 carbon bench upper Protocol has read macro user rope cave shall box Neural Math Cyber else{ if(x) vacuum that power let those hag flags read setTimeout() busy border-primary/50 track blue hall return build [index] these bench undefined const Vault lads shall Archive gall pool Network query this sad Network npm/install Identity title dads branch vocal trust user else{ null Neural pure Logic Secure setTimeout() alfalfa as hall border-primary/50 gag read flag 8080 2024 if(x) flags pipe",
             "function tough vocal yield* pour valve Glass xenon function gall bank pipe very rope <tag> setTimeout() all extends Source ads build Matrix born <tag> 8080 gall hag Glass undefined slash Neural rope treat await came setTimeout() there Rookie user branch body yield* lad treat their as alfalfa Math pure shall track gall back total flash bank lad Cyber 100 vocal extends tough nav-item pool into Glass api/path quite Rookie their Admin Archive hall if(x) read var query 50/50 thought import came vacuum they flash Math paper these that between Protocol",
-            "Math carbon class taught else{ 100 below Admin 8080 Data road bench 50/50 ash Neural return block care api/path user made rope salad wire id=2 alfalfa Mastery lads there came Admin Mastery hag null came flash Sum yield* fall begin trust macro carbon build slash a-b=c very book ask 8080 gall shall rope below export came care extends Grid broken upper falls alfalfa plus came haggah lads dash read sad 500 null Glass Protocol else{ [index] vocal id=2 glad alfalfa fad const pour broken ads false Matrix null 1000 Rookie",
+            "Math carbon class taught else{ 100 below Admin 8080 Data road bench 50/50 ash Neural return block care api/path user made rope salad wire id=2 alfalfa Mastery lads there came Admin Mastery hag null came flash Sum yield* fall begin trust macro carbon build slash a-b-c very book ask 8080 gall shall rope below export came care extends Grid broken upper falls alfalfa plus came haggah lads dash read sad 500 null Glass Protocol else{ [index] vocal id=2 glad alfalfa fad const pour broken ads false Matrix null 1000 Rookie",
             "has function total upper 500 grid-cols-3 at gall broken as read lads tough they broken grid-cols-3 gall burn api/path Vault paper care track flash lad flask Legend queue else{ bank back carbon undefined body into paper taught xenon Expert dad prior Elite trust null Expert begin Array[0] born class basic flex-col properly hall carbon Admin vacuum Cyber vanish grid-cols-3 Source Network flash power flask those grid-cols-3 user let paper between Protocol power thought 8080 <tag> Math 8080 Vault make body 3000 slash macro rule cave flags cave came pour Active"
         ]
     }

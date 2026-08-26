@@ -53,7 +53,7 @@ const RouteGuard = ({ children }) => {
                         Return to Dashboard
                     </Link>
                 </div>
-                {showAuth && <AuthModal onClose={() => setShowAuth(false)} onLoginSuccess={() => { setShowAuth(false); setIsLoggedIn(true); }} />}
+                {showAuth && <AuthModal onClose={() => setShowAuth(false)} onLoginSuccess={() => setShowAuth(false)} />}
             </div>
         );
     }

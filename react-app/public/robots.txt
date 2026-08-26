@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+Disallow: /vault
+Disallow: /api/
+
+# AI Crawlers for LLM search engines (Perplexity, ChatGPT, Claude, etc.)
+User-agent: GPTBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+Sitemap: https://typemaster.vercel.app/sitemap.xml
