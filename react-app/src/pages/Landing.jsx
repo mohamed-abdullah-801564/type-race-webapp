@@ -16,10 +16,35 @@ import {
     X,
     Sun,
     Moon,
-    ShieldCheck
+    ShieldCheck,
+    ChevronDown,
+    HelpCircle
 } from 'lucide-react';
 import AuthModal from '../components/AuthModal';
 import { playErrorSound, playSuccessSound } from '../utils/soundUtils';
+
+const FAQ_ITEMS = [
+    {
+        q: "What is the best free multiplayer typing speed test?",
+        a: "TypeMaster is a dedicated free multiplayer typing speed test platform featuring sub-50ms WebSocket room races with real-time opponent position tracking, live WPM calculations, and private or public matchmaking with zero advertisements."
+    },
+    {
+        q: "How is typing speed (WPM) calculated?",
+        a: "In typing speed tests, one standard word is defined as 5 keystrokes (including spaces and punctuation). Gross WPM is calculated as (Total Keystrokes / 5) / (Time in Minutes). Net WPM subtracts uncorrected errors to measure true typing precision."
+    },
+    {
+        q: "How can I improve my touch typing accuracy with heatmaps?",
+        a: "TypeMaster's keyboard latency heatmap records character-by-character reaction times down to the millisecond. By discovering which keys cause hesitation or finger stumbles, you can launch targeted balloon reflex drills to retrain muscle memory and eliminate speed bottlenecks."
+    },
+    {
+        q: "Is TypeMaster completely free to use?",
+        a: "Yes. TypeMaster is 100% free with no subscription tiers, paywalls, or banner advertisements. All multiplayer rooms, training academy modules, telemetry heatmaps, and ghost replay vaults are freely available to all typists."
+    },
+    {
+        q: "How does the Touch Typing Academy teach proper finger placement?",
+        a: "The Academy features a structured 16-module curriculum with animated anatomical hand guides that light up the exact finger (Index, Middle, Ring, Pinky, or Thumb) designated for each keystroke, combined with strict error blocking to enforce proper touch typing form."
+    }
+];
 
 const QUICK_TEST_TEXTS = [
     "The tactile resistance of mechanical switches provides instantaneous tactile feedback that sharpens focus and enhances typing velocity.",
@@ -32,6 +57,7 @@ export default function Landing() {
     const [showAuth, setShowAuth] = useState(false);
     const [showDownloadCard, setShowDownloadCard] = useState(false);
     const [isDark, setIsDark] = useState(true);
+    const [openFaq, setOpenFaq] = useState(0);
 
     // Quick Interactive Typing Test State
     const [testDuration, setTestDuration] = useState(15);
@@ -492,7 +518,7 @@ export default function Landing() {
                 </div>
 
                 {/* Generative Search & Platform Definition (GEO / AI Citability Section) */}
-                <section aria-label="About TypeMaster" className="w-full text-left bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 mb-16 shadow-xs">
+                <section aria-label="About TypeMaster" className="w-full text-left bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 mb-12 shadow-xs">
                     <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-3">
                         About TypeMaster Typing Speed Test & Touch Typing Academy
                     </h2>
@@ -501,23 +527,87 @@ export default function Landing() {
                     </p>
                 </section>
 
-                {/* Clean Footer */}
-                <footer className="w-full pt-8 pb-12 border-t border-slate-200 dark:border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-                    <div>
-                        © {new Date().getFullYear()} TypeMaster · High-Precision Touch Typing Benchmark
+                {/* Frequently Asked Questions (FAQ Section) */}
+                <section aria-label="Frequently Asked Questions" className="w-full text-left bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 mb-16 shadow-xs">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-primary mb-2">
+                        <HelpCircle className="w-4 h-4" />
+                        <span>Common Questions</span>
                     </div>
-                    <div className="flex items-center gap-6">
-                        <Link to="/solo" className="hover:text-primary transition-colors">Solo Practice</Link>
-                        <Link to="/academy" className="hover:text-primary transition-colors">Academy</Link>
-                        <Link to="/multiplayer" className="hover:text-primary transition-colors">Multiplayer</Link>
-                        <a 
-                            href="https://github.com/mohamed-abdullah-801564/type-race-webapp" 
-                            target="_blank" 
-                            rel="noreferrer"
-                            className="hover:text-primary transition-colors"
-                        >
-                            GitHub
-                        </a>
+                    <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white mb-6">
+                        Frequently Asked Questions About Typing Tests
+                    </h2>
+
+                    <div className="space-y-3">
+                        {FAQ_ITEMS.map((item, idx) => {
+                            const isOpen = openFaq === idx;
+                            return (
+                                <div 
+                                    key={idx}
+                                    className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden transition-all bg-slate-50/50 dark:bg-slate-950/40"
+                                >
+                                    <button
+                                        type="button"
+                                        onClick={() => setOpenFaq(isOpen ? null : idx)}
+                                        className="w-full p-4 sm:p-5 flex items-center justify-between text-left gap-4 cursor-pointer hover:bg-slate-100/50 dark:hover:bg-white/5 transition-colors"
+                                        aria-expanded={isOpen}
+                                    >
+                                        <h3 className="font-semibold text-sm sm:text-base text-slate-900 dark:text-white">
+                                            {item.q}
+                                        </h3>
+                                        <ChevronDown className={`w-5 h-5 text-slate-400 shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180 text-primary' : ''}`} />
+                                    </button>
+                                    {isOpen && (
+                                        <div className="px-4 pb-5 sm:px-5 pt-1 text-sm text-slate-600 dark:text-slate-400 leading-relaxed border-t border-slate-100 dark:border-slate-800/60 font-normal">
+                                            {item.a}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </section>
+
+                {/* Clean Footer */}
+                <footer className="w-full pt-8 pb-12 border-t border-slate-200 dark:border-slate-800/80 flex flex-col gap-6 text-xs text-slate-500">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div>
+                            © {new Date().getFullYear()} TypeMaster · High-Precision Touch Typing Benchmark
+                        </div>
+                        <div className="flex flex-wrap items-center justify-center gap-6">
+                            <Link to="/solo" className="hover:text-primary transition-colors">Solo Practice</Link>
+                            <Link to="/academy" className="hover:text-primary transition-colors">Academy</Link>
+                            <Link to="/multiplayer" className="hover:text-primary transition-colors">Multiplayer</Link>
+                            <Link to="/practice" className="hover:text-primary transition-colors">Key Practice</Link>
+                            <a 
+                                href="https://github.com/mohamed-abdullah-801564/type-race-webapp" 
+                                target="_blank" 
+                                rel="noreferrer"
+                                className="hover:text-primary transition-colors"
+                            >
+                                GitHub
+                            </a>
+                        </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-slate-100 dark:border-slate-800/40 flex flex-wrap items-center justify-between gap-3 text-[11px] text-slate-400">
+                        <div className="flex flex-wrap items-center gap-4">
+                            <span>Alternatives & Guides:</span>
+                            <Link to="/compare/monkeytype-alternative" className="hover:text-primary transition-colors underline-offset-2 hover:underline">
+                                Monkeytype Alternative
+                            </Link>
+                            <Link to="/compare/typeracer-alternative" className="hover:text-primary transition-colors underline-offset-2 hover:underline">
+                                TypeRacer Alternative
+                            </Link>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <a href="/llms.txt" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
+                                llms.txt
+                            </a>
+                            <span>·</span>
+                            <a href="/sitemap.xml" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
+                                sitemap
+                            </a>
+                        </div>
                     </div>
                 </footer>
             </main>

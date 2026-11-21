@@ -31,6 +31,18 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://type-race-webapp-x8jw.vercel.app/compare/monkeytype-alternative</loc>
+    <lastmod>2026-11-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://type-race-webapp-x8jw.vercel.app/compare/typeracer-alternative</loc>
+    <lastmod>2026-11-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://type-race-webapp-x8jw.vercel.app/dashboard</loc>
     <lastmod>2026-11-21</lastmod>
     <changefreq>daily</changefreq>

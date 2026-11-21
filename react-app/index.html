@@ -15,6 +15,10 @@
     <meta name="theme-color" content="#0284c7" />
     <link rel="canonical" href="https://type-race-webapp-x8jw.vercel.app/" />
 
+    <!-- AI & Agent Machine-Readable Discovery Links -->
+    <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs.txt" />
+    <link rel="alternate" type="text/plain" href="/llms-full.txt" title="LLMs Full Documentation" />
+
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="TypeMaster" />
@@ -76,6 +80,52 @@
             "@type": "Organization",
             "name": "TypeMaster"
           }
+        },
+        {
+          "@type": "FAQPage",
+          "@id": "https://type-race-webapp-x8jw.vercel.app/#faq",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What is the best free multiplayer typing speed test?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "TypeMaster is a dedicated free multiplayer typing speed test platform featuring sub-50ms WebSocket room races with real-time opponent position tracking, live WPM calculations, and private or public matchmaking with zero advertisements."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "How is typing speed (WPM) calculated?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "In typing speed tests, one standard word is defined as 5 keystrokes (including spaces and punctuation). Gross WPM is calculated as (Total Keystrokes / 5) / (Time in Minutes). Net WPM subtracts uncorrected errors to measure true typing precision."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "How can I improve my touch typing accuracy with heatmaps?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "TypeMaster's keyboard latency heatmap records character-by-character reaction times down to the millisecond. By discovering which keys cause hesitation or finger stumbles, you can launch targeted balloon reflex drills to retrain muscle memory and eliminate speed bottlenecks."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Is TypeMaster completely free to use?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. TypeMaster is 100% free with no subscription tiers, paywalls, or banner advertisements. All multiplayer rooms, training academy modules, telemetry heatmaps, and ghost replay vaults are freely available to all typists."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "How does the Touch Typing Academy teach proper finger placement?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The Academy features a structured 16-module curriculum with animated anatomical hand guides that light up the exact finger (Index, Middle, Ring, Pinky, or Thumb) designated for each keystroke, combined with strict error blocking to enforce proper touch typing form."
+              }
+            }
+          ]
         }
       ]
     }

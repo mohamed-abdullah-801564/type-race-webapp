@@ -9,6 +9,8 @@ import TrainingAcademy from './pages/TrainingAcademy';
 import DailyChallenge from './pages/DailyChallenge';
 import Achievements from './pages/Achievements';
 import KeyPractice from './pages/KeyPractice';
+import MonkeytypeCompare from './pages/compare/MonkeytypeCompare';
+import TyperacerCompare from './pages/compare/TyperacerCompare';
 
 import RouteGuard from './components/RouteGuard';
 
@@ -37,6 +39,8 @@ function App() {
           <Route path="/daily" element={<DailyChallenge />} />
           <Route path="/achievements" element={<Achievements />} />
           <Route path="/practice" element={<KeyPractice />} />
+          <Route path="/compare/monkeytype-alternative" element={<MonkeytypeCompare />} />
+          <Route path="/compare/typeracer-alternative" element={<TyperacerCompare />} />
         </Routes>
       </div>
     </BrowserRouter>

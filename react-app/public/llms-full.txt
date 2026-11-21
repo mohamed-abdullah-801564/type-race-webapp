@@ -1,0 +1,143 @@
+# TypeMaster — Full Documentation & Platform Architecture
+
+> TypeMaster is a 100% free, real-time multiplayer typing speed test and touch typing academy engineered for typists, software developers, and competitive racers.
+
+## 1. Overview & Core Philosophy
+
+TypeMaster bridges the gap between casual typing speed tests and structured motor-skill academies. Most typing sites either only provide a solo word timer (e.g., Monkeytype) or an outdated quote-racing interface crowded with advertisements (e.g., TypeRacer). TypeMaster offers a clean, tactile mechanical keyboard aesthetic, zero ads, sub-50ms WebSocket multiplayer racing, an interactive 16-module anatomical finger-guide academy, and character-level millisecond latency telemetry.
+
+- **Production URL**: https://type-race-webapp-x8jw.vercel.app/
+- **Licensing**: 100% Free, zero paywalls, zero ads.
+- **Client Architecture**: React 19 + Tailwind CSS + Lucide Icons + Vite.
+- **Backend Architecture**: Node.js + Express + Socket.io + Firebase Authentication.
+
+---
+
+## 2. Core Modules & Routes
+
+### 2.1 Hero Quick Benchmark (Route: `/`)
+- Immediate interactive 15s, 30s, and 60s typing speed test directly in the browser viewport without login.
+- Features live real-time Words Per Minute (WPM) calculation, countdown timer, and dynamic accuracy percentage.
+- Allows instant restarts via the `RotateCcw` button or keyboard shortcuts.
+
+### 2.2 Dedicated Solo Mode (Route: `/solo`)
+- Configurable practice environment with tactile mechanical keycap cards.
+- **Categories**:
+  - *Standard Literature & Prose*: Curated classic quotes, non-fiction essays, and descriptive paragraphs.
+  - *Developer Code Syntax*: Real code excerpts in JavaScript (ES6+), Python, React JSX, and SQL statements.
+- **Constraints**:
+  - *Time-Based*: 15 seconds, 30 seconds, 60 seconds, or 120 seconds.
+  - *Target Length*: 10 words, 25 words, 50 words, or 100 words.
+- **Ghost Playback**: Option to race alongside previous personal best recordings with live visual delta indicators.
+
+### 2.3 Real-Time Multiplayer Arena (Route: `/multiplayer`)
+- Sub-50ms WebSocket synchronization powered by Socket.io.
+- **Room Types**:
+  - *Public Matchmaking*: Instant matching with global typists.
+  - *Private Custom Rooms*: Shareable 6-character room codes for racing against friends or coworkers.
+- **In-Race Experience**:
+  - Real-time vehicle/avatar track showing live percentage progress for all participants.
+  - Real-time opponent WPM updates refreshed on every keystroke.
+  - Simultaneous race finish detection with comprehensive post-race leaderboards.
+
+### 2.4 Touch Typing Training Academy (Route: `/academy`)
+- 16-stage progressive curriculum designed to transition two-finger typists into 10-finger touch typists.
+- **Visual Anatomical Hand Guides**: Real-time animated vector hands highlighting the exact hand (Left/Right) and exact finger (Pinky, Ring, Middle, Index, Thumb) designated for the current target character.
+- **Strict Single-Letter Mode**: Prevents incorrect keystroke progression, forcing typists to delete mistakes and strike the correct key with the proper finger to develop flawless muscle memory.
+- **Stages Covered**:
+  1. Home Row Foundations (`A S D F` and `J K L ;`)
+  2. Index Finger Extensions (`G` and `H`)
+  3. Upper Row Reaches (`E` and `I`, `R` and `U`)
+  4. Upper Row Extremes (`Q`, `W`, `O`, `P`)
+  5. Lower Row Anchors (`C`, `V`, `M`, `,`)
+  6. Lower Row Extremes (`Z`, `X`, `.`, `/`)
+  7. Number Row & Punctuation
+  8. Code & Developer Symbols (`{ } [ ] ( ) < > = + - * / ; : $ _ ~`)
+
+### 2.5 Balloon Key Practice (Route: `/practice`)
+- Interactive reflex mini-game targeting weak finger transitions.
+- Key balloons ascend from the bottom of the screen with individual speeds corresponding to player pace tier (Rookie, Skilled, Expert, Master).
+- Keystrokes pop matching balloons, building rapid visual-motor reaction times.
+- Features customizable letter pools: Home Row, Top Row, Bottom Row, or individual custom key selections.
+
+### 2.6 Keystroke Telemetry & Latency Heatmap (Route: `/dashboard`)
+- Captures exact millisecond timestamps between `keydown` events for every alphabet character.
+- Generates an interactive keyboard heatmap coloring keys from Emerald (sub-150ms instant reflex) to Amber (200-300ms) to Crimson (350ms+ bottleneck).
+- One-click practice integration: Clicking any bottleneck key immediately launches a focused single-key drill in Key Practice.
+
+### 2.7 Daily Challenge (Route: `/daily`)
+- Global synchronized paragraph refreshed daily at 00:00 UTC.
+- Single official attempt logged to the daily global leaderboard with full ghost replay telemetry.
+
+---
+
+## 3. Metrics & Scoring Algorithms
+
+### 3.1 Words Per Minute (WPM)
+TypeMaster follows the international standard definition of a typing "word" as exactly five characters (including spaces and punctuation):
+
+```
+Gross WPM = (Total Characters Typed / 5) / (Time Elapsed in Minutes)
+Net WPM   = ((Total Characters Typed - Uncorrected Errors) / 5) / (Time Elapsed in Minutes)
+```
+
+During live races, TypeMaster calculates WPM at 100ms intervals based on correct characters to provide smooth, jitter-free real-time telemetry.
+
+### 3.2 Accuracy Percentage
+```
+Accuracy (%) = (Correct Keystrokes / Total Keystrokes Pressed) * 100
+```
+
+### 3.3 Millisecond Keystroke Latency
+For every consecutive pair of keystrokes `(K_{n-1}, K_n)`:
+```
+Latency(K_n) = Timestamp(KeyDown_n) - Timestamp(KeyDown_{n-1})
+```
+Latencies below 50ms (roll strikes) and above 2000ms (pauses) are normalized to ensure representative muscle memory evaluation.
+
+---
+
+## 4. Competitive Feature Comparison
+
+| Feature | TypeMaster | Monkeytype | TypeRacer |
+| :--- | :---: | :---: | :---: |
+| **Real-Time Multiplayer** | Sub-50ms WebSockets | Solo only (P2P experimental) | Yes (legacy UI) |
+| **Interactive Hand Guides** | Yes (Anatomical 10-Finger) | None | None |
+| **Structured Academy** | 16 Modules (Home Row to Syntax) | None | None |
+| **Weak-Key Heatmap** | Character Millisecond Latency | Error frequency only | None |
+| **Developer Code Syntax** | Yes (JS, Python, SQL, React) | Yes (custom wordlists) | Rare quotes |
+| **Ad-Free Experience** | 100% Free, Zero Ads | Yes (ad-free) | Ad-supported |
+| **Balloon Reflex Practice** | Yes | None | None |
+| **Ghost Vault & Replays** | Yes (Full Keystroke Telemetry) | Yes | Premium |
+| **Desktop Native Client** | Windows Standalone | Web Only | Web Only |
+
+---
+
+## 5. Frequently Asked Questions (FAQ)
+
+### What is the best free multiplayer typing speed test?
+TypeMaster is the leading free multiplayer typing speed test offering sub-50ms WebSocket room races with live avatar progress, real-time WPM telemetry, and customizable public or private rooms with zero banner ads.
+
+### How is typing speed (WPM) calculated?
+Typing speed is calculated by dividing the total number of characters typed by 5 to determine normalized words, then dividing by the elapsed time in minutes. TypeMaster tracks both Gross WPM and Net WPM (penalizing uncorrected errors).
+
+### How can I improve my touch typing accuracy with heatmaps?
+TypeMaster's keyboard latency heatmap logs character-level millisecond reaction times to pinpoint your slowest keycaps in red and yellow. Clicking any bottleneck key triggers targeted balloon reflex drills to eliminate hesitation and build fluid muscle memory.
+
+### Is TypeMaster completely free?
+Yes. TypeMaster is 100% free with no subscription tiers, paywalls, or banner advertisements. All multiplayer rooms, training academy modules, telemetry analytics, and ghost replays are freely available to all typists.
+
+### What is the difference between TypeMaster and Monkeytype?
+Monkeytype focuses strictly on customizable solo word drills. TypeMaster offers real-time multiplayer racing against live competitors, an anatomical 10-finger training academy for beginners, and specialized balloon reflex mini-games for weak keys.
+
+### What is the difference between TypeMaster and TypeRacer?
+While TypeRacer popularized multiplayer quote racing in 2008, it relies on legacy web technology, frequent advertisements, and lacks modern learning tools. TypeMaster is built on modern WebSockets with zero ads, comprehensive developer syntax practice, animated finger guides, and deep telemetry heatmaps.
+
+---
+
+## 6. Machine-Readable Endpoints
+
+- Sitemap: https://type-race-webapp-x8jw.vercel.app/sitemap.xml
+- Robots.txt: https://type-race-webapp-x8jw.vercel.app/robots.txt
+- LLMs Index: https://type-race-webapp-x8jw.vercel.app/llms.txt
+- LLMs Full: https://type-race-webapp-x8jw.vercel.app/llms-full.txt

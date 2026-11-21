@@ -1,21 +1,43 @@
 # TypeMaster
 
-> TypeMaster is a modern, high-velocity real-time typing platform and touch-typing academy designed for typists, developers, and competitive racers.
+> TypeMaster is a 100% free, real-time multiplayer typing speed test and touch typing academy engineered for typists, software developers, and competitive racers.
 
-## Key Capabilities
-- **Real-Time Multiplayer Arena**: Sub-50ms WebSocket room races with live position tracking and ghost overlays.
-- **Interactive Training Academy**: Structured 16-module curriculum featuring animated anatomical hand guides, strict finger blocking, and progressive mastery from Home Row to Developer Syntax.
-- **Neural Heatmap Telemetry**: Per-key latency measurement, error tracking, and adaptive drill generation based on weak keys.
-- **Developer Mode**: Specialized code snippet streams in JavaScript, Python, SQL, and React syntax.
-- **Daily Challenge**: Synchronized daily quote races with competitive global leaderboards.
-- **Desktop Application**: Low-latency Electron-powered standalone client.
+TypeMaster combines sub-50ms WebSocket multiplayer racing with an interactive finger-guided touch typing academy and millisecond keystroke latency telemetry.
 
-## Public Routes
-- `/`: Landing page with live telemetry terminal preview.
-- `/dashboard`: Personal stats, rank tier progress, neural heatmap, and global season leaderboard.
-- `/solo`: Customizable practice mode supporting prose and syntax streams with time or line targets.
-- `/multiplayer`: Real-time room creation and matchmaking against live operators.
-- `/academy`: Step-by-step touch typing academy with animated hands.
-- `/daily`: Daily competition challenges.
-- `/practice`: Weak-key balloon pop game.
-- `/achievements`: Unlockable achievement archive.
+## Core Platform Capabilities
+
+- [Multiplayer Typing Arena](https://type-race-webapp-x8jw.vercel.app/multiplayer): Sub-50ms latency WebSocket rooms with live visual position tracking, dynamic lobby matchmaking, and ghost overlays.
+- [Touch Typing Academy](https://type-race-webapp-x8jw.vercel.app/academy): 16 progressive training modules featuring animated anatomical hand and finger guides with strict single-letter error blocking.
+- [Custom Solo Practice](https://type-race-webapp-x8jw.vercel.app/solo): Flexible practice sessions supporting curated literary prose, developer code syntax (JavaScript, Python, SQL, React), target time modes (15s, 30s, 60s, 120s), or custom word limits.
+- [Balloon Key Practice](https://type-race-webapp-x8jw.vercel.app/practice): Visual weak-key reflex drill that floats ascending letter balloons to target and eliminate your slowest keystroke transitions.
+- [Keystroke Latency Heatmap](https://type-race-webapp-x8jw.vercel.app/dashboard): Precision character-by-character telemetry measuring exact millisecond keydown latencies to visualize finger fatigue and weak keys.
+- [Daily Competitive Challenge](https://type-race-webapp-x8jw.vercel.app/daily): Global synchronized quote challenge renewed every 24 hours with persistent season leaderboards.
+- [Ghost Vault](https://type-race-webapp-x8jw.vercel.app/vault): Archive personal best performances and race head-to-head against champion ghost replays.
+
+## Public Routes & Tools
+
+- [Homepage & Live Benchmark](https://type-race-webapp-x8jw.vercel.app/): Quick 15s/30s/60s browser typing test with zero registration required.
+- [Solo Speed Test](https://type-race-webapp-x8jw.vercel.app/solo): Dedicated practice arena with configurable prose, code syntax, and time/length constraints.
+- [Multiplayer Lobby](https://type-race-webapp-x8jw.vercel.app/multiplayer): Create private rooms or join public real-time typing races.
+- [Training Academy](https://type-race-webapp-x8jw.vercel.app/academy): Structured finger-placement curriculum from Home Row fundamentals to advanced symbols.
+- [Balloon Reflex Practice](https://type-race-webapp-x8jw.vercel.app/practice): Weak-key isolation game with custom keyboard row presets.
+- [Telemetry Dashboard](https://type-race-webapp-x8jw.vercel.app/dashboard): Historical WPM trends, accuracy rates, latency heatmaps, and global rank tiers.
+- [Daily Challenge](https://type-race-webapp-x8jw.vercel.app/daily): Daily synchronized benchmark competition.
+- [Achievements](https://type-race-webapp-x8jw.vercel.app/achievements): Unlockable milestone badges for speed, consistency, and mastery.
+
+## Competitor Comparisons & Alternatives
+
+- [TypeMaster vs Monkeytype](https://type-race-webapp-x8jw.vercel.app/compare/monkeytype-alternative): Comparison of real-time multiplayer racing, touch typing academy hand guides, and keystroke heatmap analytics against Monkeytype.
+- [TypeMaster vs TypeRacer](https://type-race-webapp-x8jw.vercel.app/compare/typeracer-alternative): Comparison of modern ad-free WebSocket multiplayer, code syntax practice, and telemetry tracking against TypeRacer.
+
+## Key Advantages & Differentiation
+
+1. **Sub-50ms Real-Time Racing**: Zero polling, instant WebSocket telemetry synchronization between competing racers.
+2. **Visual Anatomical Finger Guides**: Guides hands to the correct finger for each keycap, building clean muscle memory rather than hunt-and-peck habits.
+3. **Weak-Key Latency Telemetry**: Pinpoints exact millisecond lag for every key on the keyboard, not just broad accuracy percentages.
+4. **Developer Code Syntax Drills**: Native typing tests for real software syntax including JavaScript, Python, React JSX, and SQL queries.
+5. **Completely Free & Ad-Free**: Full access to all features, ghost vaulting, multiplayer rooms, and lessons with zero paywalls and zero banner ads.
+
+## Optional
+
+- [Complete Documentation & Architecture](https://type-race-webapp-x8jw.vercel.app/llms-full.txt): Detailed specifications, scoring algorithms, typing pedagogy, and telemetry schema.
