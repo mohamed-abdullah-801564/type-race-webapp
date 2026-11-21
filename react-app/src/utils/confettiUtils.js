@@ -17,10 +17,11 @@ export const launchConfetti = (rarity) => {
         let width = canvas.width = window.innerWidth;
         let height = canvas.height = window.innerHeight;
 
-        window.addEventListener('resize', () => {
+        const handleResize = () => {
             width = canvas.width = window.innerWidth;
             height = canvas.height = window.innerHeight;
-        });
+        };
+        window.addEventListener('resize', handleResize);
 
         const particleCount = rarity === 'legendary' ? 150 : 80;
         const duration = rarity === 'legendary' ? 5000 : 3000;
@@ -47,7 +48,10 @@ export const launchConfetti = (rarity) => {
         const animate = () => {
             const elapsed = Date.now() - startTime;
             if (elapsed >= duration) {
-                document.body.removeChild(canvas);
+                window.removeEventListener('resize', handleResize);
+                if (canvas.parentNode) {
+                    canvas.parentNode.removeChild(canvas);
+                }
                 return;
             }
 
@@ -77,7 +81,7 @@ export const launchConfetti = (rarity) => {
         };
 
         animate();
-    } catch (e) {
+    } catch {
         // Fail silently
     }
 };

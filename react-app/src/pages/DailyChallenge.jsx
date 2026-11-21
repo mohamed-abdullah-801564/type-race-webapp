@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import Navbar from '../components/Navbar';
 import AuthModal from '../components/AuthModal';
@@ -43,7 +43,6 @@ import {
 const SOCKET_SERVER = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001';
 
 export default function DailyChallenge() {
-    const navigate = useNavigate();
     const { toasts, addToast, removeToast } = useToast();
     
     // Challenge State
@@ -56,6 +55,7 @@ export default function DailyChallenge() {
     const [finalAcc, setFinalAcc] = useState(100);
     const [leaderboard, setLeaderboard] = useState([]);
     const [hasPlayedToday, setHasPlayedToday] = useState(false);
+    const [hasPlayedBeforeSession, setHasPlayedBeforeSession] = useState(false);
     const [todayScore, setTodayScore] = useState(null);
     const [showAuth, setShowAuth] = useState(false);
     const [scoreSaved, setScoreSaved] = useState(false);
@@ -95,6 +95,7 @@ export default function DailyChallenge() {
                                     if (auth.currentUser) {
                                         const scoreDoc = await getDoc(doc(db, 'daily_scores', response.date, 'scores', auth.currentUser.uid));
                                         if (scoreDoc.exists()) {
+                                            setHasPlayedBeforeSession(true);
                                             setHasPlayedToday(true);
                                             setTodayScore(scoreDoc.data());
                                         }
@@ -305,11 +306,12 @@ export default function DailyChallenge() {
             syncCrucialData(wpm, acc);
             fetchLeaderboard(challengeDate);
             setHasPlayedToday(true);
+            setScoreSaved(true);
             setTodayScore({ wpm, acc, name: playerName });
-            addToast("Daily score synchronized with neural grid.", 'success');
+            addToast({ message: "Daily score synchronized with neural grid.", type: 'success' });
         } catch (err) {
             console.error("Error saving score:", err);
-            addToast("Failed to link score to neural grid.", 'error');
+            addToast({ message: "Failed to link score to neural grid.", type: 'error' });
         }
     };
 
@@ -371,7 +373,7 @@ export default function DailyChallenge() {
                     </div>
                 )}
 
-                {hasPlayedToday ? (
+                {hasPlayedBeforeSession ? (
             <div className="flex flex-col gap-12">
                 <div className="bg-white dark:bg-black/20 border border-slate-200 dark:border-primary/20 shadow-sm rounded-3xl p-12 text-center max-w-2xl mx-auto backdrop-blur-xl animate-in zoom-in duration-500">
                     <div className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
@@ -518,10 +520,10 @@ export default function DailyChallenge() {
                                                                 });
                                                                 setScoreSaved(true);
                                                                 fetchLeaderboard(challengeDate);
-                                                                addToast("Score saved to leaderboard!", 'success');
+                                                                addToast({ message: "Score saved to leaderboard!", type: 'success' });
                                                             } catch (err) {
                                                                 console.error(err);
-                                                                addToast("Failed to save score.", 'error');
+                                                                addToast({ message: "Failed to save score.", type: 'error' });
                                                             }
                                                         }}
                                                         className="px-8 py-4 bg-primary text-background-dark font-black uppercase tracking-widest rounded-2xl hover:shadow-[0_0_30px_rgba(0,245,212,0.4)] transition-all flex items-center gap-2 mx-auto"

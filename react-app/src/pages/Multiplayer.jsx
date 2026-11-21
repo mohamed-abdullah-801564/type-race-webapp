@@ -11,6 +11,7 @@ import { recordKeyLatency, isTrackableKey } from '../utils/heatmapUtils';
 import useToast from '../hooks/useToast';
 import ToastContainer from '../components/ToastContainer';
 import MobileBanner from '../components/MobileBanner';
+import AuthModal from '../components/AuthModal';
 import { playErrorSound, playSuccessSound } from '../utils/soundUtils';
 import { checkAchievements, saveAchievements, buildStatsForAchievements } from '../utils/achievementUtils';
 import { launchConfetti } from '../utils/confettiUtils';
@@ -36,6 +37,7 @@ export default function Multiplayer() {
     const [tempName, setTempName] = useState('');
     const [winnerData, setWinnerData] = useState(null);
     const [isCreating, setIsCreating] = useState(false);
+    const [showAuth, setShowAuth] = useState(false);
 
     // Typing Mechanics State
     const [text, setText] = useState('');
@@ -100,9 +102,16 @@ export default function Multiplayer() {
         let newSocket;
         const connectSocket = async (user) => {
             try {
-                const token = await user.getIdToken(true);
+                const authPayload = {};
+                if (user) {
+                    const token = await user.getIdToken(true);
+                    authPayload.token = token;
+                } else {
+                    const localName = localStorage.getItem('playerName') || 'Guest';
+                    authPayload.playerName = localName;
+                }
                 newSocket = io(SOCKET_SERVER, {
-                    auth: { token }
+                    auth: authPayload
                 });
                 setSocket(newSocket);
             } catch (err) {
@@ -111,12 +120,8 @@ export default function Multiplayer() {
         };
 
         const unsubscribe = auth.onAuthStateChanged((user) => {
-            if (user) {
-                connectSocket(user);
-            } else {
-                if (newSocket) newSocket.disconnect();
-                setSocket(null);
-            }
+            if (newSocket) newSocket.disconnect();
+            connectSocket(user);
         });
 
         return () => {
@@ -383,7 +388,14 @@ export default function Multiplayer() {
         timerRef.current = setInterval(() => {
             if (!startTimeRef.current) return;
             const now = Date.now();
-            const elapsed = (now - startTimeRef.current) / 1000;
+            const elapsed = Math.max(0, (now - startTimeRef.current) / 1000);
+
+            if (raceModeRef.current === 'length') {
+                // Length mode: track elapsed time counting upwards; stops immediately when winner finishes
+                setElapsedTime(Math.floor(elapsed));
+                return;
+            }
+
             const raceText = textRef.current;
             const incomingDuration = raceDurationRef.current || 30;
             const remaining = Math.max(0, Math.round(incomingDuration - elapsed));
@@ -621,6 +633,12 @@ export default function Multiplayer() {
 
 
     const handleArchiveGhost = async (playerData) => {
+        if (!auth.currentUser) {
+            addToast({ message: "Neural link required: Sign in to archive ghosts to Vault", type: "warning" });
+            setShowAuth(true);
+            return;
+        }
+
         const raceText = winnerData?.text || text;
         const isUs = playerData.id === socket?.id;
         const keystrokes = playerData.keystrokes?.length > 0
@@ -880,9 +898,11 @@ export default function Multiplayer() {
                 {/* Left Side: Progress Bars */}
                 <div className="w-full lg:w-1/4 flex flex-col gap-6 select-none shrink-0">
                     <div className="flex justify-between items-end mb-2">
-                        <span className="text-xs font-bold uppercase tracking-[0.2em] text-primary/40">Race Status</span>
+                        <span className="text-xs font-bold uppercase tracking-[0.2em] text-primary/40">
+                            {raceMode === 'length' ? 'Elapsed Time' : 'Race Status'}
+                        </span>
                         <div className="text-4xl font-black text-primary drop-shadow-[0_0_15px_rgba(0,245,212,0.3)] font-mono">
-                            {gameState === 'finished' ? '0' : timeLeft}
+                            {raceMode === 'length' ? elapsedTime : (gameState === 'finished' ? '0' : timeLeft)}
                             <span className="text-sm font-medium opacity-50 ml-1">s</span>
                         </div>
                     </div>
@@ -1025,7 +1045,7 @@ export default function Multiplayer() {
                                                 {p.name} {isUs && <span className="text-[10px] opacity-60">(YOU)</span>}
                                             </div>
                                             <div className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">
-                                                {p.wpm} WPM | {p.accuracy}% ACC
+                                                {p.wpm} WPM | {p.accuracy}% ACC {p.timeTaken ? `| ${p.timeTaken}s` : ''} {p.progress !== undefined ? `| ${Math.round(p.progress)}% COMPLETED` : ''}
                                             </div>
                                         </div>
                                     </div>
@@ -1133,6 +1153,12 @@ export default function Multiplayer() {
                 )}
             </main>
             <ToastContainer toasts={toasts} removeToast={removeToast} />
+            {showAuth && (
+                <AuthModal
+                    onClose={() => setShowAuth(false)}
+                    onLoginSuccess={() => setShowAuth(false)}
+                />
+            )}
         </div>
     );
 }

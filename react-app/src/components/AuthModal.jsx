@@ -61,7 +61,6 @@ export default function AuthModal({ onClose, onLoginSuccess }) {
                     // New Cloud User -> Push initial profile summary
                     const emailPrefix = userCredential.user.email.split('@')[0];
                     const localRank = JSON.parse(localStorage.getItem('rankData') || 'null');
-                    const localHistory = JSON.parse(localStorage.getItem('raceHistory') || '[]');
                     
                     await setDoc(userDocRef, {
                         operatorName: emailPrefix,
@@ -148,7 +147,6 @@ export default function AuthModal({ onClose, onLoginSuccess }) {
                     // New Cloud User -> Push initial profile summary (if guest data exists)
                     const resolvedOperatorName = sanitizeName(operatorName) || localStorage.getItem('playerName') || userCredential.user.email.split('@')[0];
                     const localRank = JSON.parse(localStorage.getItem('rankData') || 'null');
-                    const localHistory = JSON.parse(localStorage.getItem('raceHistory') || '[]');
                     
                     await setDoc(userDocRef, {
                         operatorName: resolvedOperatorName,

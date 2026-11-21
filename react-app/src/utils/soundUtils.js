@@ -20,7 +20,7 @@ export const playErrorSound = () => {
         setTimeout(() => {
             if (audioCtx.state !== 'closed') audioCtx.close();
         }, 200);
-    } catch (e) {
+    } catch {
         // Fail silently
     }
 };
@@ -54,7 +54,7 @@ export const playSuccessSound = () => {
         setTimeout(() => {
             if (audioCtx.state !== 'closed') audioCtx.close();
         }, 500);
-    } catch (e) {
+    } catch {
         // Fail silently
     }
 };

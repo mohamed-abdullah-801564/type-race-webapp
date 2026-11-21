@@ -438,7 +438,7 @@ export default function KeyPractice() {
                         </div>
                         <div className="bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/5 rounded-2xl p-5 flex flex-col items-center gap-1">
                             <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Tier</span>
-                            <span className="text-sm font-black text-slate-900 dark:text-white uppercase mt-2">{getTierConfig(score).name}</span>
+                            <span className="text-sm font-black text-slate-900 dark:text-white uppercase mt-2">{getTierConfig(score, speedStep).name}</span>
                         </div>
                     </div>
 
@@ -472,7 +472,7 @@ export default function KeyPractice() {
         );
     }
 
-    const currentTier = getTierConfig(score);
+    const currentTier = getTierConfig(score, speedStep);
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-background-dark text-slate-700 dark:text-slate-300 font-sans overflow-hidden relative select-none" style={{ userSelect: 'none' }}>

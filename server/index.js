@@ -31,16 +31,31 @@ io.use(async (socket, next) => {
     try {
         const token = socket.handshake.auth.token;
         if (!token) {
-            return next(new Error("Authentication error: Invalid session"));
+            // Guest session support
+            const guestName = (socket.handshake.auth.playerName || 'Guest').trim().slice(0, 15);
+            socket.user = { 
+                uid: `guest_${socket.id}`,
+                name: guestName || 'Guest Operator',
+                isGuest: true
+            };
+            return next();
         }
         const decodedToken = await admin.auth().verifyIdToken(token);
         socket.user = { 
             uid: decodedToken.uid,
-            name: decodedToken.name || decodedToken.email?.split('@')[0] || 'Unknown Operator'
+            name: decodedToken.name || decodedToken.email?.split('@')[0] || 'Unknown Operator',
+            isGuest: false
         };
         next();
     } catch (error) {
-        next(new Error("Authentication error: Invalid session"));
+        // Fallback to guest if token is expired or invalid
+        const guestName = (socket.handshake.auth.playerName || 'Guest').trim().slice(0, 15);
+        socket.user = { 
+            uid: `guest_${socket.id}`,
+            name: guestName || 'Guest Operator',
+            isGuest: true
+        };
+        next();
     }
 });
 
@@ -128,24 +143,49 @@ io.on('connection', (socket) => {
     io.emit('registry_updated', Object.values(onlineOperators));
 
     socket.on('send_duel_challenge', ({ targetUid, roomId }) => {
+        const cleanRoomId = roomId ? roomId.toUpperCase() : generateRoomCode();
+        // Pre-register room so when challenged user accepts, room exists immediately
+        if (!rooms[cleanRoomId]) {
+            rooms[cleanRoomId] = {
+                id: cleanRoomId,
+                host: socket.id,
+                players: [{ id: socket.id, uid: socket.user.uid, name: socket.user.name, progress: 0, wpm: 0 }],
+                status: 'waiting'
+            };
+            socket.join(cleanRoomId);
+        }
+
         const targetSocketId = Object.keys(onlineOperators).find(
             sid => onlineOperators[sid].uid === targetUid
         );
         if (targetSocketId) {
-            io.to(targetSocketId).emit('duel_challenged', { challengerName: socket.user.name, roomId });
+            io.to(targetSocketId).emit('duel_challenged', { challengerName: socket.user.name, roomId: cleanRoomId });
         }
     });
 
     // Create a new room
     socket.on('createRoom', (data, callback) => {
         const roomId = data?.roomId ? data.roomId.toUpperCase() : generateRoomCode();
-        // Initialize room state
-        rooms[roomId] = {
-            id: roomId,
-            host: socket.id,
-            players: [{ id: socket.id, uid: socket.user.uid, name: data?.playerName || 'Host', progress: 0, wpm: 0, avatar: data?.avatar }],
-            status: 'waiting'
-        };
+        const playerName = data?.playerName || socket.user.name || 'Host';
+
+        if (rooms[roomId]) {
+            rooms[roomId].host = socket.id;
+            const existingPlayerIndex = rooms[roomId].players.findIndex(p => p.uid === socket.user.uid);
+            if (existingPlayerIndex !== -1) {
+                rooms[roomId].players[existingPlayerIndex].id = socket.id;
+                rooms[roomId].players[existingPlayerIndex].name = playerName;
+            } else {
+                rooms[roomId].players[0] = { id: socket.id, uid: socket.user.uid, name: playerName, progress: 0, wpm: 0, avatar: data?.avatar };
+            }
+        } else {
+            // Initialize room state
+            rooms[roomId] = {
+                id: roomId,
+                host: socket.id,
+                players: [{ id: socket.id, uid: socket.user.uid, name: playerName, progress: 0, wpm: 0, avatar: data?.avatar }],
+                status: 'waiting'
+            };
+        }
 
         socket.join(roomId);
         console.log(`[${roomId}] Room created by ${socket.id}`);
@@ -177,7 +217,7 @@ io.on('connection', (socket) => {
         const newPlayer = {
             id: socket.id,
             uid: socket.user.uid,
-            name: user?.playerName || 'Player',
+            name: user?.playerName || user?.name || socket.user?.name || 'Player',
             progress: 0,
             wpm: 0,
             avatar: user?.avatar
@@ -234,6 +274,7 @@ io.on('connection', (socket) => {
 
         room.text = selectedText;
         room.status = 'playing';
+        room.startTime = Date.now() + 3000; // Countdown is 3s
         console.log(`[${roomId}] Race started — diff: ${diff}, cat: ${cat}, mode: ${raceMode}, duration: ${raceDuration}s, lines: ${raceTargetLines}`);
 
         io.to(roomId).emit('raceStarted', {
@@ -277,11 +318,22 @@ const endRace = (roomId) => {
     room.status = 'finished';
     if (room.timer) clearTimeout(room.timer);
 
-    // Sort players by WPM descending for results
-    const results = [...room.players].sort((a, b) => (b.wpm || 0) - (a.wpm || 0));
+    const now = Date.now();
+    const totalElapsedSec = room.startTime ? Math.max(1, ((now - room.startTime) / 1000)).toFixed(1) : 0;
+
+    // Sort players by progress descending, then WPM descending
+    const results = [...room.players].sort((a, b) => {
+        if ((b.progress || 0) !== (a.progress || 0)) return (b.progress || 0) - (a.progress || 0);
+        return (b.wpm || 0) - (a.wpm || 0);
+    }).map(p => ({
+        ...p,
+        timeTaken: p.finishTime && room.startTime
+            ? Math.max(1, ((p.finishTime - room.startTime) / 1000)).toFixed(1)
+            : totalElapsedSec
+    }));
     const winner = results[0];
 
-    console.log(`[${roomId}] Race Over! Winner: ${winner.name}`);
+    console.log(`[${roomId}] Race Over! Winner: ${winner.name} (${winner.wpm} WPM, ${winner.timeTaken}s)`);
     io.to(roomId).emit('raceOver', {
         winnerId: winner.id,
         winnerName: winner.name,
@@ -289,6 +341,8 @@ const endRace = (roomId) => {
         accuracy: winner.accuracy,
         keystrokes: winner.keystrokes,
         text: room.text, // Include the text so players can archive any ghost
+        mode: room.mode,
+        totalElapsedSec: totalElapsedSec,
         results: results
     });
 };
@@ -333,6 +387,7 @@ const endRace = (roomId) => {
             player.wpm = wpm;
             player.accuracy = accuracy;
             player.finished = true;
+            player.finishTime = Date.now();
             player.keystrokes = keystrokes;
 
             if (wpm > globalChampionGhost.wpm) {
@@ -344,7 +399,14 @@ const endRace = (roomId) => {
                 console.log(`[Global Champion] New record: ${wpm} WPM by ${player.name}`);
             }
 
-            // If this is the first player to finish, start the grace period
+            // In length mode: stop immediately when the first player finishes!
+            if (room.mode === 'length') {
+                console.log(`[${roomId}] Length mode winner finished! Ending race immediately.`);
+                endRace(roomId);
+                return;
+            }
+
+            // In time mode: If this is the first player to finish, start the grace period
             if (room.status === 'playing') {
                 room.status = 'grace_period';
                 const graceDuration = 10000; // 10 seconds
@@ -363,6 +425,34 @@ const endRace = (roomId) => {
             if (allFinished) {
                 console.log(`[${roomId}] All players finished. Ending race early.`);
                 endRace(roomId);
+            }
+        }
+    });
+
+    // Handle leaving room explicitly
+    socket.on('leaveRoom', ({ roomId }) => {
+        const cleanRoomId = roomId?.toUpperCase();
+        const room = rooms[cleanRoomId];
+        if (!room) return;
+
+        socket.leave(cleanRoomId);
+        const playerIndex = room.players.findIndex(p => p.id === socket.id);
+        if (playerIndex !== -1) {
+            const removedPlayer = room.players.splice(playerIndex, 1)[0];
+            console.log(`[${cleanRoomId}] ${removedPlayer.id} left the room explicitly`);
+            if (room.players.length === 0) {
+                delete rooms[cleanRoomId];
+                console.log(`[${cleanRoomId}] Room deleted (empty)`);
+            } else {
+                if (room.host === socket.id && room.players.length > 0) {
+                    room.host = room.players[0].id;
+                    console.log(`[${cleanRoomId}] Host reassigned to ${room.host}`);
+                }
+                io.to(cleanRoomId).emit('playerLeft', {
+                    playerId: socket.id,
+                    newHost: room.host,
+                    room
+                });
             }
         }
     });

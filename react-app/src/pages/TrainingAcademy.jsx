@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { 
     GraduationCap, 
     ChevronRight, 
@@ -25,7 +25,6 @@ import { recordKeyLatency } from '../utils/heatmapUtils';
 import { auth } from '../firebase';
 
 export default function TrainingAcademy() {
-    const navigate = useNavigate();
     const location = useLocation();
     const [selectedId, setSelectedId] = useState('mod_0_home');
     const [unlockedIds, setUnlockedIds] = useState(['mod_0_home']);
@@ -42,6 +41,8 @@ export default function TrainingAcademy() {
     const [isWrongKey, setIsWrongKey] = useState(false);
     const [errorCount, setErrorCount] = useState(0);
     const [drillCompleted, setDrillCompleted] = useState(false);
+    const [tokenDrillPassed, setTokenDrillPassed] = useState(false);
+    const [recommendedBanner, setRecommendedBanner] = useState(null);
     const [startTime, setStartTime] = useState(null);
     const [stats, setStats] = useState({ wpm: 0, accuracy: 100 });
 
@@ -50,10 +51,33 @@ export default function TrainingAcademy() {
     const [paragraphInput, setParagraphInput] = useState('');
     const [paragraphCompleted, setParagraphCompleted] = useState(false);
     const [paragraphPassed, setParagraphPassed] = useState(false);
-    const [paragraphBackspaceUsed, setParagraphBackspaceUsed] = useState(false);
+    const [, setParagraphBackspaceUsed] = useState(false);
 
     const selectedModule = ACADEMY_MODULES.find(m => m.id === selectedId) || ACADEMY_MODULES[0];
     const isCompletedAll = unlockedIds.includes('academy_completed') || unlockedIds.includes('mod_13');
+
+    // Handle Weak Key Recommendation from SoloMode
+    useEffect(() => {
+        if (location.state?.suggestedKeys && Array.isArray(location.state.suggestedKeys) && location.state.suggestedKeys.length > 0) {
+            const weakKeysUpper = location.state.suggestedKeys.map(k => String(k).toUpperCase());
+            const currentProgress = JSON.parse(localStorage.getItem('academyProgress') || '["mod_0_home"]');
+            
+            // Prefer an unlocked module that trains these keys, otherwise best matching module
+            const matchingModule = ACADEMY_MODULES.find(m => 
+                currentProgress.includes(m.id) && m.keys && m.keys.some(k => weakKeysUpper.includes(k.toUpperCase()))
+            ) || ACADEMY_MODULES.find(m => 
+                m.keys && m.keys.some(k => weakKeysUpper.includes(k.toUpperCase()))
+            );
+
+            if (matchingModule) {
+                setSelectedId(matchingModule.id);
+                setRecommendedBanner({
+                    keys: weakKeysUpper,
+                    moduleTitle: matchingModule.title
+                });
+            }
+        }
+    }, [location.state]);
 
     // Strict Progression Load
     useEffect(() => {
@@ -286,6 +310,7 @@ export default function TrainingAcademy() {
             setErrorCount(0);
             setIsWrongKey(false);
             setDrillCompleted(false);
+            setTokenDrillPassed(false);
             setStartTime(Date.now());
             setIsDrillActive(true);
         } else {
@@ -328,35 +353,42 @@ export default function TrainingAcademy() {
                     const calcAcc = Math.round((tokens.length / totalAttempts) * 100);
 
                     setStats({ wpm: calcWpm, accuracy: calcAcc });
+                    
+                    const passed = calcWpm >= (selectedModule.minWPM || 0) &&
+                                   calcAcc >= (selectedModule.minAccuracy || 0) &&
+                                   errorCount <= (selectedModule.maxErrors ?? 999);
+                    setTokenDrillPassed(passed);
                     setDrillCompleted(true);
 
-                    // Sync & Unlock immediate next module strictly
-                    const progress = JSON.parse(localStorage.getItem('academyProgress') || '["mod_0_home"]');
-                    const cIdx = ACADEMY_MODULES.findIndex(m => m.id === selectedId);
-                    if (cIdx !== -1) {
-                        // Save current race record to history for average stats computation
-                        const history = JSON.parse(localStorage.getItem('raceHistory') || '[]');
-                        history.push({
-                            wpm: calcWpm,
-                            accuracy: calcAcc,
-                            date: Date.now(),
-                            isAcademy: true,
-                            moduleId: selectedId
-                        });
-                        localStorage.setItem('raceHistory', JSON.stringify(history.slice(-50)));
+                    if (passed) {
+                        // Sync & Unlock immediate next module strictly
+                        const progress = JSON.parse(localStorage.getItem('academyProgress') || '["mod_0_home"]');
+                        const cIdx = ACADEMY_MODULES.findIndex(m => m.id === selectedId);
+                        if (cIdx !== -1) {
+                            // Save current race record to history for average stats computation
+                            const history = JSON.parse(localStorage.getItem('raceHistory') || '[]');
+                            history.push({
+                                wpm: calcWpm,
+                                accuracy: calcAcc,
+                                date: Date.now(),
+                                isAcademy: true,
+                                moduleId: selectedId
+                            });
+                            localStorage.setItem('raceHistory', JSON.stringify(history.slice(-50)));
 
-                        if (cIdx < ACADEMY_MODULES.length - 1) {
-                            const nextId = ACADEMY_MODULES[cIdx + 1].id;
-                            if (!progress.includes(nextId)) {
-                                progress.push(nextId);
-                                localStorage.setItem('academyProgress', JSON.stringify(progress));
-                                setUnlockedIds(progress);
-                            }
-                        } else if (cIdx === ACADEMY_MODULES.length - 1) {
-                            if (!progress.includes('academy_completed')) {
-                                progress.push('academy_completed');
-                                localStorage.setItem('academyProgress', JSON.stringify(progress));
-                                setUnlockedIds(progress);
+                            if (cIdx < ACADEMY_MODULES.length - 1) {
+                                const nextId = ACADEMY_MODULES[cIdx + 1].id;
+                                if (!progress.includes(nextId)) {
+                                    progress.push(nextId);
+                                    localStorage.setItem('academyProgress', JSON.stringify(progress));
+                                    setUnlockedIds(progress);
+                                }
+                            } else if (cIdx === ACADEMY_MODULES.length - 1) {
+                                if (!progress.includes('academy_completed')) {
+                                    progress.push('academy_completed');
+                                    localStorage.setItem('academyProgress', JSON.stringify(progress));
+                                    setUnlockedIds(progress);
+                                }
                             }
                         }
                     }
@@ -371,7 +403,7 @@ export default function TrainingAcademy() {
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isDrillActive, isTokenDrillMode, activeTokenIdx, tokens, drillCompleted, startTime, errorCount, selectedId]);
+    }, [isDrillActive, isTokenDrillMode, activeTokenIdx, tokens, drillCompleted, startTime, errorCount, selectedId, selectedModule.minWPM, selectedModule.minAccuracy, selectedModule.maxErrors]);
 
     // Paragraph Input Handler
     const handleParagraphInputChange = (e) => {
@@ -534,18 +566,30 @@ export default function TrainingAcademy() {
                         ) : (
                             /* Token Drill Results */
                             <div className="my-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-primary/20 rounded-3xl p-10 max-w-md w-full text-center shadow-2xl animate-in zoom-in duration-300">
-                                <CheckCircle2 className="w-16 h-16 text-primary mx-auto mb-4 animate-bounce"/>
-                                <h3 className="text-3xl font-black text-slate-900 dark:text-white uppercase italic tracking-tight mb-2">Lesson Complete!</h3>
-                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-8">Finger Mechanics Synchronized</p>
+                                {tokenDrillPassed ? (
+                                    <>
+                                        <CheckCircle2 className="w-16 h-16 text-primary mx-auto mb-4 animate-bounce"/>
+                                        <h3 className="text-3xl font-black text-slate-900 dark:text-white uppercase italic tracking-tight mb-2">Lesson Complete!</h3>
+                                        <p className="text-xs font-bold text-[#0d9488] dark:text-primary uppercase tracking-widest mb-8">Finger Mechanics Synchronized</p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <ShieldAlert className="w-16 h-16 text-red-500 mx-auto mb-4 animate-pulse"/>
+                                        <h3 className="text-3xl font-black text-slate-900 dark:text-white uppercase italic tracking-tight mb-2">Sync Failed</h3>
+                                        <p className="text-xs font-bold text-red-500 uppercase tracking-widest mb-8">
+                                            Requires {selectedModule.minWPM} WPM & {selectedModule.minAccuracy}% ACC (Errors: {errorCount}/{selectedModule.maxErrors})
+                                        </p>
+                                    </>
+                                )}
                                 
                                 <div className="grid grid-cols-2 gap-4 mb-8">
                                     <div className="p-4 bg-slate-50 dark:bg-black/30 rounded-2xl border border-slate-200 dark:border-white/5">
                                         <span className="text-[10px] uppercase font-black text-slate-500 block mb-1">Velocity</span>
-                                        <span className="text-3xl font-black font-mono text-primary">{stats.wpm} <span className="text-sm">WPM</span></span>
+                                        <span className="text-3xl font-black font-mono text-[#0d9488] dark:text-primary">{stats.wpm} <span className="text-sm">WPM</span></span>
                                     </div>
                                     <div className="p-4 bg-slate-50 dark:bg-black/30 rounded-2xl border border-slate-200 dark:border-white/5">
                                         <span className="text-[10px] uppercase font-black text-slate-500 block mb-1">Precision</span>
-                                        <span className="text-3xl font-black font-mono text-primary">{stats.accuracy}%</span>
+                                        <span className="text-3xl font-black font-mono text-[#0d9488] dark:text-primary">{stats.accuracy}%</span>
                                     </div>
                                 </div>
 
@@ -556,19 +600,21 @@ export default function TrainingAcademy() {
                                     >
                                         Retry Lesson
                                     </button>
-                                    <button 
-                                        onClick={() => {
-                                            setIsDrillActive(false);
-                                            setDrillCompleted(false);
-                                            const cIdx = ACADEMY_MODULES.findIndex(m => m.id === selectedId);
-                                            if (cIdx !== -1 && cIdx < ACADEMY_MODULES.length - 1) {
-                                                setSelectedId(ACADEMY_MODULES[cIdx + 1].id);
-                                            }
-                                        }}
-                                        className="flex-1 py-4 bg-primary text-slate-950 font-black rounded-2xl uppercase tracking-widest text-xs transition-all shadow-[0_0_20px_rgba(0,245,212,0.4)] cursor-pointer"
-                                    >
-                                        Continue
-                                    </button>
+                                    {tokenDrillPassed && (
+                                        <button 
+                                            onClick={() => {
+                                                setIsDrillActive(false);
+                                                setDrillCompleted(false);
+                                                const cIdx = ACADEMY_MODULES.findIndex(m => m.id === selectedId);
+                                                if (cIdx !== -1 && cIdx < ACADEMY_MODULES.length - 1) {
+                                                    setSelectedId(ACADEMY_MODULES[cIdx + 1].id);
+                                                }
+                                            }}
+                                            className="flex-1 py-4 bg-primary text-slate-950 font-black rounded-2xl uppercase tracking-widest text-xs transition-all shadow-[0_0_20px_rgba(0,245,212,0.4)] cursor-pointer"
+                                        >
+                                            Continue
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         )
@@ -773,6 +819,32 @@ export default function TrainingAcademy() {
                                     >
                                         <GraduationCap className="w-4 h-4" />
                                         <span>CLAIM TELEMETRY PROFILE</span>
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Recommended Weak Keys Banner */}
+                            {recommendedBanner && (
+                                <div className="mb-8 bg-amber-500/10 border border-amber-500/30 rounded-3xl p-5 flex items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
+                                            <Target className="w-6 h-6 animate-pulse" />
+                                        </div>
+                                        <div className="text-left">
+                                            <span className="text-[10px] font-black text-amber-400 uppercase tracking-widest block mb-0.5">
+                                                Recommended Drill for Your Weak Keys
+                                            </span>
+                                            <p className="text-xs text-slate-700 dark:text-slate-300 font-medium">
+                                                Reinforcing keys: <span className="text-amber-500 dark:text-amber-300 font-mono font-bold">{recommendedBanner.keys.join(', ')}</span> — Selected module: <span className="font-bold">{recommendedBanner.moduleTitle}</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => setRecommendedBanner(null)}
+                                        className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
+                                        title="Dismiss recommendation"
+                                    >
+                                        <X className="w-4 h-4" />
                                     </button>
                                 </div>
                             )}

@@ -1,5 +1,5 @@
 import { auth, db } from '../firebase';
-import { doc, getDoc, updateDoc, setDoc, serverTimestamp, arrayUnion, increment } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, increment } from 'firebase/firestore';
 import { validateWPM, validateAccuracy } from './sanitizeUtils';
 
 /**
@@ -115,7 +115,7 @@ export const syncCrucialData = async (finalWpm, finalAcc) => {
             await syncToLeaderboard(finalWpm, finalAcc);
         }
 
-        await updateDoc(userDocRef, updatePayload);
+        await setDoc(userDocRef, updatePayload, { merge: true });
         
         console.log(isNewPB ? "New PB Synced to Cloud!" : "Race incremented in Cloud.");
         return true;
