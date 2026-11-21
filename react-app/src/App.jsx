@@ -41,6 +41,7 @@ function App() {
           <Route path="/practice" element={<KeyPractice />} />
           <Route path="/compare/monkeytype-alternative" element={<MonkeytypeCompare />} />
           <Route path="/compare/typeracer-alternative" element={<TyperacerCompare />} />
+          <Route path="*" element={<Landing />} />
         </Routes>
       </div>
     </BrowserRouter>
