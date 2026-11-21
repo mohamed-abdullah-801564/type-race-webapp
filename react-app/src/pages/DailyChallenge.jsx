@@ -376,20 +376,20 @@ export default function DailyChallenge() {
                 {hasPlayedBeforeSession ? (
             <div className="flex flex-col gap-12">
                 <div className="bg-white dark:bg-black/20 border border-slate-200 dark:border-primary/20 shadow-sm rounded-3xl p-12 text-center max-w-2xl mx-auto backdrop-blur-xl animate-in zoom-in duration-500">
-                    <div className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                        <Calendar className="w-10 h-10 text-primary" />
+                    <div className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6 text-primary">
+                        <Calendar className="w-10 h-10" />
                     </div>
-                    <h1 className="text-4xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter mb-2">Challenge Complete</h1>
-                    <p className="text-slate-600 dark:text-slate-400 font-medium mb-8">You have already completed today's challenge. Come back tomorrow for a new one.</p>
+                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight mb-2">Daily Challenge Complete</h1>
+                    <p className="text-slate-600 dark:text-slate-400 font-normal mb-8">You have completed today's challenge. Return tomorrow for a new competitive paragraph.</p>
                     
                     <div className="grid grid-cols-2 gap-4 mb-8">
                         <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-6 border border-slate-200 dark:border-slate-700/50 shadow-sm">
-                            <div className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-1">Your Speed</div>
-                            <div className="text-4xl font-black text-slate-900 dark:text-primary font-mono">{todayScore?.wpm} <span className="text-sm text-slate-500 dark:text-slate-400">WPM</span></div>
+                            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Your Speed</div>
+                            <div className="text-4xl font-bold text-slate-900 dark:text-primary font-mono">{todayScore?.wpm} <span className="text-sm text-slate-500 dark:text-slate-400">WPM</span></div>
                         </div>
                         <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-6 border border-slate-200 dark:border-slate-700/50 shadow-sm">
-                            <div className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-1">Your Accuracy</div>
-                            <div className="text-4xl font-black text-slate-900 dark:text-primary font-mono">{todayScore?.acc}%</div>
+                            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Your Accuracy</div>
+                            <div className="text-4xl font-bold text-slate-900 dark:text-primary font-mono">{todayScore?.acc}%</div>
                         </div>
                     </div>
                     
@@ -409,10 +409,10 @@ export default function DailyChallenge() {
                         <div className="lg:col-span-2 space-y-8">
                           <div className="flex flex-col gap-2">
                         <div className="flex items-center gap-3 text-primary">
-                            <Calendar className="w-6 h-6" />
-                            <span className="font-mono font-black uppercase tracking-widest text-sm">{formatDate(challengeDate)}</span>
+                            <Calendar className="w-5 h-5" />
+                            <span className="font-mono font-semibold uppercase tracking-wider text-xs">{formatDate(challengeDate)}</span>
                         </div>
-                        <h1 className="text-6xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter leading-none">Daily Challenge</h1>
+                        <h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight leading-none">Daily Challenge</h1>
                     </div>
  
                     {/* Stats Row */}
@@ -420,19 +420,19 @@ export default function DailyChallenge() {
                         <div className="flex-1 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm backdrop-blur-sm">
                             <div className="flex items-center gap-2 mb-1">
                                 <Timer className="w-4 h-4 text-primary" />
-                                <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">Time Remaining</span>
+                                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Time Remaining</span>
                             </div>
-                            <div className={`text-4xl font-black font-mono ${timeLeft < 10 ? 'text-red-500 animate-pulse' : 'text-slate-900 dark:text-white'}`}>
+                            <div className={`text-3xl md:text-4xl font-bold font-mono ${timeLeft < 10 ? 'text-red-500 animate-pulse' : 'text-slate-900 dark:text-white'}`}>
                                 {timeLeft}s
                             </div>
                         </div>
                         <div className="flex-1 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm backdrop-blur-sm">
                             <div className="flex items-center gap-2 mb-1">
                                 <Zap className="w-4 h-4 text-primary" />
-                                <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">Neural Speed</span>
+                                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Speed</span>
                             </div>
-                            <div className="text-4xl font-black font-mono text-slate-900 dark:text-white">
-                                {currentWPM} <span className="text-xs text-slate-600 dark:text-slate-400">WPM</span>
+                            <div className="text-3xl md:text-4xl font-bold font-mono text-slate-900 dark:text-white">
+                                {currentWPM} <span className="text-xs font-sans text-slate-400">WPM</span>
                             </div>
                         </div>
                     </div>

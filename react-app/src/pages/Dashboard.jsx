@@ -494,10 +494,10 @@ export default function Dashboard() {
 
                 {/* Analytics & Charts */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-2 bg-white dark:bg-primary/5 p-8 rounded-xl border border-slate-200 dark:border-primary/10">
-                        <div className="flex items-center justify-between mb-8 pb-6 border-b border-slate-200 dark:border-primary/10">
+                    <div className="lg:col-span-2 bg-white dark:bg-slate-900/60 p-8 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
+                        <div className="flex items-center justify-between mb-8 pb-6 border-b border-slate-200/80 dark:border-slate-800">
                             <div>
-                                <h3 className="text-xl font-black text-slate-900 dark:text-white">Performance Trend</h3>
+                                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Performance Trend</h3>
                                 <p className="text-sm text-slate-500">Wpm over your last 10 practice tests</p>
                             </div>
                             <div className="flex gap-2">
@@ -517,15 +517,15 @@ export default function Dashboard() {
                                 ) : (
                                     <>
                                     <svg className="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 1000 250">
-                                        <path d={soloPath} fill="none" stroke="#00f5d4" strokeWidth="3" strokeLinecap="round" />
+                                        <path d={soloPath} fill="none" stroke="currentColor" className="text-primary" strokeWidth="3" strokeLinecap="round" />
                                         <path d={multiPath} fill="none" stroke="#a855f7" strokeWidth="3" strokeLinecap="round" />
                                         <path d={dailyPath} fill="none" stroke="#f59e0b" strokeWidth="3" strokeLinecap="round" />
                                         
                                         {/* Solo Points */}
                                         {soloPoints.map((p) => (
                                             <circle 
-                                                key={`solo-${p.index}`} cx={p.x} cy={p.y} fill="#00f5d4" r="5" 
-                                                className="drop-shadow-[0_0_8px_rgba(0,245,212,0.8)] cursor-pointer transition-all duration-300 transform-gpu hover:scale-150 origin-center"
+                                                key={`solo-${p.index}`} cx={p.x} cy={p.y} r="5" 
+                                                className="fill-primary cursor-pointer transition-all duration-300 transform-gpu hover:scale-150 origin-center"
                                                 style={{ transformOrigin: `${p.x}px ${p.y}px` }}
                                                 onMouseEnter={() => setHoveredDataPoint(p)}
                                                 onMouseLeave={() => setHoveredDataPoint(null)}

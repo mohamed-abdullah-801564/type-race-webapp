@@ -820,17 +820,17 @@ export default function Multiplayer() {
                             </div>
  
                             <div className="w-full">
-                                <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-3 block">Practice Mode</span>
+                                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2.5 block">Practice Mode</span>
                                 <div className="flex gap-2">
                                     <button
                                         onClick={() => setMode('time')}
-                                        className={`flex-1 py-3 rounded-xl border-2 font-black text-xs uppercase transition-all ${mode === 'time' ? 'bg-primary text-background-dark border-primary shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-slate-100 border-slate-200 text-slate-500 dark:bg-white/5 dark:border-transparent dark:text-slate-500'}`}
+                                        className={`flex-1 py-3 rounded-xl border font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ${mode === 'time' ? 'bg-primary text-white dark:text-slate-950 border-primary shadow-xs' : 'bg-slate-100 border-slate-200 text-slate-500 dark:bg-white/5 dark:border-transparent dark:text-slate-400'}`}
                                     >
                                         <Timer className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" /> Time
                                     </button>
                                     <button
                                         onClick={() => setMode('length')}
-                                        className={`flex-1 py-3 rounded-xl border-2 font-black text-xs uppercase transition-all ${mode === 'length' ? 'bg-primary text-background-dark border-primary shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-slate-100 border-slate-200 text-slate-500 dark:bg-white/5 dark:border-transparent dark:text-slate-500'}`}
+                                        className={`flex-1 py-3 rounded-xl border font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ${mode === 'length' ? 'bg-primary text-white dark:text-slate-950 border-primary shadow-xs' : 'bg-slate-100 border-slate-200 text-slate-500 dark:bg-white/5 dark:border-transparent dark:text-slate-400'}`}
                                     >
                                         <Target className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" /> Length
                                     </button>
@@ -839,15 +839,15 @@ export default function Multiplayer() {
  
                             {mode === 'time' && (
                                 <div className="w-full">
-                                    <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-3 block">Duration (Seconds)</span>
+                                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2.5 block">Duration (Seconds)</span>
                                     <div className="flex gap-2">
                                         {[30, 60, 120].map((d) => (
                                             <button
                                                 key={d}
                                                 onClick={() => setDuration(d)}
-                                                className={`flex-1 py-3 rounded-xl border-2 font-black text-lg transition-all ${duration === d ? 'bg-primary text-background-dark border-primary shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-slate-100 border-slate-200 text-slate-500 dark:bg-white/5 dark:border-transparent dark:text-slate-500'}`}
+                                                className={`flex-1 py-3 rounded-xl border font-bold text-base transition-all cursor-pointer ${duration === d ? 'bg-primary text-white dark:text-slate-950 border-primary shadow-xs' : 'bg-slate-100 border-slate-200 text-slate-500 dark:bg-white/5 dark:border-transparent dark:text-slate-400'}`}
                                             >
-                                                {d}
+                                                {d}s
                                             </button>
                                         ))}
                                     </div>
@@ -856,13 +856,13 @@ export default function Multiplayer() {
  
                             {mode === 'length' && (
                                 <div className="w-full">
-                                    <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-3 block">Target Lines</span>
+                                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2.5 block">Target Lines</span>
                                     <div className="flex gap-2">
                                         {[5, 10, 15, 20].map((l) => (
                                             <button
                                                 key={l}
                                                 onClick={() => setTargetLines(l)}
-                                                className={`flex-1 py-3 rounded-xl border-2 font-black text-lg transition-all ${targetLines === l ? 'bg-primary text-background-dark border-primary shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-slate-100 border-slate-200 text-slate-500 dark:bg-white/5 dark:border-transparent dark:text-slate-500'}`}
+                                                className={`flex-1 py-3 rounded-xl border font-bold text-base transition-all cursor-pointer ${targetLines === l ? 'bg-primary text-white dark:text-slate-950 border-primary shadow-xs' : 'bg-slate-100 border-slate-200 text-slate-500 dark:bg-white/5 dark:border-transparent dark:text-slate-400'}`}
                                             >
                                                 {l}
                                             </button>
@@ -877,9 +877,9 @@ export default function Multiplayer() {
                         <button
                             onClick={handleStartRace}
                             disabled={players.length < 1}
-                            className="px-10 py-4 bg-primary text-background-dark font-bold rounded-xl hover:bg-primary/90 transition-colors shadow-[0_0_20px_rgba(0,245,212,0.3)] disabled:opacity-50 disabled:shadow-none flex items-center gap-2 text-lg uppercase tracking-tighter"
+                            className="px-10 py-4 bg-primary text-white dark:text-slate-950 font-bold rounded-2xl hover:opacity-90 transition-all shadow-md shadow-primary/20 disabled:opacity-50 disabled:shadow-none flex items-center gap-2 text-base uppercase tracking-wider cursor-pointer"
                         >
-                            <Play className="w-6 h-6 fill-background-dark" /> Start Race Now
+                            <Play className="w-5 h-5 fill-current" /> Start Race Now
                         </button>
                     ) : (
                         <div className="px-10 py-4 border border-primary/30 text-primary font-bold rounded-xl bg-primary/5 flex items-center gap-3">

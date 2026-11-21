@@ -457,105 +457,141 @@ export default function SoloMode() {
 
             <main className="flex-1 flex flex-col relative z-10 transition-all duration-500">
                 {showConfig ? (
-                    <div className="flex-1 flex items-center justify-center p-6 animate-in fade-in zoom-in duration-500">
-                        <div className="max-w-xl w-full bg-white dark:bg-black/20 border border-slate-200 dark:border-white/5 shadow-sm rounded-3xl p-6 md:p-10 relative overflow-hidden group">
-                           <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
-                                <Terminal className="w-32 h-32 text-primary" />
+                    <div className="flex-1 flex items-center justify-center p-6 animate-in fade-in zoom-in duration-300">
+                        <div className="max-w-xl w-full bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-black/50 rounded-3xl p-6 md:p-10 relative overflow-hidden">
+                           <div className="flex items-center gap-3 mb-2">
+                                <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+                                    <Play className="w-5 h-5 fill-current" />
+                                </div>
+                                <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
+                                    Solo Practice Setup
+                                </h1>
                            </div>
-                           
-                           <h1 className="text-5xl font-black text-slate-900 dark:text-white uppercase tracking-tighter mb-2 flex items-center gap-4">
-                                <Cpu className="w-10 h-10 text-primary animate-pulse" />
-                                System Configuration
-                           </h1>
-                           <p className="text-slate-600 dark:text-slate-400 font-bold uppercase tracking-widest text-xs mb-10 border-b border-slate-200 dark:border-white/5 pb-6">
-                                Initializing Neural Pathway Protocol // Select Parameters
+                           <p className="text-slate-500 text-sm font-normal mb-8 border-b border-slate-200 dark:border-slate-800 pb-5">
+                                Configure your text source and session rules before starting.
                            </p>
- 
-                           <div className="space-y-10">
+
+                           <div className="space-y-8">
                                 <div>
-                                    <label className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-4 block">Data Stream Source</label>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-3 block">
+                                        Content Type
+                                    </label>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         <button 
                                             onClick={() => setStream('prose')}
-                                            className={`flex items-center gap-4 p-5 rounded-2xl border transition-all ${stream === 'prose' ? 'bg-slate-200 border-slate-400 text-slate-900 dark:bg-primary/20 dark:border-primary dark:text-white dark:shadow-[0_0_20px_rgba(0,245,212,0.2)]' : 'bg-slate-100 dark:bg-white/5 border-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'}`}
+                                            className={`flex items-center gap-3.5 p-4 rounded-2xl border transition-all text-left cursor-pointer ${
+                                                stream === 'prose' 
+                                                    ? 'bg-primary/5 border-primary ring-1 ring-primary/30 text-slate-900 dark:text-white shadow-xs' 
+                                                    : 'bg-white dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700'
+                                            }`}
                                         >
-                                            <div className={`p-3 rounded-xl ${stream === 'prose' ? 'bg-primary text-black' : 'bg-slate-200 dark:bg-white/5'}`}>
-                                                <FileText className="w-6 h-6" />
+                                            <div className={`p-2.5 rounded-xl ${stream === 'prose' ? 'bg-primary text-white dark:text-slate-950' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
+                                                <FileText className="w-5 h-5" />
                                             </div>
-                                            <div className="text-left">
-                                                <div className="font-bold text-lg text-slate-900 dark:text-white">Prose Matrix</div>
-                                                <div className="text-sm opacity-60 font-semibold">Natural Language</div>
+                                            <div>
+                                                <div className="font-semibold text-sm text-slate-900 dark:text-white">Classic Prose</div>
+                                                <div className="text-xs text-slate-500">Natural language text</div>
                                             </div>
                                         </button>
                                         <button 
                                             onClick={() => setStream('code')}
-                                            className={`flex items-center gap-4 p-5 rounded-2xl border transition-all ${stream === 'code' ? 'bg-slate-200 border-slate-400 text-slate-900 dark:bg-primary/20 dark:border-primary dark:text-white dark:shadow-[0_0_20px_rgba(0,245,212,0.2)]' : 'bg-slate-100 dark:bg-white/5 border-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'}`}
+                                            className={`flex items-center gap-3.5 p-4 rounded-2xl border transition-all text-left cursor-pointer ${
+                                                stream === 'code' 
+                                                    ? 'bg-primary/5 border-primary ring-1 ring-primary/30 text-slate-900 dark:text-white shadow-xs' 
+                                                    : 'bg-white dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700'
+                                            }`}
                                         >
-                                            <div className={`p-3 rounded-xl ${stream === 'code' ? 'bg-primary text-black' : 'bg-slate-200 dark:bg-white/5'}`}>
-                                                <Code className="w-6 h-6" />
+                                            <div className={`p-2.5 rounded-xl ${stream === 'code' ? 'bg-primary text-white dark:text-slate-950' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
+                                                <Code className="w-5 h-5" />
                                             </div>
-                                            <div className="text-left">
-                                                <div className="font-bold text-lg text-slate-900 dark:text-white">Syntax Stream</div>
-                                                <div className="text-sm opacity-60 font-semibold">React / JS Logic</div>
+                                            <div>
+                                                <div className="font-semibold text-sm text-slate-900 dark:text-white">Code Syntax</div>
+                                                <div className="text-xs text-slate-500">JavaScript / React logic</div>
                                             </div>
                                         </button>
                                     </div>
                                 </div>
- 
-                                {mode === 'time' && (
-                                    <div>
-                                        <label className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-4 block">Session Duration (Seconds)</label>
-                                        <div className="flex gap-4">
-                                            {[30, 60, 120].map((d) => (
-                                                <button 
-                                                    key={d}
-                                                    onClick={() => setDuration(d)}
-                                                    className={`flex-1 py-3 md:py-4 rounded-xl border font-semibold text-lg transition-all ${duration === d ? 'bg-slate-200 border-slate-400 text-slate-900 dark:bg-primary dark:text-black dark:border-primary dark:shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-slate-100 dark:bg-white/5 border-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'}`}
-                                                >
-                                                    {d}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
- 
+
                                 <div>
-                                    <label className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-4 block">Practice Mode</label>
-                                    <div className="flex gap-4">
+                                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-3 block">
+                                        Practice Mode
+                                    </label>
+                                    <div className="flex gap-2 bg-slate-100 dark:bg-slate-800/60 p-1.5 rounded-2xl">
                                         <button
                                             onClick={() => setMode('time')}
-                                            className={`flex-1 py-3 md:py-4 rounded-xl border font-semibold text-base transition-all ${mode === 'time' ? 'bg-slate-200 border-slate-400 text-slate-900 dark:bg-primary dark:text-black dark:border-primary dark:shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-slate-100 dark:bg-white/5 border-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'}`}
+                                            className={`flex-1 py-2.5 rounded-xl font-semibold text-xs tracking-wider transition-all cursor-pointer ${
+                                                mode === 'time' 
+                                                    ? 'bg-white dark:bg-slate-700 text-primary shadow-xs' 
+                                                    : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                                            }`}
                                         >
                                             Time Based
                                         </button>
                                         <button
                                             onClick={() => setMode('length')}
-                                            className={`flex-1 py-3 md:py-4 rounded-xl border font-semibold text-base transition-all ${mode === 'length' ? 'bg-slate-200 border-slate-400 text-slate-900 dark:bg-primary dark:text-black dark:border-primary dark:shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-slate-100 dark:bg-white/5 border-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'}`}
+                                            className={`flex-1 py-2.5 rounded-xl font-semibold text-xs tracking-wider transition-all cursor-pointer ${
+                                                mode === 'length' 
+                                                    ? 'bg-white dark:bg-slate-700 text-primary shadow-xs' 
+                                                    : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                                            }`}
                                         >
-                                            Length Based
+                                            Target Length
                                         </button>
                                     </div>
-                                    {mode === 'length' && (
-                                        <div className="flex gap-4 mt-4">
+                                </div>
+
+                                {mode === 'time' && (
+                                    <div>
+                                        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-3 block">
+                                            Duration (Seconds)
+                                        </label>
+                                        <div className="flex gap-3">
+                                            {[30, 60, 120].map((d) => (
+                                                <button 
+                                                    key={d}
+                                                    onClick={() => setDuration(d)}
+                                                    className={`flex-1 py-3 rounded-xl border text-sm font-semibold transition-all cursor-pointer ${
+                                                        duration === d 
+                                                            ? 'bg-primary/10 border-primary text-primary shadow-xs' 
+                                                            : 'bg-white dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300'
+                                                    }`}
+                                                >
+                                                    {d}s
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {mode === 'length' && (
+                                    <div>
+                                        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-3 block">
+                                            Target Lines
+                                        </label>
+                                        <div className="flex gap-3">
                                             {[5, 10, 15, 20].map((l) => (
                                                 <button
                                                     key={l}
                                                     onClick={() => setTargetLines(l)}
-                                                    className={`flex-1 py-3 md:py-4 rounded-xl border font-semibold text-lg transition-all ${targetLines === l ? 'bg-slate-200 border-slate-400 text-slate-900 dark:bg-primary dark:text-black dark:border-primary dark:shadow-[0_0_15px_rgba(0,245,212,0.3)]' : 'bg-slate-100 dark:bg-white/5 border-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'}`}
+                                                    className={`flex-1 py-3 rounded-xl border text-sm font-semibold transition-all cursor-pointer ${
+                                                        targetLines === l 
+                                                            ? 'bg-primary/10 border-primary text-primary shadow-xs' 
+                                                            : 'bg-white dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300'
+                                                    }`}
                                                 >
-                                                    {l}
+                                                    {l} Lines
                                                 </button>
                                             ))}
                                         </div>
-                                    )}
-                                </div>
- 
+                                    </div>
+                                )}
+
                                 <button 
                                     onClick={handleStartRace}
-                                    className="w-full py-6 bg-primary text-black rounded-2xl font-black uppercase tracking-[0.3em] flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_30px_rgba(0,245,212,0.4)] text-base md:text-lg"
+                                    className="w-full py-4 bg-primary text-white dark:text-slate-950 rounded-2xl font-semibold text-sm hover:opacity-90 active:scale-[0.99] transition-all shadow-md shadow-primary/20 flex items-center justify-center gap-2 cursor-pointer mt-4"
                                 >
-                                    <Play className="w-6 h-6 fill-current" />
-                                    Initialize Session
+                                    <Play className="w-4 h-4 fill-current" />
+                                    <span>Start Practice Session</span>
                                 </button>
                            </div>
                         </div>
@@ -566,26 +602,26 @@ export default function SoloMode() {
                         <div className={`flex justify-between items-end mb-12 transition-all duration-700 ease-in-out ${isFocusMode ? 'opacity-10 scale-[0.98]' : 'opacity-100'}`}>
                             <div className="flex flex-col">
                                 {ghostName && (
-                                    <div className="flex items-center gap-2 mb-2 text-yellow-500 animate-pulse font-mono">
+                                    <div className="flex items-center gap-2 mb-2 text-amber-500 font-medium text-xs">
                                         <Ghost className="w-4 h-4" />
-                                        <span className="text-[10px] font-black uppercase tracking-[0.2em]">Neural Ghost Overlay: {ghostName}</span>
+                                        <span>Ghost Runner: {ghostName}</span>
                                     </div>
                                 )}
-                                <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-1">
-                                    {location.state?.isAcademy ? `TRAINING PROTOCOL: ${location.state.academyTitle}` : 'Temporal Node'}
+                                <span className="text-xs font-semibold text-primary uppercase tracking-wider mb-1">
+                                    {location.state?.isAcademy ? `Lesson: ${location.state.academyTitle}` : 'Speed Test'}
                                 </span>
-                                <div className="text-4xl md:text-7xl font-black text-slate-900 dark:text-white font-mono leading-none flex items-baseline gap-2">
+                                <div className="text-4xl md:text-6xl font-bold text-slate-900 dark:text-white font-mono leading-none flex items-baseline gap-2">
                                     {status === 'finished' ? finalWPM : (mode === 'length' ? elapsedTime : timeLeft)}
-                                    <span className={`text-sm md:text-xl uppercase font-sans tracking-widest ${status === 'finished' ? 'text-primary/40' : mode === 'length' ? 'text-primary' : 'text-primary/40'}`}>
-                                        {status === 'finished' ? 'WPM' : mode === 'length' ? 'Sec Elapsed' : 'Sec'}
+                                    <span className="text-sm md:text-lg font-sans font-medium text-slate-400">
+                                        {status === 'finished' ? 'WPM' : mode === 'length' ? 'Sec Elapsed' : 's'}
                                     </span>
                                 </div>
                             </div>
                             
                             <div className="flex flex-col items-end">
-                                <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-[0.4em] mb-1">Neural Precision</span>
-                                <div className="text-3xl md:text-5xl font-bold text-slate-700 dark:text-slate-200 font-mono leading-none">
-                                    {calculateAccuracy()}<span className="text-xl opacity-30">%</span>
+                                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Accuracy</span>
+                                <div className="text-3xl md:text-5xl font-bold text-slate-800 dark:text-slate-100 font-mono leading-none">
+                                    {calculateAccuracy()}<span className="text-lg opacity-40">%</span>
                                 </div>
                             </div>
                         </div>

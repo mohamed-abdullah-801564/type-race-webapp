@@ -745,9 +745,9 @@ export default function TrainingAcademy() {
                         <div className="px-6 mb-6">
                             <div className="flex items-center gap-2 mb-1">
                                 <GraduationCap className="w-4 h-4 text-primary"/>
-                                <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Academy Curriculum</span>
+                                <span className="text-xs font-semibold text-primary tracking-wider uppercase">Academy Curriculum</span>
                             </div>
-                            <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter">Neural Path</h2>
+                            <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Curriculum Stages</h2>
                         </div>
 
                         <div className="flex-1 overflow-y-auto px-4 space-y-2 pb-12 custom-scrollbar">
@@ -767,26 +767,26 @@ export default function TrainingAcademy() {
                                             }
                                         }}
                                         disabled={!isUnlocked}
-                                        className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all border cursor-pointer ${
+                                        className={`w-full flex items-center gap-3.5 p-3.5 rounded-2xl transition-all border cursor-pointer ${
                                             isSelected 
-                                                ? 'bg-primary/10 border-primary/30 shadow-[0_0_15px_rgba(0,245,212,0.1)]' 
+                                                ? 'bg-primary/10 border-primary/40 shadow-xs' 
                                                 : isUnlocked 
-                                                    ? 'bg-transparent border-transparent hover:bg-slate-200 dark:hover:bg-white/5' 
-                                                    : 'opacity-40 cursor-not-allowed'
+                                                    ? 'bg-white dark:bg-slate-900/30 border-slate-200/80 dark:border-white/5 hover:border-slate-300 dark:hover:bg-white/5' 
+                                                    : 'opacity-40 cursor-not-allowed bg-transparent border-transparent'
                                         }`}
                                     >
-                                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-mono font-black text-xs border ${
+                                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-mono font-bold text-xs border ${
                                             isSelected
-                                                ? 'bg-primary text-slate-950 border-primary'
+                                                ? 'bg-primary text-white dark:text-slate-950 border-primary'
                                                 : module.isTest
                                                     ? 'bg-amber-500/10 text-amber-500 border-amber-500/30'
-                                                    : 'bg-slate-200 dark:bg-white/5 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-white/10'
+                                                    : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-white/10'
                                         }`}>
                                             {isUnlocked ? (module.isTest ? <ShieldAlert className="w-4 h-4"/> : index + 1) : <Lock className="w-3.5 h-3.5"/>}
                                         </div>
                                         <div className="flex-1 text-left">
-                                            <div className="text-xs font-bold text-slate-900 dark:text-white truncate">{module.title}</div>
-                                            <div className="text-[10px] text-slate-500 uppercase tracking-widest">{module.isTokenDrill ? 'Interactive Drill' : module.difficulty}</div>
+                                            <div className="text-xs font-semibold text-slate-900 dark:text-white truncate">{module.title}</div>
+                                            <div className="text-[11px] text-slate-500 capitalize">{module.isTokenDrill ? 'Interactive Drill' : module.difficulty}</div>
                                         </div>
                                     </button>
                                 );
@@ -796,29 +796,28 @@ export default function TrainingAcademy() {
 
                     {/* Restored Rich Main Content Area */}
                     <div 
-                        className="flex-1 bg-white dark:bg-black/20 flex flex-col pt-12 md:pt-16 px-8 md:px-16 pb-20 overflow-y-auto [&::-webkit-scrollbar]:hidden items-center"
+                        className="flex-1 bg-white dark:bg-black/20 flex flex-col pt-10 md:pt-14 px-8 md:px-16 pb-20 overflow-y-auto [&::-webkit-scrollbar]:hidden items-center"
                         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                     >
                         <div className="max-w-3xl w-full mx-auto">
                             {isCompletedAll && (
-                                <div className="mb-8 bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-primary/10 border border-primary/20 rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-[0_0_30px_rgba(0,245,212,0.05)] relative overflow-hidden group">
-                                    <div className="absolute inset-0 bg-radial-gradient from-primary/5 via-transparent to-transparent pointer-events-none" />
+                                <div className="mb-8 bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-primary/10 border border-primary/20 rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm relative overflow-hidden group">
                                     <div className="flex items-center gap-4 relative z-10">
-                                        <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-center text-primary shadow-[0_0_15px_rgba(0,245,212,0.1)] group-hover:scale-105 transition-transform duration-300">
-                                            <Award className="w-8 h-8 animate-pulse" />
+                                        <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-center text-primary shadow-xs">
+                                            <Award className="w-7 h-7" />
                                         </div>
                                         <div className="text-left">
-                                            <span className="text-[9px] font-black text-primary uppercase tracking-[0.3em] block mb-1">UNIFIED STATUS: ACTIVE SENIOR OPERATOR</span>
-                                            <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter">SYNCHRONIZATION COMPLETE</h3>
-                                            <p className="text-slate-600 dark:text-slate-400 text-xs mt-1 max-w-md font-medium">All modules completed with optimal throughput. Your neural profile certificate is ready.</p>
+                                            <span className="text-[11px] font-semibold text-primary uppercase tracking-wider block mb-0.5">Curriculum Completed</span>
+                                            <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">Full Touch Typing Mastery</h3>
+                                            <p className="text-slate-600 dark:text-slate-400 text-xs mt-0.5 max-w-md font-normal">All 14 modules completed with passing velocity and precision.</p>
                                         </div>
                                     </div>
                                     <button 
                                         onClick={() => setShowGraduationModal(true)}
-                                        className="relative z-10 px-5 py-3 bg-primary text-background-dark font-black uppercase tracking-widest text-xs rounded-xl shadow-lg shadow-primary/25 hover:shadow-primary/45 hover:scale-[1.03] active:scale-[0.98] transition-all cursor-pointer flex items-center gap-2 group/btn"
+                                        className="relative z-10 px-4 py-2.5 bg-primary text-white dark:text-slate-950 font-semibold uppercase tracking-wider text-xs rounded-xl shadow-sm hover:opacity-90 transition-all cursor-pointer flex items-center gap-2"
                                     >
                                         <GraduationCap className="w-4 h-4" />
-                                        <span>CLAIM TELEMETRY PROFILE</span>
+                                        <span>View Certificate</span>
                                     </button>
                                 </div>
                             )}
@@ -827,15 +826,15 @@ export default function TrainingAcademy() {
                             {recommendedBanner && (
                                 <div className="mb-8 bg-amber-500/10 border border-amber-500/30 rounded-3xl p-5 flex items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
-                                            <Target className="w-6 h-6 animate-pulse" />
+                                        <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-500 shrink-0">
+                                            <Target className="w-6 h-6" />
                                         </div>
                                         <div className="text-left">
-                                            <span className="text-[10px] font-black text-amber-400 uppercase tracking-widest block mb-0.5">
-                                                Recommended Drill for Your Weak Keys
+                                            <span className="text-xs font-semibold text-amber-500 uppercase tracking-wider block mb-0.5">
+                                                Recommended Practice for Your Weak Keys
                                             </span>
-                                            <p className="text-xs text-slate-700 dark:text-slate-300 font-medium">
-                                                Reinforcing keys: <span className="text-amber-500 dark:text-amber-300 font-mono font-bold">{recommendedBanner.keys.join(', ')}</span> — Selected module: <span className="font-bold">{recommendedBanner.moduleTitle}</span>
+                                            <p className="text-xs text-slate-700 dark:text-slate-300 font-normal">
+                                                Reinforcing keys: <span className="text-amber-500 font-mono font-bold">{recommendedBanner.keys.join(', ')}</span> — Selected module: <span className="font-semibold">{recommendedBanner.moduleTitle}</span>
                                             </p>
                                         </div>
                                     </div>
@@ -850,101 +849,98 @@ export default function TrainingAcademy() {
                             )}
 
                             {/* Badge */}
-                            <div className="flex items-center gap-4 mb-8">
-                                <div className={`flex items-center gap-2 px-4 py-1.5 border rounded-full ${
+                            <div className="flex items-center gap-4 mb-6">
+                                <div className={`flex items-center gap-2 px-3.5 py-1.5 border rounded-full ${
                                     selectedModule.isTest 
-                                    ? 'bg-amber-500/10 border-amber-500/30' 
-                                    : 'bg-primary/5 border-primary/20'
+                                    ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' 
+                                    : 'bg-primary/5 border-primary/20 text-primary'
                                 }`}>
                                     {selectedModule.isTest ? (
-                                        <ShieldAlert className="w-3.5 h-3.5 text-amber-500" />
+                                        <ShieldAlert className="w-3.5 h-3.5" />
                                     ) : (
-                                        <Activity className="w-3.5 h-3.5 text-primary" />
+                                        <Activity className="w-3.5 h-3.5" />
                                     )}
-                                    <span className={`text-[9px] font-black uppercase tracking-[0.2em] ${
-                                        selectedModule.isTest ? 'text-amber-500' : 'text-primary'
-                                    }`}>
-                                        {selectedModule.isTest ? 'Priority Assessment: Required' : 'Neural Status: Optimal'}
+                                    <span className="text-xs font-semibold uppercase tracking-wider">
+                                        {selectedModule.isTest ? 'Assessment: Required' : 'Stage Practice'}
                                     </span>
                                 </div>
-                                <div className="flex-1 h-px bg-slate-200 dark:bg-white/5" />
+                                <div className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
                             </div>
 
                             {/* Heading */}
-                            <div className="relative mb-12 text-left">
-                                <div className="absolute -left-6 top-0 bottom-0 w-1 bg-gradient-to-b from-primary to-transparent" />
-                                <h1 className="text-4xl lg:text-5xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic mb-4">
+                            <div className="relative mb-10 text-left">
+                                <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight mb-2">
                                     {selectedModule.title}
                                 </h1>
-                                <p className="text-base text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
+                                <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 font-normal leading-relaxed">
                                     {selectedModule.description}
                                 </p>
                             </div>
 
                             {/* Specs Grid */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 text-left">
-                                <div className="bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/5 shadow-sm rounded-3xl p-6 group hover:border-primary/20 transition-all">
-                                    <div className="flex items-center gap-3 mb-6">
-                                        <Target className="w-4 h-4 text-primary opacity-40" />
-                                        <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">Protocol Targets</span>
+                                <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 shadow-sm rounded-3xl p-6 group transition-all">
+                                    <div className="flex items-center gap-2.5 mb-5">
+                                        <Target className="w-4 h-4 text-primary" />
+                                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Target Keycaps</span>
                                     </div>
-                                    <div className="flex flex-wrap gap-2 mb-6">
+                                    <div className="flex flex-wrap gap-2.5 mb-6">
                                         {selectedModule.keys.map(key => (
-                                            <div key={key} className="w-10 h-10 flex items-center justify-center bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-mono font-bold text-slate-700 dark:text-slate-300 transition-all shadow-[0_2px_0_rgba(255,255,255,0.05)]">
+                                            <div 
+                                                key={key} 
+                                                className="w-11 h-11 flex items-center justify-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 rounded-xl text-sm font-mono font-bold text-slate-800 dark:text-slate-100 shadow-xs keycap-badge transition-all"
+                                            >
                                                 {key}
                                             </div>
                                         ))}
                                     </div>
-                                    <div className="space-y-3 pt-4 border-t border-slate-200 dark:border-white/5">
-                                        <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400">
+                                    <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                                        <div className="flex justify-between items-center text-xs text-slate-600 dark:text-slate-400">
                                             <span>Target Velocity</span>
-                                            <span className="text-primary">{selectedModule.minWPM} WPM</span>
+                                            <span className="font-semibold text-primary">{selectedModule.minWPM} WPM</span>
                                         </div>
-                                        <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400">
-                                            <span>Accuracy Req</span>
-                                            <span className="text-primary">{selectedModule.minAccuracy}%</span>
+                                        <div className="flex justify-between items-center text-xs text-slate-600 dark:text-slate-400">
+                                            <span>Accuracy Requirement</span>
+                                            <span className="font-semibold text-primary">{selectedModule.minAccuracy}%</span>
                                         </div>
-                                        <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400">
-                                            <span>Error Allowance</span>
-                                            <span className="text-primary">{selectedModule.maxErrors} MAX</span>
+                                        <div className="flex justify-between items-center text-xs text-slate-600 dark:text-slate-400">
+                                            <span>Maximum Error Allowance</span>
+                                            <span className="font-semibold text-primary">{selectedModule.maxErrors} max</span>
                                         </div>
                                     </div>
                                 </div>
       
-                                <div className="bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/5 shadow-sm rounded-3xl p-6 group hover:border-primary/20 transition-all flex flex-col justify-between">
+                                <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 shadow-sm rounded-3xl p-6 group transition-all flex flex-col justify-between">
                                     <div>
-                                        <div className="flex items-center gap-3 mb-6">
-                                            <Shield className="w-4 h-4 text-primary opacity-40" />
-                                            <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">Complexity Level</span>
+                                        <div className="flex items-center gap-2.5 mb-5">
+                                            <Shield className="w-4 h-4 text-primary" />
+                                            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Difficulty Level</span>
                                         </div>
                                         <div className="space-y-4">
                                             <div className="flex justify-between items-end">
-                                                <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase">Integrity Requirements</span>
-                                                <span className={`text-sm font-black uppercase ${getDifficultyColor(selectedModule)}`}>
+                                                <span className="text-xs text-slate-500">Stage Complexity</span>
+                                                <span className={`text-sm font-semibold capitalize ${getDifficultyColor(selectedModule)}`}>
                                                     {selectedModule.isTest ? 'Assessment' : selectedModule.difficulty}
                                                 </span>
                                             </div>
-                                            <div className="w-full h-1.5 bg-slate-200 dark:bg-white/5 rounded-full overflow-hidden">
+                                            <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                                                 <div 
-                                                    className={`h-full shadow-[0_0_15px] transition-all duration-1000 ${
-                                                        selectedModule.isTest ? 'bg-amber-500 shadow-amber-500/50' : 'bg-primary shadow-primary/50'
+                                                    className={`h-full transition-all duration-700 ${
+                                                        selectedModule.isTest ? 'bg-amber-500' : 'bg-primary'
                                                     }`} 
                                                     style={{ width: selectedModule.isTest ? '100%' : (selectedModule.difficulty === 'easy' ? '33%' : (selectedModule.difficulty === 'medium' ? '66%' : '100%')) }}
                                                 />
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
 
-                            {/* Preview */}
-                            <div className="bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/5 shadow-sm rounded-3xl p-6 mb-8 relative overflow-hidden group text-left">
-                                <div className="absolute top-0 right-0 p-6">
-                                    <Terminal className="w-5 h-5 text-white/5 group-hover:text-primary/20 transition-colors" />
-                                </div>
-                                <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest block mb-3">Neural Packet Preview</span>
-                                <div className="text-base font-mono text-slate-700 dark:text-slate-400 bg-slate-100/50 dark:bg-black/20 p-4 rounded-xl border border-slate-200 dark:border-white/5 italic select-none line-clamp-2">
-                                    {selectedModule.isTokenDrill ? selectedModule.texts[0] : selectedModule.texts[0].slice(0, 120)}...
+                                    {/* Preview Box */}
+                                    <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800">
+                                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-2">Text Preview</span>
+                                        <div className="text-xs font-mono text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700/60 line-clamp-2">
+                                            {selectedModule.isTokenDrill ? selectedModule.texts[0] : selectedModule.texts[0].slice(0, 100)}...
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -953,15 +949,15 @@ export default function TrainingAcademy() {
                                 type="button"
                                 onClick={startModule}
                                 disabled={!unlockedIds.includes(selectedId)}
-                                className="w-full py-5 bg-primary text-background-dark font-black uppercase tracking-[0.2em] rounded-2xl flex items-center justify-between px-10 hover:scale-[1.01] active:scale-98 transition-all cursor-pointer shadow-[0_0_30px_rgba(0,245,212,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full py-4.5 bg-primary text-white dark:text-slate-950 font-semibold text-sm rounded-2xl flex items-center justify-between px-8 hover:opacity-90 active:scale-[0.99] transition-all cursor-pointer shadow-md shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                <div className="flex items-center gap-4">
-                                    <Play className="w-5 h-5 fill-current"/>
-                                    <span className="text-sm font-bold">
-                                        {selectedModule.isTokenDrill ? 'Start Interactive Lesson' : (selectedModule.isTest ? 'Initiate Assessment' : 'Begin Practice Lesson')}
+                                <div className="flex items-center gap-3">
+                                    <Play className="w-4 h-4 fill-current"/>
+                                    <span>
+                                        {selectedModule.isTokenDrill ? 'Start Interactive Lesson' : (selectedModule.isTest ? 'Begin Assessment' : 'Begin Practice Lesson')}
                                     </span>
                                 </div>
-                                <ChevronRight className="w-6 h-6"/>
+                                <ChevronRight className="w-5 h-5"/>
                             </button>
                         </div>
                     </div>
